@@ -182,7 +182,7 @@ export function UserDock({
                   {user.name}
                 </span>
                 <span className="block max-w-32 truncate text-[11px] leading-tight text-muted-foreground">
-                  {hasUpdate ? `v${(update as any).info?.version || ''} available` : user.email}
+                  {user.email}
                 </span>
               </span>
             </div>
