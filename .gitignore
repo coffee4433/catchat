@@ -1,0 +1,59 @@
+# v0 sandbox internal files
+__v0_runtime_loader.js
+__v0_devtools.tsx
+__v0_jsx-dev-runtime.ts
+.snowflake/
+.v0-trash/
+.vercel/
+
+# Environment variables
+.env
+.env.local
+.env*.local
+.env.development
+.env.production
+# (si quieres compartir un ejemplo con el equipo, crea .env.example SIN valores reales y NO lo ignores)
+
+# Common ignores
+node_modules
+.next/
+out/
+.DS_Store
+translator-env/
+spawn-env.json
+stdout.log
+stderr.log
+
+# Runtime del traductor portable (generado por translator:build, pesa cientos de MB)
+build/argos-packages/
+build/translator-runtime/
+build/python-embed.zip
+
+# Electron / electron-builder (instaladores y binarios generados)
+dist/
+dist-electron/
+release/
+*.msi
+*.exe
+*.dmg
+*.AppImage
+
+# Logs
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Editor / OS
+.vscode/
+.idea/
+Thumbs.db
+
+# Caches de build
+.turbo/
+.cache/

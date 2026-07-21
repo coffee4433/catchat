@@ -1,0 +1,42 @@
+import { Analytics } from '@vercel/analytics/next'
+import type { Metadata, Viewport } from 'next'
+import './globals.css'
+
+export const metadata: Metadata = {
+  title: 'CatChat — Team Messenger',
+  description:
+    'A team collaboration messenger with threads, channels and a lightning-fast command search.',
+  generator: 'v0.app',
+}
+
+export const viewport: Viewport = {
+  themeColor: '#0d0e14',
+}
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode
+}>) {
+  return (
+    <html lang="en" className="light bg-background" suppressHydrationWarning>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body className="font-sans antialiased" suppressHydrationWarning>
+        {children}
+        {process.env.NODE_ENV === 'production' && <Analytics />}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(()=>{const e=new MutationObserver(()=>{document.querySelectorAll("[bis_skin_checked]").forEach(n=>n.removeAttribute("bis_skin_checked"))});e.observe(document.documentElement,{attributes:!0,childList:!0,subtree:!0});try{document.querySelectorAll("[bis_skin_checked]").forEach(n=>n.removeAttribute("bis_skin_checked"))}catch(e){}})();`,
+          }}
+        />
+      </body>
+    </html>
+  )
+}

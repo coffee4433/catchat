@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    :root {
+      /* Vibrant Electric Cyan that pops against the #1e1f22 dark background */
+      --primary: #00e5ff;
+      --primary-trans: rgba(0, 229, 255, 0.25);
+    }
+
+    /* Make the html transparent in case it's a frameless window */
+    html {
+      background: transparent;
+    }
+
+    body {
+      background-color: #1e1f22;
+      color: #dbdee1;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      /* fixed + inset:0 en vez de height/width:100v* — así el body
+         queda pixel a pixel igual que las capas del borde (que ya son
+         fixed), sin desfase entre sus esquinas redondeadas */
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+      user-select: none;
+      /* Add border-radius to the page if it's a frameless window */
+      border-radius: 16px;
+      box-sizing: border-box;
+    }
+
+    .logo-container {
+      position: relative;
+      margin-bottom: 24px;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.85; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.05); }
+    }
+
+    .logo {
+      width: 100px;
+      height: 100px;
+      animation: pulse 2s infinite ease-in-out;
+      border-radius: 20px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+
+    .logo-fallback {
+      display: none;
+      width: 100px;
+      height: 100px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #5865F2, #4752C4);
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      color: white;
+      font-weight: bold;
+      animation: pulse 2s infinite ease-in-out;
+    }
+
+    /* Magic Border Styles for the Page */
+    .magic-border-layer {
+      /* fixed = anclado al viewport/raiz del documento, no al body */
+      position: fixed;
+      /* Trace the exact outer edge of the window */
+      inset: 0;
+      border-radius: 16px;
+      /* Sin esto, el blur de las capas estáticas se filtraba fuera de
+         la curva redondeada, hacia las esquinas cuadradas de la ventana.
+         Con overflow:hidden el resplandor se recorta justo en el borde
+         de 16px y detrás queda transparente. */
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 100; /* Ensure it stays on top of the background */
+    }
+
+    .magic-border-mask {
+      position: absolute;
+      inset: 0;
+      border-radius: 16px;
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      padding: 2px;
+      overflow: hidden;
+    }
+
+    .magic-beams {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      /* Huge width to cover the entire page's diagonal */
+      width: 300vh;
+      height: 300vh;
+      transform: translate(-50%, -50%);
+      background: conic-gradient(from 0deg, 
+        transparent 0%, transparent 7%, var(--primary-trans) 13%, var(--primary) 15.5%, #ffffff 16.66%,
+        transparent 16.66%, transparent 23.66%, var(--primary-trans) 29.66%, var(--primary) 32.16%, #ffffff 33.33%,
+        transparent 33.33%, transparent 40.33%, var(--primary-trans) 46.33%, var(--primary) 48.83%, #ffffff 50%,
+        transparent 50%, transparent 57%, var(--primary-trans) 63%, var(--primary) 65.5%, #ffffff 66.66%,
+        transparent 66.66%, transparent 73.66%, var(--primary-trans) 79.66%, var(--primary) 82.16%, #ffffff 83.33%,
+        transparent 83.33%, transparent 90.33%, var(--primary-trans) 96.33%, var(--primary) 98.83%, #ffffff 100%);
+      animation: magic-spin 5s linear infinite;
+    }
+
+    @keyframes magic-spin {
+      to { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+
+    /* Put UI elements above the border background effects */
+    .content-wrapper {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 6px;
+      letter-spacing: 0.5px;
+    }
+
+    .subtitle {
+      font-size: 11.5px;
+      color: #949ba4;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    @keyframes spin {
+      100% { transform: rotate(360deg); }
+    }
+
+    .spinner {
+      width: 12px;
+      height: 12px;
+      border: 2px solid #949ba4;
+      border-top-color: #5865F2;
+      border-radius: 50%;
+      animation: spin 0.8s infinite linear;
+    }
+
+    @keyframes dots {
+      0%, 20% { content: ''; }
+      40% { content: '.'; }
+      60% { content: '..'; }
+      80%, 100% { content: '...'; }
+    }
+
+    .dots::after {
+      content: '';
+      animation: dots 1.5s infinite steps(1);
+    }
+  </style>
+</head>
+<body>
+  <!-- Page-level Magic Border -->
+  <!-- Static Primary Blurred outer glow -->
+  <div class="magic-border-layer" style="filter: blur(4px); opacity: 0.5;">
+    <div class="magic-border-mask" style="background-color: var(--primary);"></div>
+  </div>
+  
+  <!-- Static Secondary wide colored aura -->
+  <div class="magic-border-layer" style="filter: blur(12px); opacity: 0.3;">
+    <div class="magic-border-mask" style="background-color: var(--primary);"></div>
+  </div>
+
+  <!-- Animated glowing beam layer (core worms) -->
+  <div class="magic-border-layer">
+    <div class="magic-border-mask">
+      <div class="magic-beams"></div>
+    </div>
+  </div>
+
+  <!-- Static Inner/Top Glow Aura -->
+  <div class="magic-border-layer" style="filter: blur(6px); opacity: 0.4;">
+    <div class="magic-border-mask" style="background-color: var(--primary);"></div>
+  </div>
+
+  <div class="content-wrapper">
+    <div class="logo-container">
+      <img class="logo" src="./icon.png" alt="CatChat Logo" onerror="this.style.display='none';document.getElementById('logo-fallback').style.display='flex'">
+      <div class="logo-fallback" id="logo-fallback">CC</div>
+    </div>
+    <div class="title">CatChat</div>
+    <div class="subtitle">
+      <div class="spinner"></div>
+      <span>Buscando actualizaciones<span class="dots"></span></span>
+    </div>
+  </div>
+</body>
+</html>

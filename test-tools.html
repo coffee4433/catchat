@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Acceso Directo a Tools</title>
+    <style>
+        body {
+            font-family: system-ui;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: #0f172a;
+            color: white;
+        }
+        .card {
+            text-align: center;
+            padding: 3rem;
+            background: #1e293b;
+            border-radius: 1rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        button {
+            margin-top: 2rem;
+            padding: 1rem 2rem;
+            font-size: 1.2rem;
+            background: #eab308;
+            color: #0f172a;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #fbbf24;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🛠️ Command Center</h1>
+        <p>Haz clic para ir a la herramienta multi-tool</p>
+        <button onclick="window.location.href='/tools'">
+            Abrir Command Center ⚡
+        </button>
+    </div>
+</body>
+</html>

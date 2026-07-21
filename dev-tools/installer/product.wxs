@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+
+  <?define ProductName = "CatChat Dev Tools" ?>
+  <?define ProductVersion = "0.1.0.0" ?>
+  <?define ProductManufacturer = "CatChat" ?>
+  <?define ProductDescription = "Dev tools panel for the CatChat application" ?>
+  <?define UpgradeCode = "F3A2B1C4-5D6E-7F8A-9B0C-1D2E3F4A5B6C" ?>
+
+  <Package Id="CatChat.DevTools"
+           Name="$(var.ProductName)"
+           Version="$(var.ProductVersion)"
+           Manufacturer="$(var.ProductManufacturer)"
+           UpgradeCode="$(var.UpgradeCode)"
+           Scope="perMachine">
+
+    <SummaryInformation Description="$(var.ProductDescription)" />
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+
+    <Feature Id="ProductFeature" Title="$(var.ProductName)" Level="1">
+      <ComponentGroupRef Id="AppFileComponents" />
+      <ComponentGroupRef Id="ShortcutComponents" />
+      <ComponentGroupRef Id="RegistryComponents" />
+    </Feature>
+
+    <Feature Id="DesktopShortcutFeature" Title="Desktop Shortcut" Level="1" Absent="allow" Display="hidden">
+      <ComponentGroupRef Id="DesktopShortcutComponent" />
+    </Feature>
+  </Package>
+
+  <!-- ─── Directory Structure ─────────────────────────────────── -->
+  <Fragment>
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="$(var.ProductName)" />
+    </StandardDirectory>
+
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="ApplicationProgramsFolder" Name="$(var.ProductName)" />
+    </StandardDirectory>
+
+    <StandardDirectory Id="DesktopFolder" />
+  </Fragment>
+
+  <!-- ─── App Files (auto-generated from staging dir) ────────── -->
+  <Fragment>
+    <ComponentGroup Id="AppFileComponents" Directory="INSTALLFOLDER">
+      <Component Id="AppRootFiles">
+        <File Source="..\server.mjs" />
+        <File Source="..\package.json" />
+      </Component>
+      <Component Id="DistIndex">
+        <File Source="..\dist\index.html" />
+      </Component>
+      <Component Id="DistAssets">
+        <Files Include="..\dist\assets\*" />
+      </Component>
+      <Component Id="NodeExpress">
+        <Files Include="..\node_modules\express\**" Exclude="..\node_modules\express\node_modules\**" />
+      </Component>
+      <Component Id="NodeExpressDeps">
+        <Files Include="..\node_modules\express\node_modules\**" />
+      </Component>
+      <Component Id="NodeWS">
+        <Files Include="..\node_modules\ws\**" Exclude="..\node_modules\ws\node_modules\**" />
+      </Component>
+      <Component Id="NodeWSDeps">
+        <Files Include="..\node_modules\ws\node_modules\**" />
+      </Component>
+      <Component Id="NodeSharedDeps">
+        <Files Include="..\node_modules\accepts\**" />
+        <Files Include="..\node_modules\array-flatten\**" />
+        <Files Include="..\node_modules\body-parser\**" />
+        <Files Include="..\node_modules\bytes\**" />
+        <Files Include="..\node_modules\call-bind-apply-helpers\**" />
+        <Files Include="..\node_modules\call-bound\**" />
+        <Files Include="..\node_modules\content-disposition\**" />
+        <Files Include="..\node_modules\content-type\**" />
+        <Files Include="..\node_modules\cookie\**" />
+        <Files Include="..\node_modules\cookie-signature\**" />
+        <Files Include="..\node_modules\debug\**" />
+        <Files Include="..\node_modules\depd\**" />
+        <Files Include="..\node_modules\destroy\**" />
+        <Files Include="..\node_modules\dunder-proto\**" />
+        <Files Include="..\node_modules\ee-first\**" />
+        <Files Include="..\node_modules\encodeurl\**" />
+        <Files Include="..\node_modules\es-define-property\**" />
+        <Files Include="..\node_modules\es-errors\**" />
+        <Files Include="..\node_modules\es-object-atoms\**" />
+        <Files Include="..\node_modules\escape-html\**" />
+        <Files Include="..\node_modules\etag\**" />
+        <Files Include="..\node_modules\finalhandler\**" />
+        <Files Include="..\node_modules\forwarded\**" />
+        <Files Include="..\node_modules\fresh\**" />
+        <Files Include="..\node_modules\function-bind\**" />
+        <Files Include="..\node_modules\get-intrinsic\**" />
+        <Files Include="..\node_modules\get-proto\**" />
+        <Files Include="..\node_modules\gopd\**" />
+        <Files Include="..\node_modules\has-symbols\**" />
+        <Files Include="..\node_modules\hasown\**" />
+        <Files Include="..\node_modules\http-errors\**" />
+        <Files Include="..\node_modules\iconv-lite\**" />
+        <Files Include="..\node_modules\inherits\**" />
+        <Files Include="..\node_modules\ipaddr.js\**" />
+        <Files Include="..\node_modules\media-typer\**" />
+        <Files Include="..\node_modules\math-intrinsics\**" />
+        <Files Include="..\node_modules\merge-descriptors\**" />
+        <Files Include="..\node_modules\methods\**" />
+        <Files Include="..\node_modules\mime-db\**" />
+        <Files Include="..\node_modules\mime-types\**" />
+        <Files Include="..\node_modules\ms\**" />
+        <Files Include="..\node_modules\negotiator\**" />
+        <Files Include="..\node_modules\object-inspect\**" />
+        <Files Include="..\node_modules\on-finished\**" />
+        <Files Include="..\node_modules\parseurl\**" />
+        <Files Include="..\node_modules\path-to-regexp\**" />
+        <Files Include="..\node_modules\proxy-addr\**" />
+        <Files Include="..\node_modules\qs\**" />
+        <Files Include="..\node_modules\range-parser\**" />
+        <Files Include="..\node_modules\raw-body\**" />
+        <Files Include="..\node_modules\router\**" />
+        <Files Include="..\node_modules\safe-buffer\**" />
+        <Files Include="..\node_modules\safer-buffer\**" />
+        <Files Include="..\node_modules\send\**" />
+        <Files Include="..\node_modules\serve-static\**" />
+        <Files Include="..\node_modules\setprototypeof\**" />
+        <Files Include="..\node_modules\side-channel\**" />
+        <Files Include="..\node_modules\side-channel-list\**" />
+        <Files Include="..\node_modules\side-channel-map\**" />
+        <Files Include="..\node_modules\side-channel-weakmap\**" />
+        <Files Include="..\node_modules\statuses\**" />
+        <Files Include="..\node_modules\toidentifier\**" />
+        <Files Include="..\node_modules\type-is\**" />
+        <Files Include="..\node_modules\unpipe\**" />
+        <Files Include="..\node_modules\utils-merge\**" />
+        <Files Include="..\node_modules\vary\**" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+
+  <!-- ─── Shortcuts (Start Menu) ──────────────────────────────── -->
+  <Fragment>
+    <ComponentGroup Id="ShortcutComponents">
+      <Component Id="StartMenuShortcuts"
+                 Guid="A1B2C3D4-E5F6-7890-ABCD-EF1234567890"
+                 Directory="ApplicationProgramsFolder"
+                 Location="local">
+        <Shortcut Id="AppShortcut"
+                  Name="$(var.ProductName)"
+                  Description="Starts the CatChat Dev Tools server on http://localhost:4444"
+                  Target="[SystemFolder]cmd.exe"
+                  Arguments="/c node &quot;[INSTALLFOLDER]server.mjs&quot;"
+                  WorkingDirectory="INSTALLFOLDER" />
+        <Shortcut Id="UninstallShortcut"
+                  Name="Uninstall $(var.ProductName)"
+                  Description="Uninstalls CatChat Dev Tools"
+                  Target="[System64Folder]msiexec.exe"
+                  Arguments="/x [ProductCode]" />
+        <RegistryValue Root="HKCU"
+                       Key="Software\CatChat\DevTools"
+                       Name="StartMenuInstalled"
+                       Type="integer"
+                       Value="1"
+                       KeyPath="yes" />
+        <RemoveFolder Id="ApplicationProgramsFolder" On="uninstall" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+
+  <!-- ─── Desktop Shortcut ────────────────────────────────────── -->
+  <Fragment>
+    <ComponentGroup Id="DesktopShortcutComponent">
+      <Component Id="DesktopShortcut"
+                 Guid="B2C3D4E5-F6A7-8901-BCDE-F12345678901"
+                 Directory="DesktopFolder"
+                 Location="local">
+        <Shortcut Id="DesktopAppShortcut"
+                  Name="$(var.ProductName)"
+                  Description="Starts the CatChat Dev Tools server on http://localhost:4444"
+                  Target="[SystemFolder]cmd.exe"
+                  Arguments="/c node &quot;[INSTALLFOLDER]server.mjs&quot;"
+                  WorkingDirectory="INSTALLFOLDER" />
+        <RegistryValue Root="HKCU"
+                       Key="Software\CatChat\DevTools"
+                       Name="DesktopShortcutInstalled"
+                       Type="integer"
+                       Value="1"
+                       KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+
+  <!-- ─── Registry ────────────────────────────────────────────── -->
+  <Fragment>
+    <ComponentGroup Id="RegistryComponents">
+      <Component Id="ProductInfoRegistry"
+                 Guid="C3D4E5F6-A7B8-9012-CDEF-123456789012"
+                 Directory="INSTALLFOLDER"
+                 Location="local">
+        <RegistryValue Root="HKLM"
+                       Key="Software\CatChat\DevTools"
+                       Name="InstallPath"
+                       Type="string"
+                       Value="[INSTALLFOLDER]"
+                       KeyPath="yes" />
+        <RegistryValue Root="HKLM"
+                       Key="Software\CatChat\DevTools"
+                       Name="Version"
+                       Type="string"
+                       Value="$(var.ProductVersion)" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+
+  <!-- ─── App Info ────────────────────────────────────────────── -->
+  <Fragment>
+    <Property Id="ARPURLINFOABOUT" Value="https://github.com/anomalyco/chat-app-logic" />
+    <Property Id="ARPHELPLINK" Value="https://github.com/anomalyco/chat-app-logic" />
+  </Fragment>
+
+</Wix>
