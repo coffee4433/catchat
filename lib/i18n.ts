@@ -309,6 +309,9 @@ export const translations = {
     translatorSpanish: 'Spanish',
     translatorActive: 'Translating to',
     translatorError: 'Translation failed. Sending original.',
+    translatorSearch: 'Search languages...',
+    translatorFavorites: 'Favorites',
+    translatorAllLanguages: 'All languages',
     translating: 'Translating...',
   },
   es: {
@@ -599,6 +602,9 @@ export const translations = {
     translatorSpanish: 'Español',
     translatorActive: 'Traduciendo a',
     translatorError: 'Fallo en traducción. Enviando original.',
+    translatorSearch: 'Buscar idiomas...',
+    translatorFavorites: 'Favoritos',
+    translatorAllLanguages: 'Todos los idiomas',
     translating: 'Traduciendo...',
   },
 }

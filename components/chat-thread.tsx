@@ -23,6 +23,7 @@ import {
   Phone,
   Video,
   UserPlus,
+  Star,
   Languages,
   Check,
 } from 'lucide-react'
@@ -33,6 +34,7 @@ import useSWR from 'swr'
 import { useLanguage } from '@/lib/i18n'
 import { usePrefs } from '@/hooks/use-prefs'
 import { translateText } from '@/lib/translate'
+import { LANGUAGES, getLanguageName } from '@/lib/languages'
 const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false })
 import {
   createConversation,
@@ -318,11 +320,29 @@ export function ChatThread({
   const [forwardedStatus, setForwardedStatus] = useState<Record<number, boolean>>({})
 
   // Translator state
-  const [translateTarget, setTranslateTarget] = useState<string | null>(null) // null = off, 'en' or 'es'
+  const [translateTarget, setTranslateTarget] = useState<string | null>(null)
   const [translatorMenuOpen, setTranslatorMenuOpen] = useState(false)
   const [translating, setTranslating] = useState(false)
   const translatorBtnRef = useRef<HTMLButtonElement>(null)
   const [translatorMenuPos, setTranslatorMenuPos] = useState<{ top: number; left: number } | null>(null)
+  const [languageSearch, setLanguageSearch] = useState('')
+  const [favorites, setFavorites] = useState<string[]>(['en', 'es'])
+  const searchInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('translator-favorites')
+      if (stored) setFavorites(JSON.parse(stored))
+    } catch {}
+  }, [])
+
+  function toggleFavorite(code: string) {
+    setFavorites((prev) => {
+      const next = prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]
+      try { localStorage.setItem('translator-favorites', JSON.stringify(next)) } catch {}
+      return next
+    })
+  }
 
   // Track previous info panel open state before search hijacked it
   const wasInfoOpenRef = useRef(false)
@@ -1551,12 +1571,12 @@ export function ChatThread({
                         <Languages className="size-3 text-[#5865F2]" />
                         <span>{t.translatorActive}</span>
                         <strong className="font-semibold text-[#5865F2]">
-                          {translateTarget === 'en' ? t.translatorEnglish : t.translatorSpanish}
+                          {translateTarget ? getLanguageName(translateTarget, lang) : ''}
                         </strong>
-                        {translateTarget === 'en' ? (
-                          <span className="text-[10px]">🇬🇧</span>
-                        ) : (
-                          <span className="text-[10px]">🇪🇸</span>
+                        {translateTarget && (
+                          <span className="text-[10px]">
+                            {LANGUAGES.find((l) => l.code === translateTarget)?.flag}
+                          </span>
                         )}
                       </span>
                       <button
@@ -1577,15 +1597,15 @@ export function ChatThread({
                   <button
                     ref={translatorBtnRef}
                     onClick={() => {
-                      if (!translatorMenuOpen && translatorBtnRef.current) {
+                      const opening = !translatorMenuOpen
+                      if (opening && translatorBtnRef.current) {
                         const rect = translatorBtnRef.current.getBoundingClientRect()
-                        const menuHeight = 200 // approximate height
-                        const menuWidth = 208 // 52 * 4 (w-52)
-                        
+                        const menuHeight = 370
+                        const menuWidth = 272
+
                         let top = rect.top - menuHeight - 8
                         let left = rect.left
-                        
-                        // Adjust if menu would go off screen
+
                         if (top < 10) {
                           top = rect.bottom + 8
                         }
@@ -1595,10 +1615,14 @@ export function ChatThread({
                         if (left < 10) {
                           left = 10
                         }
-                        
+
                         setTranslatorMenuPos({ top, left })
                       }
                       setTranslatorMenuOpen(!translatorMenuOpen)
+                      setLanguageSearch('')
+                      if (opening) {
+                        setTimeout(() => searchInputRef.current?.focus(), 100)
+                      }
                     }}
                     title={t.translatorTooltip}
                     className={`flex items-center justify-center size-7 rounded-lg transition-all duration-200 ${
@@ -1624,21 +1648,26 @@ export function ChatThread({
                           animate={{ opacity: 1, y: 0, scale: 1 }}
                           exit={{ opacity: 0, y: 6, scale: 0.95 }}
                           transition={{ duration: 0.15, ease: 'easeOut' }}
-                          style={{ top: translatorMenuPos.top, left: translatorMenuPos.left }}
-                          className="fixed z-[70] w-52 rounded-xl border border-border bg-popover shadow-2xl overflow-hidden backdrop-blur-sm"
+                          style={{ top: translatorMenuPos.top, left: translatorMenuPos.left, maxHeight: 380 }}
+                          className="fixed z-[70] w-68 rounded-xl border border-border bg-popover shadow-2xl overflow-hidden backdrop-blur-sm flex flex-col"
                         >
-                          {/* Menu header */}
-                          <div className="px-3 py-2.5 border-b border-border/60 bg-secondary/30">
-                            <div className="flex items-center gap-1.5">
-                              <Languages className="size-3.5 text-[#5865F2]" />
-                              <span className="text-[11.5px] font-semibold text-foreground tracking-wide">
-                                {t.translatorMenuTitle}
-                              </span>
+                          {/* Search bar */}
+                          <div className="px-3 pt-2.5 pb-2">
+                            <div className="relative">
+                              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
+                              <input
+                                ref={searchInputRef}
+                                type="text"
+                                value={languageSearch}
+                                onChange={(e) => setLanguageSearch(e.target.value)}
+                                placeholder={t.translatorSearch}
+                                className="w-full h-8 pl-8 pr-3 rounded-full bg-secondary/60 text-[12px] text-foreground placeholder:text-muted-foreground/60 outline-none border border-border/40 focus:border-[#5865F2]/40 focus:bg-secondary transition-all"
+                              />
                             </div>
                           </div>
 
-                          {/* Menu options */}
-                          <div className="p-1.5 space-y-0.5">
+                          {/* Scrollable list */}
+                          <div className="overflow-y-auto flex-1 px-1.5 pb-1.5 space-y-0.5">
                             {/* Off */}
                             <button
                               onClick={() => {
@@ -1664,55 +1693,111 @@ export function ChatThread({
                               )}
                             </button>
 
-                            {/* English */}
-                            <button
-                              onClick={() => {
-                                setTranslateTarget('en')
-                                setTranslatorMenuOpen(false)
-                              }}
-                              className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[12.5px] transition-all duration-150 ${
-                                translateTarget === 'en'
-                                  ? 'bg-[#5865F2]/10 text-[#5865F2] font-medium ring-1 ring-[#5865F2]/20'
-                                  : 'text-muted-foreground hover:bg-secondary/60 hover:text-foreground'
-                              }`}
-                            >
-                              <span className="flex items-center justify-center size-5 rounded-md text-[13px] shrink-0">
-                                🇬🇧
-                              </span>
-                              <span>{t.translatorEnglish}</span>
-                              {translateTarget === 'en' && (
-                                <motion.span
-                                  initial={{ scale: 0 }}
-                                  animate={{ scale: 1 }}
-                                  className="ml-auto size-1.5 rounded-full bg-[#5865F2]"
-                                />
-                              )}
-                            </button>
+                            {/* Favorites section */}
+                            {favorites.filter((c) => !languageSearch || getLanguageName(c, lang).toLowerCase().includes(languageSearch.toLowerCase())).length > 0 && (
+                              <>
+                                <div className="px-2.5 pt-1.5 pb-0.5">
+                                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                                    {t.translatorFavorites}
+                                  </span>
+                                </div>
+                                {favorites
+                                  .filter((c) => !languageSearch || getLanguageName(c, lang).toLowerCase().includes(languageSearch.toLowerCase()))
+                                  .map((code) => {
+                                    const language = LANGUAGES.find((l) => l.code === code)
+                                    if (!language) return null
+                                    const selected = translateTarget === code
+                                    return (
+                                      <button
+                                        key={code}
+                                        onClick={() => {
+                                          setTranslateTarget(code)
+                                          setTranslatorMenuOpen(false)
+                                        }}
+                                        className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[12.5px] transition-all duration-150 group ${
+                                          selected
+                                            ? 'bg-[#5865F2]/10 text-[#5865F2] font-medium ring-1 ring-[#5865F2]/20'
+                                            : 'text-muted-foreground hover:bg-secondary/60 hover:text-foreground'
+                                        }`}
+                                      >
+                                        <span className="flex items-center justify-center size-5 rounded-md text-[13px] shrink-0">
+                                          {language.flag}
+                                        </span>
+                                        <span>{lang === 'es' ? language.nameEs : language.nameEn}</span>
+                                        {selected && (
+                                          <motion.span
+                                            initial={{ scale: 0 }}
+                                            animate={{ scale: 1 }}
+                                            className="ml-auto size-1.5 rounded-full bg-[#5865F2]"
+                                          />
+                                        )}
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            toggleFavorite(code)
+                                          }}
+                                          className="ml-auto shrink-0 p-0.5 rounded-md text-muted-foreground/40 hover:text-amber-400 transition-colors group-hover:opacity-100"
+                                          title="Toggle favorite"
+                                        >
+                                          <Star className={`size-3 ${favorites.includes(code) ? 'fill-amber-400 text-amber-400' : ''}`} />
+                                        </button>
+                                      </button>
+                                    )
+                                  })}
+                              </>
+                            )}
 
-                            {/* Spanish */}
-                            <button
-                              onClick={() => {
-                                setTranslateTarget('es')
-                                setTranslatorMenuOpen(false)
-                              }}
-                              className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[12.5px] transition-all duration-150 ${
-                                translateTarget === 'es'
-                                  ? 'bg-[#5865F2]/10 text-[#5865F2] font-medium ring-1 ring-[#5865F2]/20'
-                                  : 'text-muted-foreground hover:bg-secondary/60 hover:text-foreground'
-                              }`}
-                            >
-                              <span className="flex items-center justify-center size-5 rounded-md text-[13px] shrink-0">
-                                🇪🇸
-                              </span>
-                              <span>{t.translatorSpanish}</span>
-                              {translateTarget === 'es' && (
-                                <motion.span
-                                  initial={{ scale: 0 }}
-                                  animate={{ scale: 1 }}
-                                  className="ml-auto size-1.5 rounded-full bg-[#5865F2]"
-                                />
-                              )}
-                            </button>
+                            {/* All languages section */}
+                            {LANGUAGES.filter((l) => !languageSearch || l.nameEn.toLowerCase().includes(languageSearch.toLowerCase()) || l.nameEs.toLowerCase().includes(languageSearch.toLowerCase())).length > 0 && (
+                              <>
+                                <div className="px-2.5 pt-1.5 pb-0.5">
+                                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                                    {t.translatorAllLanguages}
+                                  </span>
+                                </div>
+                                {LANGUAGES
+                                  .filter((l) => !languageSearch || l.nameEn.toLowerCase().includes(languageSearch.toLowerCase()) || l.nameEs.toLowerCase().includes(languageSearch.toLowerCase()))
+                                  .map((language) => {
+                                    const selected = translateTarget === language.code
+                                    return (
+                                      <button
+                                        key={language.code}
+                                        onClick={() => {
+                                          setTranslateTarget(language.code)
+                                          setTranslatorMenuOpen(false)
+                                        }}
+                                        className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[12.5px] transition-all duration-150 group ${
+                                          selected
+                                            ? 'bg-[#5865F2]/10 text-[#5865F2] font-medium ring-1 ring-[#5865F2]/20'
+                                            : 'text-muted-foreground hover:bg-secondary/60 hover:text-foreground'
+                                        }`}
+                                      >
+                                        <span className="flex items-center justify-center size-5 rounded-md text-[13px] shrink-0">
+                                          {language.flag}
+                                        </span>
+                                        <span>{lang === 'es' ? language.nameEs : language.nameEn}</span>
+                                        {selected && (
+                                          <motion.span
+                                            initial={{ scale: 0 }}
+                                            animate={{ scale: 1 }}
+                                            className="ml-auto size-1.5 rounded-full bg-[#5865F2]"
+                                          />
+                                        )}
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            toggleFavorite(language.code)
+                                          }}
+                                          className="ml-auto shrink-0 p-0.5 rounded-md text-muted-foreground/40 hover:text-amber-400 transition-colors group-hover:opacity-100"
+                                          title="Toggle favorite"
+                                        >
+                                          <Star className={`size-3 ${favorites.includes(language.code) ? 'fill-amber-400 text-amber-400' : ''}`} />
+                                        </button>
+                                      </button>
+                                    )
+                                  })}
+                              </>
+                            )}
                           </div>
                         </motion.div>
                       </>
