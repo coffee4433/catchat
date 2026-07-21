@@ -29,5 +29,8 @@ if (oldVersion === version) {
   fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n')
 }
 
-console.log('Building and publishing...\n')
-execSync('pnpm run desktop:publish', { cwd: root, stdio: 'inherit' })
+console.log('Building...\n')
+execSync('pnpm run desktop:build', { cwd: root, stdio: 'inherit' })
+
+console.log('\nPublishing to GitHub...\n')
+execSync('node scripts/publish-release.cjs', { cwd: root, stdio: 'inherit' })

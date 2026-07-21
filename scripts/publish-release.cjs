@@ -92,7 +92,7 @@ async function publish() {
     await ghReq(`/git/refs/tags/${tag}`, { method: 'DELETE' })
   } catch { /* fine */ }
 
-  // 2. Create release
+  // Create release
   console.log(`Creating release ${tag}...`)
   const release = await ghReq('/releases', {
     method: 'POST',
@@ -100,12 +100,12 @@ async function publish() {
       tag_name: tag,
       name: tag,
       body: releaseBody,
-      draft: true,
+      draft: false,
       prerelease: false,
     }),
   })
 
-  if (!release || !release.upload_url || !release.id) {
+  if (!release || !release.upload_url) {
     console.error('Release creation failed:', JSON.stringify(release))
     process.exit(1)
   }
@@ -114,7 +114,7 @@ async function publish() {
 
   const uploadUrl = release.upload_url
 
-  // 3. Upload assets
+  // Upload all assets
   const exeName = `CatChat-Setup-${version}.exe`
   console.log(`Uploading ${exeName}...`)
   await uploadAsset(uploadUrl, exePath, exeName)
@@ -127,13 +127,6 @@ async function publish() {
     console.log(`Uploading ${bmName}...`)
     await uploadAsset(uploadUrl, blockmapPath, bmName)
   }
-
-  // Publish: mark as non-draft so electron-updater can find it
-  console.log(`Publishing release...`)
-  await ghReq(`/releases/${release.id}`, {
-    method: 'PATCH',
-    body: JSON.stringify({ draft: false }),
-  })
 
   console.log(`\nPublished: ${release.html_url}`)
 
