@@ -101,11 +101,14 @@ ipcMain.handle('release', async (_event, version, notes) => {
     })
 
     child.on('close', (code) => {
-      mainWindow?.webContents.send('release:done', code === 0)
-      resolve({ success: code === 0 })
+      const success = code === 0
+      mainWindow?.webContents.send('release:output', success ? '\n✓ Completed\n' : '\n✕ Failed\n')
+      mainWindow?.webContents.send('release:done', success)
+      resolve({ success })
     })
 
     child.on('error', (err) => {
+      mainWindow?.webContents.send('release:output', '\n✕ Error: ' + err.message + '\n')
       mainWindow?.webContents.send('release:done', false)
       reject(err)
     })
