@@ -88,7 +88,7 @@ ipcMain.handle('release', async (_event, version, notes) => {
   return new Promise((resolve, reject) => {
     const child = spawn('node', [releaseScript], {
       cwd: cfg.projectPath,
-      env: { ...process.env, RELEASE_VERSION: version, RELEASE_NOTES: notes || '', GH_TOKEN: cfg.ghToken || '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' },
+      env: { ...process.env, RELEASE_VERSION: version, RELEASE_NOTES: notes || '', GH_TOKEN: cfg.ghToken || process.env.GH_TOKEN || '' },
       shell: true,
     })
 

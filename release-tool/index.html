@@ -359,7 +359,12 @@
         Select Folder
       </button>
       <div class="project-path" id="projectPath"></div>
-      <input id="tokenInput" type="password" class="notes" placeholder="GitHub token (saved locally)..." style="margin-top:8px;height:36px;display:none">
+    </div>
+
+    <div class="card" id="tokenCard">
+      <label>GitHub Token</label>
+      <input id="tokenInput" type="password" class="notes" placeholder="ghp_..." style="margin-top:0;height:36px">
+      <div class="project-path" id="tokenStatus" style="margin-top:4px"></div>
     </div>
 
     <div class="card" id="publishCard" style="display:none">
@@ -446,10 +451,9 @@ const api = window.releaseTool
 
 async function init() {
   const cfg = await api.getConfig()
-  tokenInput.style.display = 'block'
   if (cfg.hasToken) {
-    tokenInput.placeholder = 'GitHub token ✓ (saved)'
-    tokenInput.value = ''
+    tokenInput.placeholder = 'Token saved ✓'
+    document.getElementById('tokenStatus').textContent = 'Token saved from previous session'
   }
   tokenInput.addEventListener('change', () => {
     const val = tokenInput.value.trim()
