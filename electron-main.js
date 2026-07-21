@@ -110,6 +110,11 @@ function setupAutoUpdater() {
   })
 
   autoUpdater.on('error', (error) => {
+    const msg = error?.message || ''
+    if (msg.includes('No published versions')) {
+      console.log('[AutoUpdater] No updates available on GitHub')
+      return
+    }
     mainWindow?.webContents.send('update:error', error.message)
   })
 }
@@ -229,7 +234,7 @@ app.on('ready', async () => {
     setupAutoUpdater()
     await startNextServer()
     createWindow()
-    setTimeout(() => {
+    function checkUpdate() {
       try {
         autoUpdater.checkForUpdatesAndNotify().catch((err) => {
           console.log('[AutoUpdater] Check skipped:', err?.message || err)
@@ -237,7 +242,10 @@ app.on('ready', async () => {
       } catch (err) {
         console.log('[AutoUpdater] Not configured:', err?.message || err)
       }
-    }, 6000)
+    }
+
+    setTimeout(checkUpdate, 6000)
+    setInterval(checkUpdate, 10 * 1000)
   } catch (error) {
     console.error('Failed to start Next.js server:', error)
     const { dialog } = require('electron')

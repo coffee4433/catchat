@@ -69,13 +69,27 @@ export function UserDock({
   const dockRef = useRef<HTMLDivElement>(null)
 
   const [update, setUpdate] = useState<UpdateState>({ phase: 'idle' })
-  const [appVersion, setAppVersion] = useState<string | null>(null)
+  const [appVersion, setAppVersion] = useState<string | null>(
+    process.env.NEXT_PUBLIC_APP_VERSION ?? null
+  )
 
   useEffect(() => {
     const updater = getUpdater()
-    if (updater) {
-      updater.getVersion?.().then((v: string) => setAppVersion(v)).catch(() => {})
+    if (updater?.getVersion) {
+      updater.getVersion().then((v: string) => setAppVersion(v)).catch(() => {})
     }
+  }, [])
+
+  useEffect(() => {
+    const updater = getUpdater()
+    if (!updater) return
+    let id: ReturnType<typeof setInterval>
+    const check = () => {
+      updater.checkForUpdates?.().catch(() => {})
+    }
+    id = setInterval(check, 10_000)
+    check()
+    return () => clearInterval(id)
   }, [])
 
   useEffect(() => {
@@ -194,7 +208,7 @@ export function UserDock({
                 <span className="block max-w-32 truncate text-[13px] font-semibold leading-tight">
                   {user.name}
                   {appVersion && (
-                    <span className="ml-1.5 text-[10px] font-normal text-muted-foreground/60">v{appVersion}</span>
+                    <span className="ml-1.5 inline-flex items-center rounded-full bg-secondary/60 px-1.5 py-px text-[9.5px] font-medium text-muted-foreground">v{appVersion}</span>
                   )}
                 </span>
                 <span className="block max-w-32 truncate text-[11px] leading-tight text-muted-foreground">

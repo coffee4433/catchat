@@ -23,7 +23,7 @@
     "desktop:dev": "electron .",
     "desktop:dev:hot": "node scripts/dev-desktop.mjs",
     "desktop:build": "node -e \"const fs=require('fs');['.next/dev','.next/cache','.next/turbopack','dist','dist/**'].forEach(p=>{try{fs.rmSync(p,{recursive:true,force:true})}catch(e){}})\" && electron-builder --win",
-    "desktop:publish": "node -e \"const fs=require('fs');['.next/dev','.next/cache','.next/turbopack','dist','dist/**'].forEach(p=>{try{fs.rmSync(p,{recursive:true,force:true})}catch(e){}})\" && electron-builder --win --publish always",
+    "desktop:publish": "node -e \"const fs=require('fs');['.next/dev','.next/cache','.next/turbopack','dist','dist/**'].forEach(p=>{try{fs.rmSync(p,{recursive:true,force:true})}catch(e){}})\" && electron-builder --win && node scripts/publish-release.cjs",
     "devtools": "cd dev-tools && node server.mjs"
   },
   "build": {
