@@ -26,6 +26,7 @@ function formatSize(bytes: number): string {
 type UpdateInfo = {
   version: string
   files: Array<{ url: string; size: number }>
+  releaseNotes?: string
 }
 
 type DownloadProgress = {
@@ -280,6 +281,11 @@ export function UserDock({
                             <span className="text-[12px] text-muted-foreground">Version {update.info.version}</span>
                             {update.info.files?.[0]?.size != null && (
                               <span className="block text-[11px] text-muted-foreground/70">{formatSize(update.info.files[0].size)}</span>
+                            )}
+                            {update.info.releaseNotes && (
+                              <p className="text-[11px] text-muted-foreground/80 mt-1.5 leading-relaxed max-h-16 overflow-y-auto">
+                                {update.info.releaseNotes}
+                              </p>
                             )}
                           </div>
                           <button

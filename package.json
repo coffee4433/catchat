@@ -1,6 +1,6 @@
 {
   "name": "catchat",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "private": true,
   "author": "CatChat <dev@catchat.app>",
   "description": "Team collaboration messenger with threads, channels and lightning-fast command search",
@@ -23,8 +23,10 @@
     "desktop:dev": "electron .",
     "desktop:dev:hot": "node scripts/dev-desktop.mjs",
     "desktop:build": "node -e \"const fs=require('fs');['.next/dev','.next/cache','.next/turbopack','dist','dist/**'].forEach(p=>{try{fs.rmSync(p,{recursive:true,force:true})}catch(e){}})\" && electron-builder --win",
-    "desktop:publish": "node -e \"const fs=require('fs');['.next/dev','.next/cache','.next/turbopack','dist','dist/**'].forEach(p=>{try{fs.rmSync(p,{recursive:true,force:true})}catch(e){}})\" && electron-builder --win && node scripts/publish-release.cjs",
+    "desktop:publish": "node -e \"const fs=require('fs');['.next/dev','.next/cache','.next/turbopack','dist','dist/**'].forEach(p=>{try{fs.rmSync(p,{recursive:true,force:true})}catch(e){}})\" && electron-builder --win --publish always && node scripts/publish-release.cjs",
     "release": "node scripts/release.cjs",
+    "release-tool": "electron release-tool/electron-main.js",
+    "release-tool:build": "cd release-tool && electron-builder --win",
     "devtools": "cd dev-tools && node server.mjs"
   },
   "build": {
@@ -109,7 +111,9 @@
     "typescript": "^5.9.3"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["electron-winstaller"],
+    "onlyBuiltDependencies": [
+      "electron-winstaller"
+    ],
     "overrides": {
       "hono": "4.12.25"
     }

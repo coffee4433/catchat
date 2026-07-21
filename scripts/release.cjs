@@ -22,13 +22,12 @@ const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'))
 const oldVersion = pkg.version
 
 if (oldVersion === version) {
-  console.error(`Version ${version} is already set`)
-  process.exit(1)
+  console.log(`Version ${version} already set, retrying publish...\n`)
+} else {
+  console.log(`Bumping version: ${oldVersion} → ${version}\n`)
+  pkg.version = version
+  fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n')
 }
-
-console.log(`Bumping version: ${oldVersion} → ${version}\n`)
-pkg.version = version
-fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n')
 
 console.log('Building and publishing...\n')
 execSync('pnpm run desktop:publish', { cwd: root, stdio: 'inherit' })

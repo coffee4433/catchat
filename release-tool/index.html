@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CatChat Release</title>
+<style>
+  :root {
+    --bg-1: #15120f;
+    --bg-2: #1c1815;
+    --card-bg: rgba(255,247,235,0.045);
+    --card-border: rgba(255,235,205,0.09);
+    --muted: #a89a8a;
+    --fg: #f5efe6;
+    --accent-1: #f2b544;
+    --accent-2: #e8894a;
+    --on-accent: #201509;
+    --green: #6fbf8a;
+    --red: #e8735f;
+    --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--font);
+    color: var(--fg);
+    height: 100vh;
+    overflow: hidden;
+    -webkit-app-region: drag;
+    background: transparent;
+    margin: 0;
+  }
+
+  .window {
+    width: 100%;
+    height: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+    background:
+      radial-gradient(1000px circle at 8% -15%, rgba(242,181,68,0.18), transparent 55%),
+      radial-gradient(900px circle at 112% 118%, rgba(232,137,74,0.14), transparent 50%),
+      linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .header { text-align: center; margin-bottom: 22px; -webkit-app-region: no-drag; }
+
+  .icon {
+    width: 52px; height: 52px;
+    background: rgba(242,181,68,0.12);
+    border: 1px solid rgba(242,181,68,0.28);
+    border-radius: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 14px;
+    box-shadow: 0 10px 28px rgba(242,181,68,0.22);
+  }
+
+  .icon svg { width: 26px; height: 26px; color: var(--accent-1); }
+
+  h1 {
+    font-size: 21px;
+    font-weight: 800;
+    letter-spacing: -0.4px;
+    background: linear-gradient(135deg, #fbf3e4, #f0cf94);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .sub { font-size: 12px; color: var(--muted); margin-top: 5px; }
+
+  .main-area {
+    display: flex;
+    gap: 12px;
+    -webkit-app-region: no-drag;
+    align-items: flex-start;
+  }
+
+  .card {
+    background: var(--card-bg);
+    backdrop-filter: blur(24px) saturate(150%);
+    -webkit-backdrop-filter: blur(24px) saturate(150%);
+    border: 1px solid var(--card-border);
+    border-radius: 24px;
+    padding: 20px;
+    margin-bottom: 12px;
+    width: 380px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+
+  label {
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--muted);
+    margin-bottom: 10px;
+    display: block;
+  }
+
+  .row { display: flex; gap: 8px; }
+
+  input {
+    flex: 1; min-width: 0;
+    height: 42px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+    padding: 0 14px;
+    color: var(--fg);
+    font-size: 14px;
+    font-family: var(--font);
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  input:focus {
+    border-color: rgba(242,181,68,0.55);
+    background: rgba(255,255,255,0.06);
+    box-shadow: 0 0 0 4px rgba(242,181,68,0.15);
+  }
+  input:disabled { opacity: 0.45; }
+  input::placeholder { color: rgba(168,154,138,0.4); }
+
+  button {
+    height: 42px;
+    padding: 0 16px;
+    border-radius: 14px;
+    border: none;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--font);
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease, opacity 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--fg);
+    white-space: nowrap;
+  }
+
+  button:active { transform: scale(0.97); }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+    color: var(--on-accent);
+    font-weight: 700;
+    box-shadow: 0 10px 26px rgba(242,181,68,0.32);
+  }
+
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 12px 30px rgba(242,181,68,0.42); }
+  .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; transform: none; }
+
+  .version-badge {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 12px;
+  }
+
+  .version-badge .arrow { color: rgba(168,154,138,0.4); }
+
+  .chip {
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 11px;
+    line-height: 1.5;
+  }
+  .chip-old { background: rgba(255,255,255,0.05); border: 1px solid var(--card-border); color: var(--muted); }
+  .chip-new { background: linear-gradient(135deg, var(--accent-1), var(--accent-2)); color: var(--on-accent); }
+  .badge-note { color: var(--muted); opacity: 0.6; }
+
+  .logs-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(24px) saturate(150%);
+    -webkit-backdrop-filter: blur(24px) saturate(150%);
+    border: 1px solid var(--card-border);
+    border-radius: 24px;
+    padding: 20px;
+    width: 340px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+
+  .logs {
+    background: rgba(15,11,8,0.5);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 12px 14px;
+    font-family: 'SF Mono', 'Consolas', 'Courier New', monospace;
+    font-size: 10.5px;
+    line-height: 1.6;
+    height: 160px;
+    overflow-y: auto;
+    color: rgba(111,191,138,0.85);
+  }
+  .logs::-webkit-scrollbar { width: 6px; }
+  .logs::-webkit-scrollbar-thumb { background: rgba(255,235,205,0.15); border-radius: 999px; }
+  .logs::-webkit-scrollbar-track { background: transparent; }
+  .logs .err { color: rgba(232,115,95,0.9); }
+
+  .status {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 12.5px;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+
+  .dot { width: 9px; height: 9px; border-radius: 50%; }
+  .dot-running { background: var(--accent-1); box-shadow: 0 0 0 4px rgba(242,181,68,0.2); animation: pulse 1.1s ease-in-out infinite; }
+  .dot-ok { background: var(--green); box-shadow: 0 0 0 4px rgba(111,191,138,0.2); }
+  .dot-err { background: var(--red); box-shadow: 0 0 0 4px rgba(232,115,95,0.2); }
+
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  .btn-reset {
+    background: rgba(242,181,68,0.1);
+    color: #f6cf82;
+    font-size: 12.5px;
+    margin-top: 12px;
+    width: 100%;
+    justify-content: center;
+    border: 1px solid rgba(242,181,68,0.25);
+  }
+  .btn-reset:hover { background: rgba(242,181,68,0.16); }
+
+  .drag-bar {
+    position: fixed; top: 0; left: 0; right: 0; height: 32px;
+    -webkit-app-region: drag;
+  }
+
+  .close-btn {
+    position: fixed; top: 12px; right: 14px;
+    width: 30px; height: 30px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.06);
+    color: var(--muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    transition: background 0.15s ease, color 0.15s ease;
+    -webkit-app-region: no-drag;
+  }
+  .close-btn:hover { background: rgba(232,115,95,0.15); color: var(--red); }
+
+  .select-btn {
+    background: rgba(255,255,255,0.03);
+    color: var(--fg);
+    font-size: 13.5px;
+    width: 100%;
+    justify-content: center;
+    margin-top: 8px;
+    border: 1.5px dashed rgba(255,235,205,0.18);
+    white-space: nowrap;
+  }
+  .select-btn:hover { background: rgba(255,255,255,0.06); border-color: rgba(242,181,68,0.45); }
+
+  .project-path {
+    font-size: 10.5px;
+    color: rgba(168,154,138,0.55);
+    margin-top: 10px;
+    text-align: center;
+    word-break: break-all;
+  }
+
+  .notes {
+    width: 100%;
+    height: 48px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+    padding: 14px;
+    color: var(--fg);
+    font-size: 12px;
+    font-family: var(--font);
+    outline: none;
+    resize: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    margin-top: 8px;
+  }
+  .notes:focus { border-color: rgba(242,181,68,0.5); box-shadow: 0 0 0 4px rgba(242,181,68,0.12); }
+  .notes:disabled { opacity: 0.45; }
+  .notes::placeholder { color: rgba(168,154,138,0.3); }
+
+  .ver { font-size: 11px; color: rgba(168,154,138,0.5); text-align: center; margin-top: 8px; -webkit-app-region: no-drag; }
+
+  .steps {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+
+  .step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+  }
+
+  .step-icon {
+    width: 20px; height: 20px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    flex-shrink: 0;
+  }
+
+  .step-pending { color: rgba(168,154,138,0.4); }
+  .step-pending .step-icon { background: rgba(255,255,255,0.04); }
+  .step-active { color: var(--accent-1); background: rgba(242,181,68,0.08); }
+  .step-active .step-icon { background: rgba(242,181,68,0.2); }
+  .step-done { color: var(--green); }
+  .step-done .step-icon { background: rgba(111,191,138,0.15); }
+</style>
+</head>
+<body>
+<div class="window">
+<div class="drag-bar"></div>
+<button class="close-btn" onclick="window.close()">✕</button>
+
+<div class="header">
+  <div class="icon">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/>
+      <path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/>
+      <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/>
+      <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>
+    </svg>
+  </div>
+  <h1>CatChat Release</h1>
+  <p class="sub">Publish new versions to GitHub</p>
+</div>
+
+<div class="main-area">
+  <div class="left-side">
+    <div class="card" id="projectCard">
+      <label>Project Path</label>
+      <button class="select-btn" onclick="selectProject()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        Select Folder
+      </button>
+      <div class="project-path" id="projectPath"></div>
+      <input id="tokenInput" type="password" class="notes" placeholder="GitHub token (saved locally)..." style="margin-top:8px;height:36px;display:none">
+    </div>
+
+    <div class="card" id="publishCard" style="display:none">
+      <label>New Version</label>
+      <div class="row">
+        <input id="version" type="text" placeholder="0.1.4" pattern="\d+\.\d+\.\d+">
+        <button id="publishBtn" class="btn-primary" onclick="publish()">
+          <svg id="btnIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/>
+            <path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/>
+            <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/>
+            <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>
+          </svg>
+          Publish
+        </button>
+      </div>
+      <div class="version-badge" id="versionBadge"></div>
+      <textarea id="notes" class="notes" placeholder="Release notes (optional)..." disabled></textarea>
+    </div>
+    <div class="ver" id="currentVer"></div>
+  </div>
+
+  <div id="rightSide" style="display:none">
+    <div class="logs-card">
+      <div class="status" id="status"></div>
+      <div class="steps" id="steps">
+        <div class="step step-pending" data-step="build">
+          <span class="step-icon">🔨</span> Building installer
+        </div>
+        <div class="step step-pending" data-step="upload">
+          <span class="step-icon">⬆️</span> Uploading to GitHub
+        </div>
+        <div class="step step-pending" data-step="publish">
+          <span class="step-icon">📦</span> Publishing release
+        </div>
+        <div class="step step-pending" data-step="git">
+          <span class="step-icon">🔀</span> Git commit & push
+        </div>
+      </div>
+      <div class="logs" id="logs"></div>
+      <button class="btn-reset" id="resetBtn" style="display:none" onclick="reset()">Publish Another</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const v = document.getElementById('version')
+const notes = document.getElementById('notes')
+const badge = document.getElementById('versionBadge')
+const logs = document.getElementById('logs')
+const rightSide = document.getElementById('rightSide')
+const status = document.getElementById('status')
+const btn = document.getElementById('publishBtn')
+const resetBtn = document.getElementById('resetBtn')
+const btnIcon = document.getElementById('btnIcon')
+const projectPath = document.getElementById('projectPath')
+const publishCard = document.getElementById('publishCard')
+const projectCard = document.getElementById('projectCard')
+const tokenInput = document.getElementById('tokenInput')
+let current = ''
+let running = false
+let completedSteps = new Set()
+
+function setStep(step, state) {
+  const el = document.querySelector(`[data-step="${step}"]`)
+  if (!el) return
+  el.className = 'step step-' + state
+  if (state === 'done') completedSteps.add(step)
+}
+
+function detectPhase(chunk) {
+  const lower = chunk.toLowerCase()
+  if (lower.includes('building') || lower.includes('electron-builder') || lower.includes('packaging')) setStep('build', 'active')
+  if (lower.includes('uploading') || lower.includes('catchat-setup')) setStep('upload', 'active')
+  if (lower.includes('publishing') || lower.includes('creating github release')) setStep('publish', 'active')
+  if (lower.includes('git') && (lower.includes('push') || lower.includes('commit'))) setStep('git', 'active')
+  if (lower.includes('building block map')) setStep('build', 'done')
+  if (lower.includes('latest.yml uploaded')) setStep('upload', 'done')
+  if (lower.includes('published:')) setStep('publish', 'done')
+  if (lower.includes('pushed to git')) setStep('git', 'done')
+}
+
+const api = window.releaseTool
+
+async function init() {
+  const cfg = await api.getConfig()
+  tokenInput.style.display = 'block'
+  if (cfg.hasToken) {
+    tokenInput.placeholder = 'GitHub token ✓ (saved)'
+    tokenInput.value = ''
+  }
+  tokenInput.addEventListener('change', () => {
+    const val = tokenInput.value.trim()
+    if (val) api.saveToken(val)
+  })
+
+  const ver = await api.getVersion()
+  if (ver) {
+    current = ver
+    document.getElementById('currentVer').textContent = 'v' + ver
+    projectCard.style.display = 'none'
+    publishCard.style.display = 'block'
+    notes.disabled = false
+    v.focus()
+  }
+}
+
+async function selectProject() {
+  const result = await api.selectProject()
+  if (result && !result.error) {
+    current = result.version
+    projectPath.textContent = result.path
+    projectCard.style.display = 'none'
+    publishCard.style.display = 'block'
+    notes.disabled = false
+    document.getElementById('currentVer').textContent = 'v' + result.version
+    v.focus()
+  } else if (result && result.error) {
+    projectPath.textContent = result.error
+    projectPath.style.color = 'var(--red)'
+  }
+}
+
+v.addEventListener('input', () => {
+  const val = v.value.trim()
+  if (/^\d+\.\d+\.\d+$/.test(val) && val !== current) {
+    badge.innerHTML = '<span class="chip chip-old">v' + current + '</span> <span class="arrow">→</span> <span class="chip chip-new">v' + val + '</span> <span class="badge-note">builds + GitHub + git push</span>'
+  } else {
+    badge.innerHTML = ''
+  }
+})
+
+function publish() {
+  const ver = v.value.trim()
+  if (!/^\d+\.\d+\.\d+$/.test(ver) || running) return
+
+  running = true
+  btn.disabled = true
+  v.disabled = true
+  notes.disabled = true
+  rightSide.style.display = 'block'
+  btnIcon.outerHTML = '<svg id="btnIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="spin"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>'
+  document.getElementById('btnIcon').style.animation = 'spin 1.5s linear infinite'
+  const style = document.createElement('style')
+  style.textContent = '@keyframes spin{to{transform:rotate(360deg)}}'
+  document.head.appendChild(style)
+
+  logs.textContent = ''
+  status.innerHTML = '<div class="dot dot-running"></div> Publishing v' + ver + '...'
+  completedSteps.clear()
+  ;['build','upload','publish','git'].forEach(s => setStep(s, 'pending'))
+
+  api.onOutput(chunk => {
+  logs.textContent += chunk
+  logs.scrollTop = logs.scrollHeight
+  detectPhase(chunk)
+})
+
+  api.onDone(success => {
+    running = false
+    v.disabled = false
+    btn.disabled = true
+    resetBtn.style.display = 'block'
+    ['build','upload','publish','git'].forEach(s => setStep(s, success ? 'done' : 'pending'))
+    if (success) {
+      status.innerHTML = '<div class="dot dot-ok"></div> Published v' + ver + ' ✓'
+      current = ver
+      document.getElementById('currentVer').textContent = 'v' + ver
+    } else {
+      status.innerHTML = '<div class="dot dot-err"></div> Failed ✕'
+    }
+    btnIcon.outerHTML = '<svg id="btnIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>'
+  })
+
+  api.release(ver, notes.value.trim()).catch(() => {
+    running = false
+    status.innerHTML = '<div class="dot dot-err"></div> Error'
+  })
+}
+
+function reset() {
+  running = false
+  btn.disabled = false
+  v.disabled = false
+  v.value = ''
+  notes.disabled = false
+  notes.value = ''
+  badge.innerHTML = ''
+  rightSide.style.display = 'none'
+  logs.textContent = ''
+  resetBtn.style.display = 'none'
+  completedSteps.clear()
+  ;['build','upload','publish','git'].forEach(s => setStep(s, 'pending'))
+  document.getElementById('currentVer').textContent = 'v' + current
+  btnIcon.outerHTML = '<svg id="btnIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>'
+  v.focus()
+}
+
+init()
+</script>
+</div>
+</body>
+</html>

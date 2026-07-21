@@ -1,0 +1,53 @@
+{
+  "name": "catchat-release-tool",
+  "version": "1.0.0",
+  "description": "CatChat Release Manager",
+  "main": "electron-main.js",
+  "author": "CatChat",
+  "scripts": {
+    "build": "electron-builder --win",
+    "start": "electron ."
+  },
+  "build": {
+    "appId": "com.catchat.release-tool",
+    "productName": "CatChat Release",
+    "executableName": "catchat-release",
+    "electronVersion": "43.1.0",
+    "publish": null,
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "icon": "../build/icon.png",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "runAfterFinish": true,
+      "createDesktopShortcut": false,
+      "createStartMenuShortcut": true,
+      "shortcutName": "CatChat Release"
+    },
+    "files": [
+      "electron-main.js",
+      "preload.js",
+      "index.html",
+      "../scripts/release.cjs",
+      "../scripts/publish-release.cjs",
+      "../package.json"
+    ],
+    "asarUnpack": [
+      "../scripts/**"
+    ]
+  },
+  "devDependencies": {
+    "electron": "43.1.0",
+    "electron-builder": "^26.15.3"
+  }
+}
