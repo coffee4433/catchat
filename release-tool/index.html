@@ -1167,6 +1167,7 @@ function attachListeners() {
       resultText.textContent = 'v' + versionInput.value.trim() + ' is live on GitHub'
       current = versionInput.value.trim()
       $('currentVer').textContent = 'v' + current
+      scrollResultIntoView()
     } else {
       // Mark the currently active step as failed
       const active = document.querySelector('.step.active')
@@ -1179,7 +1180,18 @@ function attachListeners() {
       resultBar.className = 'result-bar visible failure'
       resultText.textContent = 'Something went wrong — check the terminal output'
       terminal.classList.remove('collapsed')
+      scrollResultIntoView()
     }
+  })
+}
+
+// Smoothly scrolls the result bar into view once it becomes visible.
+// Waits a frame so the layout (display:flex) has been applied first.
+function scrollResultIntoView() {
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      resultBar.scrollIntoView({ behavior: 'smooth', block: 'end' })
+    })
   })
 }
 
