@@ -56,21 +56,10 @@ function setupAutoUpdater() {
   autoUpdater.autoDownload = false
   autoUpdater.autoInstallOnAppQuit = false
 
-  if (process.env.GITHUB_REF !== 'refs/heads/main' && process.env.ELECTRON_START_URL?.includes('localhost')) {
-    console.log('[AutoUpdater] Dev mode — updates skipped')
-    return
-  }
-
-  try {
-    autoUpdater.setFeedURL({
-      provider: 'github',
-      owner: 'coffee4433',
-      repo: 'catchat',
-    })
-  } catch (err) {
-    console.log('[AutoUpdater] Could not configure feed URL:', err.message)
-    return
-  }
+  autoUpdater.setFeedURL({
+    provider: 'generic',
+    url: 'https://catchat-one.vercel.app/updates/',
+  })
 
   ipcMain.handle('update:check', async () => {
     try {
@@ -111,8 +100,8 @@ function setupAutoUpdater() {
 
   autoUpdater.on('error', (error) => {
     const msg = error?.message || ''
-    if (msg.includes('No published versions')) {
-      console.log('[AutoUpdater] No updates available on GitHub')
+    if (msg.includes('No published versions') || msg.includes('404') || msg.includes('ENOENT')) {
+      console.log('[AutoUpdater] No updates available')
       return
     }
     mainWindow?.webContents.send('update:error', error.message)

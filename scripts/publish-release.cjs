@@ -106,7 +106,7 @@ async function publish() {
       tag_name: tag,
       name: tag,
       body: releaseBody,
-      draft: false,
+      draft: true,
       prerelease: false,
     }),
   })
@@ -135,6 +135,23 @@ async function publish() {
   }
 
   console.log(`\nPublished: ${release.html_url}`)
+
+  // Make release visible
+  await ghReq(`/releases/${release.id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ draft: false }),
+  })
+  console.log('Release is now public')
+
+  // Copy latest.yml to public/updates/ for Vercel
+  const publicDir = path.join(__dirname, '..', 'public', 'updates')
+  fs.mkdirSync(publicDir, { recursive: true })
+  const ghBase = `https://github.com/${OWNER}/${REPO}/releases/download/${tag}`
+  let ymlContent = fs.readFileSync(latestYml, 'utf8')
+  ymlContent = ymlContent.replace(/url: CatChat-Setup/g, `url: ${ghBase}/CatChat-Setup`)
+  ymlContent = ymlContent.replace(/path: CatChat Setup/g, '# path: CatChat Setup')
+  fs.writeFileSync(path.join(publicDir, 'latest.yml'), ymlContent)
+  console.log('latest.yml copied to public/updates/ for Vercel')
 
   // Auto git push
   try {
