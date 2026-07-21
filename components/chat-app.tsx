@@ -12,6 +12,7 @@ import { SearchModal } from '@/components/search-modal'
 import { SettingsModal } from '@/components/settings-modal'
 import { Sidebar } from '@/components/sidebar'
 import { UserDock } from '@/components/user-dock'
+import { UpdateNotification } from '@/components/update-notification'
 import { themes } from '@/lib/themes'
 
 export type AppUser = { id: string; name: string; email: string; image?: string | null; banner?: string | null }
@@ -143,6 +144,7 @@ export function ChatApp({
         user={user}
       />
       <UserDock onOpenSettings={() => setSettingsOpen(true)} user={user} />
+      <UpdateNotification />
     </main>
   )
 }

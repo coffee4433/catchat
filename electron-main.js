@@ -1,7 +1,8 @@
-const { app, BrowserWindow } = require('electron')
+const { app, BrowserWindow, ipcMain } = require('electron')
 const path = require('path')
 const fs = require('fs')
 const http = require('http')
+const { autoUpdater } = require('electron-updater')
 const { registerCommandRunnerIPC } = require('./electron/commandRunner')
 
 // Load environment variables from a .env file packaged with the app (if present).
@@ -50,6 +51,50 @@ try {
 let mainWindow
 let splashWindow
 let nextServer
+
+function setupAutoUpdater() {
+  autoUpdater.autoDownload = false
+  autoUpdater.autoInstallOnAppQuit = false
+
+  ipcMain.handle('update:check', async () => {
+    try {
+      const result = await autoUpdater.checkForUpdates()
+      return result?.updateInfo || null
+    } catch (err) {
+      console.error('[AutoUpdater] Check failed:', err.message)
+      return null
+    }
+  })
+
+  ipcMain.handle('update:download', async () => {
+    try {
+      await autoUpdater.downloadUpdate()
+    } catch (err) {
+      console.error('[AutoUpdater] Download failed:', err.message)
+      throw err
+    }
+  })
+
+  ipcMain.handle('update:install', () => {
+    autoUpdater.quitAndInstall()
+  })
+
+  autoUpdater.on('update-available', (info) => {
+    mainWindow?.webContents.send('update:available', info)
+  })
+
+  autoUpdater.on('download-progress', (progress) => {
+    mainWindow?.webContents.send('update:download-progress', progress)
+  })
+
+  autoUpdater.on('update-downloaded', (info) => {
+    mainWindow?.webContents.send('update:downloaded', info)
+  })
+
+  autoUpdater.on('error', (error) => {
+    mainWindow?.webContents.send('update:error', error.message)
+  })
+}
 
 function getAppDir() {
   if (app.isPackaged) {
@@ -163,8 +208,10 @@ async function startNextServer() {
 app.on('ready', async () => {
   createSplashWindow()
   try {
+    setupAutoUpdater()
     await startNextServer()
     createWindow()
+    setTimeout(() => autoUpdater.checkForUpdates().catch(() => {}), 5000)
   } catch (error) {
     console.error('Failed to start Next.js server:', error)
     const { dialog } = require('electron')

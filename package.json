@@ -56,6 +56,11 @@
       "warningsAsErrors": false,
       "upgradeCode": "{A1234567-BCDE-F012-3456-789ABCDEF012}"
     },
+    "publish": {
+      "provider": "github",
+      "owner": "coffee4433",
+      "repo": "catchat"
+    },
     "files": [
       "electron-main.js",
       "preload.js",
@@ -77,6 +82,7 @@
     "clsx": "^2.1.1",
     "dotenv": "^16.1.4",
     "drizzle-orm": "^0.45.2",
+    "electron-updater": "^6.8.9",
     "emoji-picker-react": "^4.19.1",
     "framer-motion": "^12.42.2",
     "lucide-react": "^1.16.0",
