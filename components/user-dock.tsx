@@ -116,7 +116,7 @@ export function UserDock({
 
   const handleDismiss = useCallback(() => {
     setShowMenu(false)
-    setTimeout(() => setUpdate({ phase: 'idle' }), 350)
+    setTimeout(() => setUpdate({ phase: 'idle' }), 300)
   }, [])
 
   const handleSignOut = async () => {
@@ -222,8 +222,8 @@ export function UserDock({
                 key="expanded"
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3, ease: 'easeOut' }}
                 className="overflow-hidden"
               >
                 {hasUpdate ? (
