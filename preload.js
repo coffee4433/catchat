@@ -41,4 +41,5 @@ contextBridge.exposeInMainWorld("updater", {
   checkForUpdates: () => ipcRenderer.invoke("update:check"),
   downloadUpdate: () => ipcRenderer.invoke("update:download"),
   quitAndInstall: () => ipcRenderer.invoke("update:install"),
+  getVersion: () => ipcRenderer.invoke("app:version"),
 });

@@ -51,6 +51,7 @@ function getUpdater() {
     onError: (cb: (msg: string) => void) => () => void
     downloadUpdate: () => Promise<void>
     quitAndInstall: () => void
+    getVersion?: () => Promise<string>
   } | null
 }
 
@@ -68,6 +69,14 @@ export function UserDock({
   const dockRef = useRef<HTMLDivElement>(null)
 
   const [update, setUpdate] = useState<UpdateState>({ phase: 'idle' })
+  const [appVersion, setAppVersion] = useState<string | null>(null)
+
+  useEffect(() => {
+    const updater = getUpdater()
+    if (updater) {
+      updater.getVersion?.().then((v: string) => setAppVersion(v)).catch(() => {})
+    }
+  }, [])
 
   useEffect(() => {
     const updater = getUpdater()
@@ -184,6 +193,9 @@ export function UserDock({
               <span className="min-w-0 pr-1">
                 <span className="block max-w-32 truncate text-[13px] font-semibold leading-tight">
                   {user.name}
+                  {appVersion && (
+                    <span className="ml-1.5 text-[10px] font-normal text-muted-foreground/60">v{appVersion}</span>
+                  )}
                 </span>
                 <span className="block max-w-32 truncate text-[11px] leading-tight text-muted-foreground">
                   {user.email}

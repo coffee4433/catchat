@@ -95,6 +95,8 @@ function setupAutoUpdater() {
     autoUpdater.quitAndInstall()
   })
 
+  ipcMain.handle('app:version', () => app.getVersion())
+
   autoUpdater.on('update-available', (info) => {
     mainWindow?.webContents.send('update:available', info)
   })
