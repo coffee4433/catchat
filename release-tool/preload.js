@@ -11,6 +11,11 @@ contextBridge.exposeInMainWorld('releaseTool', {
     ipcRenderer.on('release:output', fn)
     return () => ipcRenderer.removeListener('release:output', fn)
   },
+  onStep: (cb) => {
+    const fn = (_e, data) => cb(data)
+    ipcRenderer.on('release:step', fn)
+    return () => ipcRenderer.removeListener('release:step', fn)
+  },
   onDone: (cb) => {
     const fn = (_e, success) => cb(success)
     ipcRenderer.on('release:done', fn)

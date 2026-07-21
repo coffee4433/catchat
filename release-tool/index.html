@@ -3,569 +3,985 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CatChat Release</title>
+<title>CatChat Release Studio</title>
 <style>
   :root {
-    --bg-1: #15120f;
-    --bg-2: #1c1815;
-    --card-bg: rgba(255,247,235,0.045);
-    --card-border: rgba(255,235,205,0.09);
-    --muted: #a89a8a;
-    --fg: #f5efe6;
-    --accent-1: #f2b544;
-    --accent-2: #e8894a;
-    --on-accent: #201509;
-    --green: #6fbf8a;
-    --red: #e8735f;
-    --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    --bg: #0b0e14;
+    --bg-elev: #10141d;
+    --surface: #151a25;
+    --surface-2: #1a2030;
+    --border: rgba(148, 163, 184, 0.12);
+    --border-strong: rgba(148, 163, 184, 0.22);
+    --fg: #e6eaf2;
+    --muted: #8b94a7;
+    --faint: #5b6475;
+    --accent: #3b82f6;
+    --accent-soft: rgba(59, 130, 246, 0.14);
+    --accent-glow: rgba(59, 130, 246, 0.35);
+    --green: #34d399;
+    --green-soft: rgba(52, 211, 153, 0.12);
+    --red: #f87171;
+    --red-soft: rgba(248, 113, 113, 0.12);
+    --mono: 'JetBrains Mono', 'SF Mono', 'Cascadia Code', Consolas, monospace;
+    --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    --radius: 12px;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
-  body {
-    font-family: var(--font);
-    color: var(--fg);
-    height: 100vh;
-    overflow: hidden;
-    -webkit-app-region: drag;
+  html, body {
+    height: 100%;
     background: transparent;
-    margin: 0;
+    font-family: var(--sans);
+    color: var(--fg);
+    overflow: hidden;
   }
 
   .window {
-    width: 100%;
-    height: 100%;
-    border-radius: 12px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    border-radius: 14px;
     overflow: hidden;
-    background:
-      radial-gradient(1000px circle at 8% -15%, rgba(242,181,68,0.18), transparent 55%),
-      radial-gradient(900px circle at 112% 118%, rgba(232,137,74,0.14), transparent 50%),
-      linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 100%);
+    background: var(--bg);
+    border: 1px solid rgba(148, 163, 184, 0.15);
+    box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Titlebar                                                            */
+  /* ------------------------------------------------------------------ */
+  .titlebar {
+    height: 44px;
     display: flex;
-    flex-direction: column;
     align-items: center;
-    justify-content: center;
-  }
-
-  .header { text-align: center; margin-bottom: 22px; -webkit-app-region: no-drag; }
-
-  .icon {
-    width: 52px; height: 52px;
-    background: rgba(242,181,68,0.12);
-    border: 1px solid rgba(242,181,68,0.28);
-    border-radius: 18px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 14px;
-    box-shadow: 0 10px 28px rgba(242,181,68,0.22);
-  }
-
-  .icon svg { width: 26px; height: 26px; color: var(--accent-1); }
-
-  h1 {
-    font-size: 21px;
-    font-weight: 800;
-    letter-spacing: -0.4px;
-    background: linear-gradient(135deg, #fbf3e4, #f0cf94);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-  .sub { font-size: 12px; color: var(--muted); margin-top: 5px; }
-
-  .main-area {
-    display: flex;
-    gap: 12px;
-    -webkit-app-region: no-drag;
-    align-items: flex-start;
-  }
-
-  .card {
-    background: var(--card-bg);
-    backdrop-filter: blur(24px) saturate(150%);
-    -webkit-backdrop-filter: blur(24px) saturate(150%);
-    border: 1px solid var(--card-border);
-    border-radius: 24px;
-    padding: 20px;
-    margin-bottom: 12px;
-    width: 380px;
-    box-shadow: 0 12px 40px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.05);
-  }
-
-  label {
-    font-size: 10.5px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-    color: var(--muted);
-    margin-bottom: 10px;
-    display: block;
-  }
-
-  .row { display: flex; gap: 8px; }
-
-  input {
-    flex: 1; min-width: 0;
-    height: 42px;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid var(--card-border);
-    border-radius: 14px;
+    justify-content: space-between;
     padding: 0 14px;
-    color: var(--fg);
-    font-size: 14px;
-    font-family: var(--font);
-    outline: none;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
-  }
-
-  input:focus {
-    border-color: rgba(242,181,68,0.55);
-    background: rgba(255,255,255,0.06);
-    box-shadow: 0 0 0 4px rgba(242,181,68,0.15);
-  }
-  input:disabled { opacity: 0.45; }
-  input::placeholder { color: rgba(168,154,138,0.4); }
-
-  button {
-    height: 42px;
-    padding: 0 16px;
-    border-radius: 14px;
-    border: none;
-    font-size: 13px;
-    font-weight: 600;
-    font-family: var(--font);
-    cursor: pointer;
-    transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease, opacity 0.2s ease;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--fg);
-    white-space: nowrap;
-  }
-
-  button:active { transform: scale(0.97); }
-
-  .btn-primary {
-    background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
-    color: var(--on-accent);
-    font-weight: 700;
-    box-shadow: 0 10px 26px rgba(242,181,68,0.32);
-  }
-
-  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 12px 30px rgba(242,181,68,0.42); }
-  .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; transform: none; }
-
-  .version-badge {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 6px;
-    font-size: 11px;
-    color: var(--muted);
-    margin-top: 12px;
-  }
-
-  .version-badge .arrow { color: rgba(168,154,138,0.4); }
-
-  .chip {
-    padding: 3px 10px;
-    border-radius: 999px;
-    font-weight: 600;
-    font-size: 11px;
-    line-height: 1.5;
-  }
-  .chip-old { background: rgba(255,255,255,0.05); border: 1px solid var(--card-border); color: var(--muted); }
-  .chip-new { background: linear-gradient(135deg, var(--accent-1), var(--accent-2)); color: var(--on-accent); }
-  .badge-note { color: var(--muted); opacity: 0.6; }
-
-  .logs-card {
-    background: var(--card-bg);
-    backdrop-filter: blur(24px) saturate(150%);
-    -webkit-backdrop-filter: blur(24px) saturate(150%);
-    border: 1px solid var(--card-border);
-    border-radius: 24px;
-    padding: 20px;
-    width: 340px;
-    box-shadow: 0 12px 40px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.05);
-  }
-
-  .logs {
-    background: rgba(15,11,8,0.5);
-    border: 1px solid var(--card-border);
-    border-radius: 16px;
-    padding: 12px 14px;
-    font-family: 'SF Mono', 'Consolas', 'Courier New', monospace;
-    font-size: 10.5px;
-    line-height: 1.6;
-    height: 160px;
-    overflow-y: auto;
-    color: rgba(111,191,138,0.85);
-  }
-  .logs::-webkit-scrollbar { width: 6px; }
-  .logs::-webkit-scrollbar-thumb { background: rgba(255,235,205,0.15); border-radius: 999px; }
-  .logs::-webkit-scrollbar-track { background: transparent; }
-  .logs .err { color: rgba(232,115,95,0.9); }
-
-  .status {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    font-size: 12.5px;
-    font-weight: 600;
-    margin-bottom: 12px;
-  }
-
-  .dot { width: 9px; height: 9px; border-radius: 50%; }
-  .dot-running { background: var(--accent-1); box-shadow: 0 0 0 4px rgba(242,181,68,0.2); animation: pulse 1.1s ease-in-out infinite; }
-  .dot-ok { background: var(--green); box-shadow: 0 0 0 4px rgba(111,191,138,0.2); }
-  .dot-err { background: var(--red); box-shadow: 0 0 0 4px rgba(232,115,95,0.2); }
-
-  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-
-  .btn-reset {
-    background: rgba(242,181,68,0.1);
-    color: #f6cf82;
-    font-size: 12.5px;
-    margin-top: 12px;
-    width: 100%;
-    justify-content: center;
-    border: 1px solid rgba(242,181,68,0.25);
-  }
-  .btn-reset:hover { background: rgba(242,181,68,0.16); }
-
-  .drag-bar {
-    position: fixed; top: 0; left: 0; right: 0; height: 32px;
+    background: var(--bg-elev);
+    border-bottom: 1px solid var(--border);
     -webkit-app-region: drag;
-  }
-
-  .close-btn {
-    position: fixed; top: 12px; right: 14px;
-    width: 30px; height: 30px;
-    border-radius: 10px;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.06);
-    color: var(--muted);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 15px;
-    transition: background 0.15s ease, color 0.15s ease;
-    -webkit-app-region: no-drag;
-  }
-  .close-btn:hover { background: rgba(232,115,95,0.15); color: var(--red); }
-
-  .select-btn {
-    background: rgba(255,255,255,0.03);
-    color: var(--fg);
-    font-size: 13.5px;
-    width: 100%;
-    justify-content: center;
-    margin-top: 8px;
-    border: 1.5px dashed rgba(255,235,205,0.18);
-    white-space: nowrap;
-  }
-  .select-btn:hover { background: rgba(255,255,255,0.06); border-color: rgba(242,181,68,0.45); }
-
-  .project-path {
-    font-size: 10.5px;
-    color: rgba(168,154,138,0.55);
-    margin-top: 10px;
-    text-align: center;
-    word-break: break-all;
-  }
-
-  .notes {
-    width: 100%;
-    height: 48px;
-    background: rgba(255,255,255,0.03);
-    border: 1px solid var(--card-border);
-    border-radius: 14px;
-    padding: 14px;
-    color: var(--fg);
-    font-size: 12px;
-    font-family: var(--font);
-    outline: none;
-    resize: none;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
-    margin-top: 8px;
-  }
-  .notes:focus { border-color: rgba(242,181,68,0.5); box-shadow: 0 0 0 4px rgba(242,181,68,0.12); }
-  .notes:disabled { opacity: 0.45; }
-  .notes::placeholder { color: rgba(168,154,138,0.3); }
-
-  .ver { font-size: 11px; color: rgba(168,154,138,0.5); text-align: center; margin-top: 8px; -webkit-app-region: no-drag; }
-
-  .steps {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    margin-bottom: 14px;
-  }
-
-  .step {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 12px;
-    padding: 6px 12px;
-    border-radius: 10px;
-    transition: all 0.3s ease;
-  }
-
-  .step-icon {
-    width: 20px; height: 20px;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 10px;
     flex-shrink: 0;
   }
 
-  .step-pending { color: rgba(168,154,138,0.4); }
-  .step-pending .step-icon { background: rgba(255,255,255,0.04); }
-  .step-active { color: var(--accent-1); background: rgba(242,181,68,0.08); }
-  .step-active .step-icon { background: rgba(242,181,68,0.2); }
-  .step-done { color: var(--green); }
-  .step-done .step-icon { background: rgba(111,191,138,0.15); }
+  .titlebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12.5px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    color: var(--muted);
+  }
+
+  .titlebar-brand .logo {
+    width: 22px; height: 22px;
+    border-radius: 7px;
+    background: var(--accent-soft);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .titlebar-brand .logo svg { width: 12px; height: 12px; color: var(--accent); }
+  .titlebar-brand .divider { color: var(--faint); opacity: 0.5; }
+  .titlebar-brand .page { color: var(--fg); }
+
+  .titlebar-actions { display: flex; gap: 8px; -webkit-app-region: no-drag; }
+
+  .win-btn {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s, color 0.15s;
+  }
+  .win-btn:hover { background: var(--red-soft); color: var(--red); }
+  .win-btn svg { width: 13px; height: 13px; }
+
+  /* ------------------------------------------------------------------ */
+  /* Body layout                                                         */
+  /* ------------------------------------------------------------------ */
+  .app-body {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+  }
+
+  .sidebar {
+    width: 292px;
+    flex-shrink: 0;
+    background: var(--bg-elev);
+    border-right: 1px solid var(--border);
+    padding: 22px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    overflow-y: auto;
+  }
+
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    padding: 26px 28px 20px;
+    gap: 18px;
+    overflow-y: auto;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Sidebar sections                                                    */
+  /* ------------------------------------------------------------------ */
+  .side-section { display: flex; flex-direction: column; gap: 10px; }
+
+  .side-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.1px;
+    color: var(--faint);
+  }
+
+  .side-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+  }
+
+  .project-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .project-row .p-icon {
+    width: 34px; height: 34px;
+    border-radius: 9px;
+    background: var(--accent-soft);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .project-row .p-icon svg { width: 16px; height: 16px; color: var(--accent); }
+  .project-meta { min-width: 0; }
+  .project-name { font-size: 13px; font-weight: 600; }
+  .project-dir {
+    font-size: 10.5px;
+    color: var(--faint);
+    font-family: var(--mono);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 2px;
+  }
+
+  .btn {
+    height: 38px;
+    padding: 0 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border-strong);
+    background: var(--surface-2);
+    color: var(--fg);
+    font-family: var(--sans);
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    transition: background 0.15s, border-color 0.15s, transform 0.1s;
+    white-space: nowrap;
+  }
+  .btn:hover { background: #202737; border-color: rgba(148,163,184,0.32); }
+  .btn:active { transform: scale(0.98); }
+  .btn svg { width: 14px; height: 14px; }
+  .btn-block { width: 100%; margin-top: 10px; }
+
+  .field { display: flex; flex-direction: column; gap: 7px; }
+  .field-label { font-size: 11.5px; font-weight: 600; color: var(--muted); }
+
+  input, textarea {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--fg);
+    font-family: var(--sans);
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  input { height: 40px; padding: 0 13px; font-size: 13.5px; }
+  textarea { padding: 11px 13px; font-size: 13px; resize: none; line-height: 1.5; }
+  input:focus, textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
+  }
+  input:disabled, textarea:disabled { opacity: 0.4; }
+  input::placeholder, textarea::placeholder { color: var(--faint); }
+
+  .token-status {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px; color: var(--green);
+  }
+  .token-status svg { width: 12px; height: 12px; }
+  .token-status.empty { color: var(--faint); }
+
+  .sidebar-footer {
+    margin-top: auto;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--faint);
+  }
+  .ver-pill {
+    font-family: var(--mono);
+    font-size: 11px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 3px 10px;
+    color: var(--muted);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Main: release form                                                  */
+  /* ------------------------------------------------------------------ */
+  .page-head h1 {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+  .page-head p { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+
+  .release-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 180px 1fr auto;
+    gap: 12px;
+    align-items: end;
+  }
+
+  #version { font-family: var(--mono); }
+
+  .btn-publish {
+    height: 40px;
+    padding: 0 22px;
+    border-radius: 10px;
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    font-family: var(--sans);
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 6px 20px var(--accent-glow);
+    transition: background 0.15s, transform 0.1s, box-shadow 0.2s, opacity 0.2s;
+    white-space: nowrap;
+  }
+  .btn-publish:hover:not(:disabled) { background: #2f74e8; transform: translateY(-1px); }
+  .btn-publish:active:not(:disabled) { transform: scale(0.98); }
+  .btn-publish:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+  .btn-publish svg { width: 15px; height: 15px; }
+
+  .version-diff {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11.5px;
+    color: var(--muted);
+    min-height: 22px;
+  }
+  .chip {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 999px;
+  }
+  .chip-old { background: var(--surface-2); border: 1px solid var(--border); color: var(--muted); }
+  .chip-new { background: var(--accent-soft); border: 1px solid rgba(59,130,246,0.35); color: #7fb0fb; }
+  .version-diff .arrow { color: var(--faint); }
+
+  /* ------------------------------------------------------------------ */
+  /* Pipeline steps                                                      */
+  /* ------------------------------------------------------------------ */
+  .pipeline {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    display: none;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .pipeline.visible { display: flex; }
+
+  .pipeline-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .pipeline-title {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13.5px; font-weight: 700;
+  }
+
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .status-dot.running { background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); animation: pulse 1.2s ease-in-out infinite; }
+  .status-dot.ok { background: var(--green); box-shadow: 0 0 0 4px var(--green-soft); }
+  .status-dot.err { background: var(--red); box-shadow: 0 0 0 4px var(--red-soft); }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+  .steps {
+    display: flex;
+    align-items: flex-start;
+    gap: 0;
+  }
+
+  .step {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+    padding-top: 2px;
+  }
+
+  .step::before {
+    content: '';
+    position: absolute;
+    top: 17px;
+    left: calc(-50% + 18px);
+    right: calc(50% + 18px);
+    height: 2px;
+    background: var(--border-strong);
+    transition: background 0.3s;
+  }
+  .step:first-child::before { display: none; }
+  .step.done::before, .step.active::before { background: var(--accent); }
+
+  .step-circle {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--surface-2);
+    border: 2px solid var(--border-strong);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--faint);
+    transition: all 0.3s;
+    z-index: 1;
+  }
+  .step-circle svg { width: 14px; height: 14px; }
+
+  .step.active .step-circle {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent);
+    box-shadow: 0 0 0 5px rgba(59, 130, 246, 0.1);
+  }
+  .step.done .step-circle {
+    border-color: var(--green);
+    background: var(--green-soft);
+    color: var(--green);
+  }
+  .step.error .step-circle {
+    border-color: var(--red);
+    background: var(--red-soft);
+    color: var(--red);
+  }
+
+  .step-name {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--faint);
+    text-align: center;
+    transition: color 0.3s;
+  }
+  .step.active .step-name { color: var(--accent); }
+  .step.done .step-name { color: var(--green); }
+  .step.error .step-name { color: var(--red); }
+
+  .spinner {
+    width: 14px; height: 14px;
+    border: 2px solid rgba(59,130,246,0.25);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ------------------------------------------------------------------ */
+  /* Terminal (collapsible)                                              */
+  /* ------------------------------------------------------------------ */
+  .terminal {
+    background: #0a0c11;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    display: none;
+  }
+  .terminal.visible { display: block; }
+
+  .terminal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 14px;
+    background: rgba(21, 26, 37, 0.7);
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+  }
+  .terminal-header:hover { background: rgba(26, 32, 48, 0.9); }
+
+  .terminal-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .traffic { display: flex; gap: 6px; }
+  .traffic span { width: 10px; height: 10px; border-radius: 50%; opacity: 0.85; }
+  .traffic .r { background: #ff5f57; }
+  .traffic .y { background: #febc2e; }
+  .traffic .g { background: #28c840; }
+
+  .terminal-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .line-count {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--faint);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 2px 8px;
+    border-radius: 999px;
+  }
+
+  .chevron {
+    width: 15px; height: 15px;
+    color: var(--muted);
+    transition: transform 0.25s ease;
+  }
+  .terminal.collapsed .chevron { transform: rotate(-90deg); }
+
+  .terminal-body {
+    max-height: 240px;
+    transition: max-height 0.3s ease;
+    overflow: hidden;
+  }
+  .terminal.collapsed .terminal-body { max-height: 0; }
+
+  .terminal-logs {
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1.65;
+    padding: 12px 16px;
+    height: 240px;
+    overflow-y: auto;
+    color: #9fb3c8;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .terminal-logs .ln-ok { color: var(--green); }
+  .terminal-logs .ln-err { color: var(--red); }
+  .terminal-logs::-webkit-scrollbar { width: 8px; }
+  .terminal-logs::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.18); border-radius: 999px; }
+  .terminal-logs::-webkit-scrollbar-track { background: transparent; }
+
+  .result-bar {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .result-bar.visible { display: flex; }
+  .result-bar.success { background: var(--green-soft); border: 1px solid rgba(52,211,153,0.3); color: var(--green); }
+  .result-bar.failure { background: var(--red-soft); border: 1px solid rgba(248,113,113,0.3); color: var(--red); }
+  .result-bar .btn { height: 32px; font-size: 12px; }
+
+  /* Setup empty state */
+  .setup-note {
+    background: var(--surface);
+    border: 1px dashed var(--border-strong);
+    border-radius: 14px;
+    padding: 32px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+    display: none;
+  }
+  .setup-note.visible { display: block; }
 </style>
 </head>
 <body>
 <div class="window">
-<div class="drag-bar"></div>
-<button class="close-btn" onclick="window.close()">✕</button>
 
-<div class="header">
-  <div class="icon">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/>
-      <path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/>
-      <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/>
-      <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>
-    </svg>
-  </div>
-  <h1>CatChat Release</h1>
-  <p class="sub">Publish new versions to GitHub</p>
-</div>
-
-<div class="main-area">
-  <div class="left-side">
-    <div class="card" id="projectCard">
-      <label>Project Path</label>
-      <button class="select-btn" onclick="selectProject()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-        Select Folder
+  <!-- Titlebar -->
+  <header class="titlebar">
+    <div class="titlebar-brand">
+      <div class="logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/>
+          <path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/>
+        </svg>
+      </div>
+      CatChat <span class="divider">/</span> <span class="page">Release Studio</span>
+    </div>
+    <div class="titlebar-actions">
+      <button class="win-btn" onclick="window.close()" aria-label="Close window">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
       </button>
-      <div class="project-path" id="projectPath"></div>
     </div>
+  </header>
 
-    <div class="card" id="tokenCard">
-      <label>GitHub Token</label>
-      <input id="tokenInput" type="password" class="notes" placeholder="ghp_..." style="margin-top:0;height:36px">
-      <div class="project-path" id="tokenStatus" style="margin-top:4px"></div>
-    </div>
+  <div class="app-body">
 
-    <div class="card" id="publishCard" style="display:none">
-      <label>New Version</label>
-      <div class="row">
-        <input id="version" type="text" placeholder="0.1.4" pattern="\d+\.\d+\.\d+">
-        <button id="publishBtn" class="btn-primary" onclick="publish()">
-          <svg id="btnIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/>
-            <path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/>
-            <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/>
-            <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>
-          </svg>
-          Publish
-        </button>
-      </div>
-      <div class="version-badge" id="versionBadge"></div>
-      <textarea id="notes" class="notes" placeholder="Release notes (optional)..." disabled></textarea>
-    </div>
-    <div class="ver" id="currentVer"></div>
-  </div>
-
-  <div id="rightSide" style="display:none">
-    <div class="logs-card">
-      <div class="status" id="status"></div>
-      <div class="steps" id="steps">
-        <div class="step step-pending" data-step="build">
-          <span class="step-icon">🔨</span> Building installer
-        </div>
-        <div class="step step-pending" data-step="upload">
-          <span class="step-icon">⬆️</span> Uploading to GitHub
-        </div>
-        <div class="step step-pending" data-step="publish">
-          <span class="step-icon">📦</span> Publishing release
-        </div>
-        <div class="step step-pending" data-step="git">
-          <span class="step-icon">🔀</span> Git commit & push
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="side-section">
+        <span class="side-label">Project</span>
+        <div class="side-card" id="projectCard">
+          <div class="project-row" id="projectInfo" style="display:none">
+            <div class="p-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            <div class="project-meta">
+              <div class="project-name">CatChat</div>
+              <div class="project-dir" id="projectPath"></div>
+            </div>
+          </div>
+          <button class="btn btn-block" id="selectBtn" onclick="selectProject()" style="margin-top:0">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            Select project folder
+          </button>
+          <div class="project-dir" id="projectError" style="color:var(--red);margin-top:8px;display:none"></div>
         </div>
       </div>
-      <div class="logs" id="logs"></div>
-      <button class="btn-reset" id="resetBtn" style="display:none" onclick="reset()">Publish Another</button>
-    </div>
+
+      <div class="side-section">
+        <span class="side-label">GitHub</span>
+        <div class="side-card">
+          <div class="field">
+            <span class="field-label">Personal access token</span>
+            <input id="tokenInput" type="password" placeholder="ghp_••••••••••••" autocomplete="off">
+            <div class="token-status empty" id="tokenStatus">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+              <span>No token saved</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <span>Current version</span>
+        <span class="ver-pill" id="currentVer">—</span>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main">
+      <div class="page-head">
+        <h1>Publish a new release</h1>
+        <p>Build the installer, upload assets to GitHub, and push the release commit.</p>
+      </div>
+
+      <div class="setup-note visible" id="setupNote">
+        Select your project folder in the sidebar to get started.
+      </div>
+
+      <section class="release-card" id="releaseCard" style="display:none">
+        <div class="form-grid">
+          <div class="field">
+            <span class="field-label">Version</span>
+            <input id="version" type="text" placeholder="1.2.3" spellcheck="false">
+          </div>
+          <div class="field">
+            <span class="field-label">Release notes <span style="color:var(--faint);font-weight:400">(optional)</span></span>
+            <input id="notes" type="text" placeholder="What changed in this release...">
+          </div>
+          <button class="btn-publish" id="publishBtn" onclick="publish()">
+            <svg id="publishIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/>
+              <path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/>
+            </svg>
+            <span id="publishLabel">Publish</span>
+          </button>
+        </div>
+        <div class="version-diff" id="versionDiff"></div>
+      </section>
+
+      <!-- Pipeline -->
+      <section class="pipeline" id="pipeline">
+        <div class="pipeline-head">
+          <div class="pipeline-title">
+            <span class="status-dot running" id="statusDot"></span>
+            <span id="statusText">Publishing…</span>
+          </div>
+        </div>
+
+        <div class="steps" id="steps">
+          <div class="step" data-step="prepare">
+            <div class="step-circle">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+            </div>
+            <span class="step-name">Prepare</span>
+          </div>
+          <div class="step" data-step="build">
+            <div class="step-circle">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"/></svg>
+            </div>
+            <span class="step-name">Build installer</span>
+          </div>
+          <div class="step" data-step="upload">
+            <div class="step-circle">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+            </div>
+            <span class="step-name">Upload assets</span>
+          </div>
+          <div class="step" data-step="publish">
+            <div class="step-circle">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/><path d="M16 8L2 22M17.5 15H9"/></svg>
+            </div>
+            <span class="step-name">Publish release</span>
+          </div>
+          <div class="step" data-step="git">
+            <div class="step-circle">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/></svg>
+            </div>
+            <span class="step-name">Commit &amp; push</span>
+          </div>
+        </div>
+
+        <!-- Terminal -->
+        <div class="terminal visible" id="terminal">
+          <div class="terminal-header" onclick="toggleTerminal()" role="button" aria-expanded="true" tabindex="0" id="terminalHeader">
+            <div class="terminal-header-left">
+              <div class="traffic"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+              <div class="terminal-title">
+                release.cjs
+                <span class="line-count" id="lineCount">0 lines</span>
+              </div>
+            </div>
+            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </div>
+          <div class="terminal-body">
+            <div class="terminal-logs" id="logs"></div>
+          </div>
+        </div>
+
+        <div class="result-bar" id="resultBar">
+          <span id="resultText"></span>
+          <button class="btn" onclick="resetAll()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            Publish another
+          </button>
+        </div>
+      </section>
+    </main>
   </div>
 </div>
 
 <script>
-const v = document.getElementById('version')
-const notes = document.getElementById('notes')
-const badge = document.getElementById('versionBadge')
-const logs = document.getElementById('logs')
-const rightSide = document.getElementById('rightSide')
-const status = document.getElementById('status')
-const btn = document.getElementById('publishBtn')
-const resetBtn = document.getElementById('resetBtn')
-const btnIcon = document.getElementById('btnIcon')
-const projectPath = document.getElementById('projectPath')
-const publishCard = document.getElementById('publishCard')
-const projectCard = document.getElementById('projectCard')
-const tokenInput = document.getElementById('tokenInput')
-let current = ''
-let running = false
-let completedSteps = new Set()
-
-function setStep(step, state) {
-  const el = document.querySelector(`[data-step="${step}"]`)
-  if (!el) return
-  el.className = 'step step-' + state
-  if (state === 'done') completedSteps.add(step)
-}
-
-function detectPhase(chunk) {
-  const lower = chunk.toLowerCase()
-  if (lower.includes('building') || lower.includes('electron-builder') || lower.includes('packaging')) setStep('build', 'active')
-  if (lower.includes('uploading')) setStep('upload', 'active')
-  if (lower.includes('published:')) setStep('publish', 'active')
-  if (lower.includes('pushing') || lower.includes('pushed')) setStep('git', 'active')
-
-  if (lower.includes('building block map')) setStep('build', 'done')
-  if (lower.includes('published:')) { setStep('upload', 'done'); setStep('build', 'done') }
-  if (lower.includes('pushed to git')) { setStep('publish', 'done'); setStep('git', 'done') }
-}
-
 const api = window.releaseTool
 
+const $ = (id) => document.getElementById(id)
+const versionInput = $('version')
+const notesInput = $('notes')
+const versionDiff = $('versionDiff')
+const logs = $('logs')
+const pipeline = $('pipeline')
+const statusDot = $('statusDot')
+const statusText = $('statusText')
+const publishBtn = $('publishBtn')
+const publishLabel = $('publishLabel')
+const resultBar = $('resultBar')
+const resultText = $('resultText')
+const lineCount = $('lineCount')
+const terminal = $('terminal')
+const tokenInput = $('tokenInput')
+const tokenStatus = $('tokenStatus')
+
+const STEP_KEYS = ['prepare', 'build', 'upload', 'publish', 'git']
+const stepIcons = {}
+let current = ''
+let running = false
+let lines = 0
+let listenersAttached = false
+
+// Cache original step SVG icons so we can restore them after spinner/check
+STEP_KEYS.forEach((key) => {
+  const circle = document.querySelector('[data-step="' + key + '"] .step-circle')
+  stepIcons[key] = circle.innerHTML
+})
+
+const CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>'
+
+function setStep(key, state) {
+  const el = document.querySelector('[data-step="' + key + '"]')
+  if (!el) return
+  // Never regress a completed step
+  if (el.classList.contains('done') && state !== 'done' && state !== 'pending-reset') return
+
+  el.classList.remove('active', 'done', 'error')
+  const circle = el.querySelector('.step-circle')
+
+  if (state === 'active') {
+    el.classList.add('active')
+    circle.innerHTML = '<div class="spinner"></div>'
+  } else if (state === 'done') {
+    el.classList.add('done')
+    circle.innerHTML = CHECK_SVG
+  } else if (state === 'error') {
+    el.classList.add('error')
+    circle.innerHTML = stepIcons[key]
+  } else {
+    circle.innerHTML = stepIcons[key]
+  }
+}
+
+function resetSteps() {
+  STEP_KEYS.forEach((key) => setStep(key, 'pending-reset'))
+  STEP_KEYS.forEach((key) => {
+    const el = document.querySelector('[data-step="' + key + '"]')
+    el.classList.remove('active', 'done', 'error')
+    el.querySelector('.step-circle').innerHTML = stepIcons[key]
+  })
+}
+
+// Fallback phase detection from raw output (used if main process
+// doesn't emit structured release:step events)
+function detectPhase(chunk) {
+  const lower = chunk.toLowerCase()
+  if (lower.includes('building') || lower.includes('electron-builder') || lower.includes('packaging')) {
+    setStep('prepare', 'done'); setStep('build', 'active')
+  }
+  if (lower.includes('building block map')) setStep('build', 'done')
+  if (lower.includes('uploading')) { setStep('build', 'done'); setStep('upload', 'active') }
+  if (lower.includes('published:')) { setStep('upload', 'done'); setStep('publish', 'active') }
+  if (lower.includes('pushing') || lower.includes('committing')) { setStep('publish', 'done'); setStep('git', 'active') }
+  if (lower.includes('pushed')) { setStep('publish', 'done'); setStep('git', 'done') }
+}
+
+function appendLog(chunk) {
+  const span = document.createElement('span')
+  if (chunk.includes('✓')) span.className = 'ln-ok'
+  else if (chunk.includes('✕') || /error/i.test(chunk)) span.className = 'ln-err'
+  span.textContent = chunk
+  logs.appendChild(span)
+  lines += (chunk.match(/\n/g) || []).length
+  lineCount.textContent = lines + ' lines'
+  logs.scrollTop = logs.scrollHeight
+}
+
+function toggleTerminal() {
+  terminal.classList.toggle('collapsed')
+  $('terminalHeader').setAttribute('aria-expanded', String(!terminal.classList.contains('collapsed')))
+}
+
+$('terminalHeader').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleTerminal() }
+})
+
+// ---------------------------------------------------------------------
+// Init
+// ---------------------------------------------------------------------
 async function init() {
   const cfg = await api.getConfig()
-  if (cfg.hasToken) {
-    tokenInput.placeholder = 'Token saved ✓'
-    document.getElementById('tokenStatus').textContent = 'Token saved from previous session'
-  }
+
+  if (cfg.hasToken) markTokenSaved()
+
   tokenInput.addEventListener('change', () => {
     const val = tokenInput.value.trim()
-    if (val) api.saveToken(val)
+    if (val) {
+      api.saveToken(val)
+      tokenInput.value = ''
+      markTokenSaved()
+    }
   })
 
+  if (cfg.projectPath) showProject(cfg.projectPath)
+
   const ver = await api.getVersion()
-  if (ver) {
-    current = ver
-    document.getElementById('currentVer').textContent = 'v' + ver
-    projectCard.style.display = 'none'
-    publishCard.style.display = 'block'
-    notes.disabled = false
-    v.focus()
-  }
+  if (ver) setVersion(ver)
+}
+
+function markTokenSaved() {
+  tokenInput.placeholder = 'Token saved'
+  tokenStatus.classList.remove('empty')
+  tokenStatus.innerHTML =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><span>Token saved</span>'
+}
+
+function showProject(dir) {
+  $('projectInfo').style.display = 'flex'
+  $('projectPath').textContent = dir
+  $('selectBtn').classList.add('btn-block')
+  $('selectBtn').style.marginTop = '10px'
+  $('selectBtn').innerHTML =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg> Change folder'
+  $('projectError').style.display = 'none'
+}
+
+function setVersion(ver) {
+  current = ver
+  $('currentVer').textContent = 'v' + ver
+  $('setupNote').classList.remove('visible')
+  $('releaseCard').style.display = 'flex'
+  versionInput.focus()
 }
 
 async function selectProject() {
   const result = await api.selectProject()
   if (result && !result.error) {
-    current = result.version
-    projectPath.textContent = result.path
-    projectCard.style.display = 'none'
-    publishCard.style.display = 'block'
-    notes.disabled = false
-    document.getElementById('currentVer').textContent = 'v' + result.version
-    v.focus()
+    showProject(result.path)
+    setVersion(result.version)
   } else if (result && result.error) {
-    projectPath.textContent = result.error
-    projectPath.style.color = 'var(--red)'
+    $('projectError').textContent = result.error
+    $('projectError').style.display = 'block'
   }
 }
 
-v.addEventListener('input', () => {
-  const val = v.value.trim()
+versionInput.addEventListener('input', () => {
+  const val = versionInput.value.trim()
   if (/^\d+\.\d+\.\d+$/.test(val) && val !== current) {
-    badge.innerHTML = '<span class="chip chip-old">v' + current + '</span> <span class="arrow">→</span> <span class="chip chip-new">v' + val + '</span> <span class="badge-note">builds + GitHub + git push</span>'
+    versionDiff.innerHTML =
+      '<span class="chip chip-old">v' + current + '</span>' +
+      '<svg class="arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>' +
+      '<span class="chip chip-new">v' + val + '</span>' +
+      '<span>build → GitHub release → git push</span>'
   } else {
-    badge.innerHTML = ''
+    versionDiff.innerHTML = ''
   }
 })
+
+versionInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.nativeEvent?.isComposing && e.keyCode !== 229) publish()
+})
+
+// ---------------------------------------------------------------------
+// Publish
+// ---------------------------------------------------------------------
+function attachListeners() {
+  if (listenersAttached) return
+  listenersAttached = true
+
+  api.onOutput((chunk) => {
+    appendLog(chunk)
+    if (typeof api.onStep !== 'function') detectPhase(chunk)
+  })
+
+  if (typeof api.onStep === 'function') {
+    api.onStep(({ step, state }) => setStep(step, state))
+  }
+
+  api.onDone((success) => {
+    running = false
+    publishBtn.disabled = false
+    publishLabel.textContent = 'Publish'
+    versionInput.disabled = false
+    notesInput.disabled = false
+
+    if (success) {
+      STEP_KEYS.forEach((k) => setStep(k, 'done'))
+      statusDot.className = 'status-dot ok'
+      statusText.textContent = 'Published v' + versionInput.value.trim()
+      resultBar.className = 'result-bar visible success'
+      resultText.textContent = 'v' + versionInput.value.trim() + ' is live on GitHub'
+      current = versionInput.value.trim()
+      $('currentVer').textContent = 'v' + current
+    } else {
+      // Mark the currently active step as failed
+      const active = document.querySelector('.step.active')
+      if (active) setStep(active.dataset.step, 'error')
+      statusDot.className = 'status-dot err'
+      statusText.textContent = 'Release failed'
+      resultBar.className = 'result-bar visible failure'
+      resultText.textContent = 'Something went wrong — check the terminal output'
+      terminal.classList.remove('collapsed')
+    }
+  })
+}
 
 function publish() {
-  const ver = v.value.trim()
+  const ver = versionInput.value.trim()
   if (!/^\d+\.\d+\.\d+$/.test(ver) || running) return
 
+  attachListeners()
+
   running = true
-  btn.disabled = true
-  v.disabled = true
-  notes.disabled = true
-  rightSide.style.display = 'block'
-  btnIcon.outerHTML = '<svg id="btnIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="spin"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>'
-  document.getElementById('btnIcon').style.animation = 'spin 1.5s linear infinite'
-  const style = document.createElement('style')
-  style.textContent = '@keyframes spin{to{transform:rotate(360deg)}}'
-  document.head.appendChild(style)
+  publishBtn.disabled = true
+  publishLabel.textContent = 'Publishing…'
+  versionInput.disabled = true
+  notesInput.disabled = true
 
   logs.textContent = ''
-  status.innerHTML = '<div class="dot dot-running"></div> Publishing v' + ver + '...'
-  completedSteps.clear()
-  ;['build','upload','publish','git'].forEach(s => setStep(s, 'pending'))
+  lines = 0
+  lineCount.textContent = '0 lines'
+  resetSteps()
+  setStep('prepare', 'active')
 
-  api.onOutput(chunk => {
-  logs.textContent += chunk
-  logs.scrollTop = logs.scrollHeight
-  detectPhase(chunk)
-})
+  resultBar.className = 'result-bar'
+  pipeline.classList.add('visible')
+  terminal.classList.remove('collapsed')
+  statusDot.className = 'status-dot running'
+  statusText.textContent = 'Publishing v' + ver + '…'
 
-  api.onDone(success => {
-    try {
+  api.release(ver, notesInput.value.trim()).catch(() => {
     running = false
-    v.disabled = false
-    btn.disabled = true
-    resetBtn.style.display = 'block'
-    ;['build','upload','publish','git'].forEach(s => setStep(s, success ? 'done' : 'pending'))
-    if (success) {
-      status.innerHTML = '<div class="dot dot-ok"></div> Published v' + ver + ' ✓'
-      current = ver
-      document.getElementById('currentVer').textContent = 'v' + ver
-    } else {
-      status.innerHTML = '<div class="dot dot-err"></div> Failed ✕'
-    }
-    btnIcon.outerHTML = '<svg id="btnIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>'
-    } catch(e) { console.error(e) }
-  })
-
-  api.release(ver, notes.value.trim()).catch(() => {
-    running = false
-    status.innerHTML = '<div class="dot dot-err"></div> Error'
+    publishBtn.disabled = false
+    publishLabel.textContent = 'Publish'
+    versionInput.disabled = false
+    notesInput.disabled = false
+    statusDot.className = 'status-dot err'
+    statusText.textContent = 'Release failed to start'
   })
 }
 
-function reset() {
+function resetAll() {
   running = false
-  btn.disabled = false
-  v.disabled = false
-  v.value = ''
-  notes.disabled = false
-  notes.value = ''
-  badge.innerHTML = ''
-  rightSide.style.display = 'none'
+  versionInput.value = ''
+  notesInput.value = ''
+  versionDiff.innerHTML = ''
   logs.textContent = ''
-  resetBtn.style.display = 'none'
-  completedSteps.clear()
-  ;['build','upload','publish','git'].forEach(s => setStep(s, 'pending'))
-  document.getElementById('currentVer').textContent = 'v' + current
-  btnIcon.outerHTML = '<svg id="btnIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>'
-  v.focus()
+  lines = 0
+  lineCount.textContent = '0 lines'
+  resetSteps()
+  pipeline.classList.remove('visible')
+  resultBar.className = 'result-bar'
+  publishBtn.disabled = false
+  publishLabel.textContent = 'Publish'
+  versionInput.disabled = false
+  notesInput.disabled = false
+  versionInput.focus()
 }
 
 init()
 </script>
-</div>
 </body>
 </html>

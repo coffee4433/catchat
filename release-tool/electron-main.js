@@ -28,9 +28,11 @@ let mainWindow
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 820,
-    height: 580,
-    resizable: false,
+    width: 1040,
+    height: 720,
+    minWidth: 920,
+    minHeight: 640,
+    resizable: true,
     frame: false,
     transparent: true,
     roundedCorners: true,
@@ -43,6 +45,49 @@ function createWindow() {
 
   mainWindow.loadFile(path.join(__dirname, 'index.html'))
   mainWindow.on('closed', () => { mainWindow = null })
+}
+
+// ---------------------------------------------------------------------------
+// Step detection (done in main so the UI receives structured events)
+// ---------------------------------------------------------------------------
+const STEP_ORDER = ['prepare', 'build', 'upload', 'publish', 'git']
+
+function detectSteps(chunk) {
+  const lower = chunk.toLowerCase()
+  const events = []
+
+  if (lower.includes('bumping') || lower.includes('version') && lower.includes('package.json')) {
+    events.push({ step: 'prepare', state: 'active' })
+  }
+  if (lower.includes('building') || lower.includes('electron-builder') || lower.includes('packaging')) {
+    events.push({ step: 'prepare', state: 'done' })
+    events.push({ step: 'build', state: 'active' })
+  }
+  if (lower.includes('building block map')) {
+    events.push({ step: 'build', state: 'done' })
+  }
+  if (lower.includes('uploading')) {
+    events.push({ step: 'prepare', state: 'done' })
+    events.push({ step: 'build', state: 'done' })
+    events.push({ step: 'upload', state: 'active' })
+  }
+  if (lower.includes('published:')) {
+    events.push({ step: 'upload', state: 'done' })
+    events.push({ step: 'publish', state: 'active' })
+  }
+  if (lower.includes('release created') || lower.includes('release published')) {
+    events.push({ step: 'publish', state: 'done' })
+  }
+  if (lower.includes('pushing') || lower.includes('git commit') || lower.includes('committing')) {
+    events.push({ step: 'publish', state: 'done' })
+    events.push({ step: 'git', state: 'active' })
+  }
+  if (lower.includes('pushed to git') || lower.includes('pushed')) {
+    events.push({ step: 'publish', state: 'done' })
+    events.push({ step: 'git', state: 'done' })
+  }
+
+  return events
 }
 
 ipcMain.handle('get:version', () => {
@@ -92,17 +137,28 @@ ipcMain.handle('release', async (_event, version, notes) => {
       shell: true,
     })
 
-    child.stdout.on('data', (d) => {
-      mainWindow?.webContents.send('release:output', d.toString())
-    })
+    const handleChunk = (d) => {
+      const text = d.toString()
+      mainWindow?.webContents.send('release:output', text)
+      for (const ev of detectSteps(text)) {
+        mainWindow?.webContents.send('release:step', ev)
+      }
+    }
 
-    child.stderr.on('data', (d) => {
-      mainWindow?.webContents.send('release:output', d.toString())
-    })
+    // First step starts immediately
+    mainWindow?.webContents.send('release:step', { step: 'prepare', state: 'active' })
+
+    child.stdout.on('data', handleChunk)
+    child.stderr.on('data', handleChunk)
 
     child.on('close', (code) => {
       const success = code === 0
-      mainWindow?.webContents.send('release:output', success ? '\n✓ Completed\n' : '\n✕ Failed\n')
+      if (success) {
+        for (const step of STEP_ORDER) {
+          mainWindow?.webContents.send('release:step', { step, state: 'done' })
+        }
+      }
+      mainWindow?.webContents.send('release:output', success ? '\n✓ Release completed successfully\n' : '\n✕ Release failed (exit code ' + code + ')\n')
       mainWindow?.webContents.send('release:done', success)
       resolve({ success })
     })
