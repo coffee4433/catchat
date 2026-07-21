@@ -438,13 +438,13 @@ function setStep(step, state) {
 function detectPhase(chunk) {
   const lower = chunk.toLowerCase()
   if (lower.includes('building') || lower.includes('electron-builder') || lower.includes('packaging')) setStep('build', 'active')
-  if (lower.includes('uploading') || lower.includes('catchat-setup')) setStep('upload', 'active')
-  if (lower.includes('publishing') || lower.includes('creating github release')) setStep('publish', 'active')
-  if (lower.includes('git') && (lower.includes('push') || lower.includes('commit'))) setStep('git', 'active')
+  if (lower.includes('uploading')) setStep('upload', 'active')
+  if (lower.includes('published:')) setStep('publish', 'active')
+  if (lower.includes('pushing') || lower.includes('pushed')) setStep('git', 'active')
+
   if (lower.includes('building block map')) setStep('build', 'done')
-  if (lower.includes('latest.yml uploaded')) setStep('upload', 'done')
-  if (lower.includes('published:')) setStep('publish', 'done')
-  if (lower.includes('pushed to git')) setStep('git', 'done')
+  if (lower.includes('published:')) { setStep('upload', 'done'); setStep('build', 'done') }
+  if (lower.includes('pushed to git')) { setStep('publish', 'done'); setStep('git', 'done') }
 }
 
 const api = window.releaseTool
