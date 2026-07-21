@@ -19,15 +19,9 @@ node_modules
 .next/
 out/
 .DS_Store
-translator-env/
 spawn-env.json
 stdout.log
 stderr.log
-
-# Runtime del traductor portable (generado por translator:build, pesa cientos de MB)
-build/argos-packages/
-build/translator-runtime/
-build/python-embed.zip
 
 # Electron / electron-builder (instaladores y binarios generados)
 dist/

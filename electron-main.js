@@ -50,137 +50,6 @@ try {
 let mainWindow
 let splashWindow
 let nextServer
-let libreTranslateProcess = null
-
-const LT_PORT = 5000
-
-function getTranslatorConfig() {
-  const isPackaged = app.isPackaged
-  const baseDir = isPackaged
-    ? path.join(process.resourcesPath, 'app.asar.unpacked', 'build')
-    : path.join(__dirname, 'build')
-
-  const embeddedExe = process.platform === 'win32'
-    ? path.join(baseDir, 'translator-runtime', 'Scripts', 'libretranslate.exe')
-    : path.join(baseDir, 'translator-runtime', 'bin', 'libretranslate')
-
-  const embeddedModels = path.join(baseDir, 'argos-packages')
-
-  // Check if embedded libretranslate executable exists
-  if (fs.existsSync(embeddedExe)) {
-    return {
-      executable: embeddedExe,
-      modelsDir: embeddedModels,
-      isEmbedded: true,
-      useModule: false
-    }
-  }
-
-  // Fallback to local dev virtual environment
-  const venvExe = process.platform === 'win32'
-    ? path.join(__dirname, 'translator-env', 'Scripts', 'libretranslate.exe')
-    : path.join(__dirname, 'translator-env', 'bin', 'libretranslate')
-
-  if (fs.existsSync(venvExe)) {
-    return {
-      executable: venvExe,
-      modelsDir: null,
-      isEmbedded: false,
-      useModule: false
-    }
-  }
-
-  // Fallback to system python with module
-  return {
-    executable: process.platform === 'win32' ? 'python' : 'python3',
-    modelsDir: null,
-    isEmbedded: false,
-    useModule: true
-  }
-}
-
-/**
- * Inicia LibreTranslate como proceso hijo (en,es).
- * Si el puerto ya está en uso, asume que ya está corriendo.
- */
-async function startLibreTranslate() {
-  // Comprobar si el puerto ya está en uso
-  const net = require('net')
-  const inUse = await new Promise((resolve) => {
-    const server = net.createServer()
-    server.once('error', () => resolve(true))
-    server.once('listening', () => { server.close(); resolve(false) })
-    server.listen(LT_PORT, '127.0.0.1')
-  })
-
-  if (inUse) {
-    console.log(`[LibreTranslate] Ya detectado en puerto ${LT_PORT}`)
-    return
-  }
-
-  const config = getTranslatorConfig()
-  console.log(`[LibreTranslate] Iniciando en puerto ${LT_PORT} (en,es)...`)
-  console.log(`   Ejecutable: ${config.executable}`)
-  if (config.modelsDir && fs.existsSync(config.modelsDir)) {
-    console.log(`   Modelos: ${config.modelsDir}`)
-  }
-
-  let runArgs
-  let runCommand
-  
-  if (config.useModule) {
-    // Use python -m libretranslate for system python
-    runCommand = config.executable
-    runArgs = ['-m', 'libretranslate', '--load-only', 'en,es', '--host', '127.0.0.1', '--port', String(LT_PORT)]
-  } else {
-    // Use libretranslate.exe directly
-    runCommand = config.executable
-    runArgs = ['--load-only', 'en,es', '--host', '127.0.0.1', '--port', String(LT_PORT)]
-  }
-  
-  const runEnv = { ...process.env }
-  
-  // Only set ARGOS_PACKAGES_DIR if the directory exists and has models
-  if (config.modelsDir && fs.existsSync(config.modelsDir)) {
-    const files = fs.readdirSync(config.modelsDir)
-    if (files.length > 0) {
-      runEnv.ARGOS_PACKAGES_DIR = config.modelsDir
-      console.log(`   Usando modelos embebidos (${files.length} paquetes)`)
-    }
-  }
-
-  const { spawn } = require('child_process')
-  libreTranslateProcess = spawn(
-    runCommand,
-    runArgs,
-    { stdio: ['ignore', 'pipe', 'pipe'], shell: false, detached: false, env: runEnv }
-  )
-
-  libreTranslateProcess.stdout.on('data', (d) => console.log(`[LibreTranslate] ${d.toString().trim()}`))
-  libreTranslateProcess.stderr.on('data', (d) => console.log(`[LibreTranslate] ${d.toString().trim()}`))
-  libreTranslateProcess.on('error', (err) => {
-    console.error('[LibreTranslate] Error:', err.message)
-    libreTranslateProcess = null
-  })
-  libreTranslateProcess.on('close', (code) => { 
-    console.log(`[LibreTranslate] Proceso terminado con código ${code}`)
-    libreTranslateProcess = null 
-  })
-}
-
-function stopLibreTranslate() {
-  if (libreTranslateProcess) {
-    console.log('[LibreTranslate] Deteniendo...')
-    try {
-      if (process.platform === 'win32') {
-        require('child_process').spawnSync('taskkill', ['/pid', String(libreTranslateProcess.pid), '/f', '/t'], { stdio: 'ignore', shell: true })
-      } else {
-        libreTranslateProcess.kill('SIGTERM')
-      }
-    } catch {}
-    libreTranslateProcess = null
-  }
-}
 
 function getAppDir() {
   if (app.isPackaged) {
@@ -294,10 +163,6 @@ async function startNextServer() {
 app.on('ready', async () => {
   createSplashWindow()
   try {
-    // Iniciar LibreTranslate en paralelo (no bloqueante)
-    startLibreTranslate().catch((err) => {
-      console.warn('[LibreTranslate] No se pudo iniciar:', err.message)
-    })
     await startNextServer()
     createWindow()
   } catch (error) {
@@ -315,14 +180,9 @@ app.on('ready', async () => {
 })
 
 app.on('window-all-closed', function () {
-  stopLibreTranslate()
   if (process.platform !== 'darwin') {
     app.quit()
   }
-})
-
-app.on('before-quit', () => {
-  stopLibreTranslate()
 })
 
 app.on('activate', function () {

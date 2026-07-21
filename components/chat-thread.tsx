@@ -33,7 +33,6 @@ import useSWR from 'swr'
 import { useLanguage } from '@/lib/i18n'
 import { usePrefs } from '@/hooks/use-prefs'
 import { translateText } from '@/lib/translate'
-
 const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false })
 import {
   createConversation,
@@ -816,13 +815,12 @@ export function ChatThread({
     let content = draft.trim()
     if (!content || sending) return
 
-    // Auto-translate if a target language is active
     if (translateTarget && !editingMessage) {
       setTranslating(true)
       try {
         content = await translateText(content, translateTarget)
       } catch {
-        // Server unavailable — send original
+        // Translation unavailable — send original
       } finally {
         setTranslating(false)
       }
