@@ -28,10 +28,10 @@ let mainWindow
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 1040,
-    height: 720,
-    minWidth: 920,
-    minHeight: 640,
+    width: 1280,
+    height: 760,
+    minWidth: 1100,
+    minHeight: 660,
     resizable: true,
     frame: false,
     transparent: true,
