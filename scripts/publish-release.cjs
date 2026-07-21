@@ -110,7 +110,20 @@ async function publish() {
     body: JSON.stringify({ draft: false }),
   })
 
-  console.log(`\nPublished: ${release.html_url}\n`)
+  console.log(`\nPublished: ${release.html_url}`)
+
+  // Auto git push
+  try {
+    const { execSync } = require('child_process')
+    const root = path.join(__dirname, '..')
+    console.log(`Committing and pushing...`)
+    execSync('git add -A', { cwd: root, stdio: 'pipe' })
+    execSync(`git commit -m "Release ${tag}" --allow-empty`, { cwd: root, stdio: 'pipe' })
+    execSync('git push', { cwd: root, stdio: 'pipe' })
+    console.log('Pushed to Git\n')
+  } catch (e) {
+    console.log(`Git: ${e.stderr?.toString() || e.message}`)
+  }
 }
 
 publish().catch((e) => {

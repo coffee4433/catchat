@@ -3,7 +3,7 @@ const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("commandRunner", {
   listCommands: () => ipcRenderer.invoke("cmd:list"),
-  run: (scriptName) => ipcRenderer.invoke("cmd:run", scriptName),
+  run: (scriptName, env) => ipcRenderer.invoke("cmd:run", scriptName, env),
   cancel: (runId) => ipcRenderer.invoke("cmd:cancel", runId),
   onOutput: (callback) => {
     const listener = (_event, payload) => callback(payload);

@@ -79,7 +79,7 @@ function registerCommandRunnerIPC(mainWindow) {
     return getAllowedScripts();
   });
 
-  ipcMain.handle("cmd:run", async (_event, scriptName) => {
+  ipcMain.handle("cmd:run", async (_event, scriptName, extraEnv = {}) => {
     const allowed = getAllowedScripts();
 
     // SECURITY: reject any script not present in package.json.
@@ -91,7 +91,7 @@ function registerCommandRunnerIPC(mainWindow) {
     const runId = crypto.randomUUID();
 
     // Sanitize environment variables inherited from Electron
-    const cleanEnv = { ...process.env };
+    const cleanEnv = { ...process.env, ...extraEnv };
     delete cleanEnv.NODE_OPTIONS;
     delete cleanEnv.ELECTRON_RUN_AS_NODE;
     delete cleanEnv.ELECTRON_NO_ASAR;
