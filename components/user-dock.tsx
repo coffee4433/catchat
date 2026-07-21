@@ -115,8 +115,8 @@ export function UserDock({
   }, [])
 
   const handleDismiss = useCallback(() => {
-    setUpdate({ phase: 'idle' })
     setShowMenu(false)
+    setTimeout(() => setUpdate({ phase: 'idle' }), 350)
   }, [])
 
   const handleSignOut = async () => {
