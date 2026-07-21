@@ -34,22 +34,15 @@
     background: transparent;
     font-family: var(--sans);
     color: var(--fg);
-    overflow: auto;
-  }
-
-  body {
-    display: flex;
-    padding: 22px;
+    overflow: hidden;
   }
 
   .window {
-    flex: 1;
-    height: calc(100vh - 44px);
+    height: 100vh;
+    width: 100vw;
     display: flex;
     flex-direction: column;
-    border-radius: 18px;
-    border-bottom-left-radius: 22px;
-    border-bottom-right-radius: 22px;
+    border-radius: 14px;
     overflow: hidden;
     background: var(--bg);
     border: 1px solid rgba(148, 163, 184, 0.15);
@@ -136,6 +129,32 @@
     padding: 26px 28px 20px;
     gap: 18px;
     overflow-y: auto;
+  }
+
+  /* Discord-style scrollbars, applied to every scrollable region */
+  .sidebar, .main, .task-feed, .task-logs {
+    scrollbar-width: thin;
+    scrollbar-color: #1e2430 transparent;
+  }
+  .sidebar::-webkit-scrollbar, .main::-webkit-scrollbar {
+    width: 16px;
+  }
+  .sidebar::-webkit-scrollbar-track, .main::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .sidebar::-webkit-scrollbar-thumb, .main::-webkit-scrollbar-thumb {
+    background-color: #1e2430;
+    border-radius: 8px;
+    border: 4px solid transparent;
+    background-clip: padding-box;
+  }
+  .sidebar::-webkit-scrollbar-thumb:hover, .main::-webkit-scrollbar-thumb:hover {
+    background-color: #2b3344;
+    background-clip: padding-box;
+  }
+  .sidebar::-webkit-scrollbar-thumb:active, .main::-webkit-scrollbar-thumb:active {
+    background-color: #3a4459;
+    background-clip: padding-box;
   }
 
   /* ------------------------------------------------------------------ */
@@ -516,9 +535,23 @@
     flex-direction: column;
     gap: 4px;
   }
-  .task-feed::-webkit-scrollbar { width: 8px; }
-  .task-feed::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.18); border-radius: 999px; }
+  .task-feed { scrollbar-width: thin; scrollbar-color: #1e2430 transparent; }
+  .task-feed::-webkit-scrollbar { width: 16px; }
   .task-feed::-webkit-scrollbar-track { background: transparent; }
+  .task-feed::-webkit-scrollbar-thumb {
+    background-color: #1e2430;
+    border-radius: 8px;
+    border: 4px solid transparent;
+    background-clip: padding-box;
+  }
+  .task-feed::-webkit-scrollbar-thumb:hover {
+    background-color: #2b3344;
+    background-clip: padding-box;
+  }
+  .task-feed::-webkit-scrollbar-thumb:active {
+    background-color: #3a4459;
+    background-clip: padding-box;
+  }
 
   .task {
     display: flex;
@@ -616,8 +649,19 @@
   .task-logs:empty { display: none; }
   .task-logs .ln-ok { color: var(--green); }
   .task-logs .ln-err { color: var(--red); }
-  .task-logs::-webkit-scrollbar { width: 6px; }
-  .task-logs::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.15); border-radius: 999px; }
+  .task-logs { scrollbar-width: thin; scrollbar-color: #1e2430 transparent; }
+  .task-logs::-webkit-scrollbar { width: 10px; }
+  .task-logs::-webkit-scrollbar-track { background: transparent; }
+  .task-logs::-webkit-scrollbar-thumb {
+    background-color: #1e2430;
+    border-radius: 6px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  .task-logs::-webkit-scrollbar-thumb:hover {
+    background-color: #2b3344;
+    background-clip: padding-box;
+  }
 
   .feed-empty {
     font-family: var(--mono);
