@@ -35,6 +35,7 @@ import { useLanguage } from '@/lib/i18n'
 import { usePrefs } from '@/hooks/use-prefs'
 import { translateText } from '@/lib/translate'
 import { LANGUAGES, getLanguageName } from '@/lib/languages'
+import { getTranslatorFavorites, saveTranslatorFavorites } from '@/app/actions/preferences'
 const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false })
 import {
   createConversation,
@@ -330,16 +331,13 @@ export function ChatThread({
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem('translator-favorites')
-      if (stored) setFavorites(JSON.parse(stored))
-    } catch {}
+    getTranslatorFavorites().then(setFavorites).catch(() => {})
   }, [])
 
   function toggleFavorite(code: string) {
     setFavorites((prev) => {
       const next = prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]
-      try { localStorage.setItem('translator-favorites', JSON.stringify(next)) } catch {}
+      saveTranslatorFavorites(next).catch(() => {})
       return next
     })
   }

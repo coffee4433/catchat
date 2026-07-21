@@ -18,6 +18,7 @@
     "supabase:setup": "node scripts/setup-supabase.mjs",
     "supabase:create-table": "node scripts/direct-create-table.mjs",
     "supabase:test": "node scripts/test-supabase-connection.mjs",
+    "supabase:prefs-table": "node scripts/setup-preferences-table.mjs",
     "migrate:to-supabase": "node scripts/migrate-to-supabase.mjs",
     "desktop:dev": "electron .",
     "desktop:dev:hot": "node scripts/dev-desktop.mjs",
