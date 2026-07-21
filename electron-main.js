@@ -56,6 +56,22 @@ function setupAutoUpdater() {
   autoUpdater.autoDownload = false
   autoUpdater.autoInstallOnAppQuit = false
 
+  if (process.env.GITHUB_REF !== 'refs/heads/main' && process.env.ELECTRON_START_URL?.includes('localhost')) {
+    console.log('[AutoUpdater] Dev mode — updates skipped')
+    return
+  }
+
+  try {
+    autoUpdater.setFeedURL({
+      provider: 'github',
+      owner: 'coffee4433',
+      repo: 'catchat',
+    })
+  } catch (err) {
+    console.log('[AutoUpdater] Could not configure feed URL:', err.message)
+    return
+  }
+
   ipcMain.handle('update:check', async () => {
     try {
       const result = await autoUpdater.checkForUpdates()
@@ -211,7 +227,15 @@ app.on('ready', async () => {
     setupAutoUpdater()
     await startNextServer()
     createWindow()
-    setTimeout(() => autoUpdater.checkForUpdates().catch(() => {}), 5000)
+    setTimeout(() => {
+      try {
+        autoUpdater.checkForUpdatesAndNotify().catch((err) => {
+          console.log('[AutoUpdater] Check skipped:', err?.message || err)
+        })
+      } catch (err) {
+        console.log('[AutoUpdater] Not configured:', err?.message || err)
+      }
+    }, 6000)
   } catch (error) {
     console.error('Failed to start Next.js server:', error)
     const { dialog } = require('electron')
