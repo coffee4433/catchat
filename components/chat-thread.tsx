@@ -1651,15 +1651,15 @@ export function ChatThread({
                         >
                           {/* Search bar */}
                           <div className="px-3 pt-2.5 pb-2">
-                            <div className="relative">
-                              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
+                            <div className="relative flex items-center bg-secondary rounded-lg px-2.5 h-7.5 border border-border shadow-sm">
+                              <Search className="size-3.5 text-muted-foreground mr-1.5 shrink-0" />
                               <input
                                 ref={searchInputRef}
                                 type="text"
                                 value={languageSearch}
                                 onChange={(e) => setLanguageSearch(e.target.value)}
                                 placeholder={t.translatorSearch}
-                                className="w-full h-8 pl-8 pr-3 rounded-full bg-secondary/60 text-[12px] text-foreground placeholder:text-muted-foreground/60 outline-none border border-border/40 focus:border-[#5865F2]/40 focus:bg-secondary transition-all"
+                                className="w-full bg-transparent text-[12px] outline-none placeholder:text-muted-foreground pr-5 text-foreground"
                               />
                             </div>
                           </div>
