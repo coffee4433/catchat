@@ -91,6 +91,10 @@ export function UserDock({
     }
   }, [])
 
+  useEffect(() => {
+    if (hasUpdate) setShowMenu(true)
+  }, [hasUpdate])
+
   const handleInstall = useCallback(async () => {
     const updater = getUpdater()
     if (!updater || update.phase !== 'available') return
