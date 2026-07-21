@@ -68,6 +68,8 @@ export function UserDock({
   const [signingOut, setSigningOut] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
   const dockRef = useRef<HTMLDivElement>(null)
+  const downloadingRef = useRef(false)
+  const updateSeenRef = useRef(false)
 
   const [update, setUpdate] = useState<UpdateState>({ phase: 'idle' })
   const [appVersion, setAppVersion] = useState<string | null>(
@@ -84,11 +86,11 @@ export function UserDock({
   useEffect(() => {
     const updater = getUpdater()
     if (!updater) return
-    let id: ReturnType<typeof setInterval>
     const check = () => {
+      if (downloadingRef.current) return
       updater.checkForUpdates?.().catch(() => {})
     }
-    id = setInterval(check, 10_000)
+    const id = setInterval(check, 10_000)
     check()
     return () => clearInterval(id)
   }, [])
@@ -98,10 +100,9 @@ export function UserDock({
     if (!updater) return
 
     const unsubAvailable = updater.onAvailable((info) => {
-      setUpdate((prev) => {
-        if (prev.phase === 'downloading' || prev.phase === 'downloaded') return prev
-        return { phase: 'available', info }
-      })
+      if (updateSeenRef.current) return
+      updateSeenRef.current = true
+      setUpdate({ phase: 'available', info })
     })
     const unsubProgress = updater.onDownloadProgress((progress) => {
       setUpdate((prev) => {
@@ -127,6 +128,7 @@ export function UserDock({
   const handleInstall = useCallback(async () => {
     const updater = getUpdater()
     if (!updater || update.phase !== 'available') return
+    downloadingRef.current = true
     setUpdate((prev) =>
       prev.phase === 'available'
         ? { phase: 'downloading', info: prev.info, progress: { percent: 0, transferred: 0, total: 0, bytesPerSecond: 0 } }
@@ -136,6 +138,8 @@ export function UserDock({
       await updater.downloadUpdate()
     } catch {
       setUpdate((prev) => (prev.phase === 'downloading' ? { phase: 'error', message: 'Download failed' } : prev))
+    } finally {
+      downloadingRef.current = false
     }
   }, [update.phase])
 
@@ -145,6 +149,7 @@ export function UserDock({
 
   const handleDismiss = useCallback(() => {
     setShowMenu(false)
+    updateSeenRef.current = false
     setTimeout(() => setUpdate({ phase: 'idle' }), 300)
   }, [])
 
