@@ -56,15 +56,21 @@ async function ghReq(endpoint, opts = {}) {
 async function uploadAsset(uploadUrl, filePath, fileName) {
   const content = fs.readFileSync(filePath)
   const url = uploadUrl.replace('{?name,label}', '') + '?name=' + encodeURIComponent(fileName)
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 600_000)
+  console.log(`  Uploading ${fileName} (${(content.length / 1024 / 1024).toFixed(1)} MB)...`)
   const res = await fetch(url, {
     method: 'POST',
-    headers: { Authorization: auth, 'Content-Type': 'application/octet-stream' },
+    headers: { Authorization: auth, 'Content-Type': 'application/octet-stream', 'Content-Length': String(content.length) },
     body: content,
+    signal: controller.signal,
   })
+  clearTimeout(timeout)
   if (!res.ok) {
     const err = await res.text()
     throw new Error(`Upload ${fileName} failed: ${res.status} ${err}`)
   }
+  console.log(`  ✓ ${fileName} uploaded`)
 }
 
 async function publish() {
@@ -114,13 +120,13 @@ async function publish() {
 
   const uploadUrl = release.upload_url
 
-  // Upload all assets
+  // Upload latest.yml FIRST (instant) so electron-updater can find it immediately
+  console.log(`Uploading latest.yml...`)
+  await uploadAsset(uploadUrl, latestYml, 'latest.yml')
+
   const exeName = `CatChat-Setup-${version}.exe`
   console.log(`Uploading ${exeName}...`)
   await uploadAsset(uploadUrl, exePath, exeName)
-
-  console.log(`Uploading latest.yml...`)
-  await uploadAsset(uploadUrl, latestYml, 'latest.yml')
 
   if (fs.existsSync(blockmapPath)) {
     const bmName = `CatChat-Setup-${version}.exe.blockmap`

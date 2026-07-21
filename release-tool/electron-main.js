@@ -28,8 +28,8 @@ let mainWindow
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 780,
-    height: 540,
+    width: 820,
+    height: 580,
     resizable: false,
     frame: false,
     transparent: true,

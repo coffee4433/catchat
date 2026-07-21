@@ -97,7 +97,12 @@ export function UserDock({
     const updater = getUpdater()
     if (!updater) return
 
-    const unsubAvailable = updater.onAvailable((info) => setUpdate({ phase: 'available', info }))
+    const unsubAvailable = updater.onAvailable((info) => {
+      setUpdate((prev) => {
+        if (prev.phase === 'downloading' || prev.phase === 'downloaded') return prev
+        return { phase: 'available', info }
+      })
+    })
     const unsubProgress = updater.onDownloadProgress((progress) => {
       setUpdate((prev) => {
         if (prev.phase === 'downloading' || prev.phase === 'available') {
@@ -284,7 +289,7 @@ export function UserDock({
                             )}
                             {update.info.releaseNotes && (
                               <p className="text-[11px] text-muted-foreground/80 mt-1.5 leading-relaxed max-h-16 overflow-y-auto">
-                                {update.info.releaseNotes}
+                                {update.info.releaseNotes.replace(/<[^>]*>/g, '').trim()}
                               </p>
                             )}
                           </div>
