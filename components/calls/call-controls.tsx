@@ -3,9 +3,20 @@
 import { TrackToggle, useLocalParticipant } from '@livekit/components-react'
 import { Track } from 'livekit-client'
 import { Mic, MicOff, Video, VideoOff, MonitorUp, MonitorOff, PhoneOff } from 'lucide-react'
+import { useCallback } from 'react'
 
 export function CallControls({ onHangUp }: { onHangUp: () => void }) {
   const { localParticipant } = useLocalParticipant()
+  const screenEnabled = localParticipant?.isScreenShareEnabled ?? false
+
+  const toggleScreenShare = useCallback(async () => {
+    if (!localParticipant) return
+    if (screenEnabled) {
+      await localParticipant.setScreenShareEnabled(false)
+    } else {
+      await localParticipant.setScreenShareEnabled(true)
+    }
+  }, [localParticipant, screenEnabled])
 
   return (
     <div className="flex items-center gap-3">
@@ -25,13 +36,13 @@ export function CallControls({ onHangUp }: { onHangUp: () => void }) {
         <Video className="size-5 block data-[state=off]:hidden" />
       </TrackToggle>
 
-      <TrackToggle
-        source={Track.Source.ScreenShare}
-        className="flex size-11 items-center justify-center rounded-full bg-secondary text-foreground shadow-lg transition-all hover:scale-105 active:scale-95 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+      <button
+        onClick={toggleScreenShare}
+        className={`flex size-11 items-center justify-center rounded-full shadow-lg transition-all hover:scale-105 active:scale-95 ${screenEnabled ? 'bg-primary text-primary-foreground' : 'bg-secondary text-foreground'}`}
+        title={screenEnabled ? 'Stop sharing' : 'Share screen'}
       >
-        <MonitorOff className="size-5 hidden data-[state=on]:block" />
-        <MonitorUp className="size-5 block data-[state=on]:hidden" />
-      </TrackToggle>
+        {screenEnabled ? <MonitorOff className="size-5" /> : <MonitorUp className="size-5" />}
+      </button>
 
       <button
         onClick={onHangUp}
