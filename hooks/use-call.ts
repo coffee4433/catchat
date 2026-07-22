@@ -235,6 +235,11 @@ export function useCall(userId: string, userName: string) {
         setRemoteStream(stream)
       }
 
+      conn.onRemoteScreenStream = (stream) => {
+        setScreenStream(stream)
+        setRemoteMediaState((prev) => ({ ...prev, screenOn: true }))
+      }
+
       conn.onNegotiationNeeded = async () => {
         try {
           const reoffer = await conn.negotiate()
@@ -300,6 +305,11 @@ export function useCall(userId: string, userName: string) {
 
       conn.onRemoteStream = (stream) => {
         setRemoteStream(stream)
+      }
+
+      conn.onRemoteScreenStream = (stream) => {
+        setScreenStream(stream)
+        setRemoteMediaState((prev) => ({ ...prev, screenOn: true }))
       }
 
       conn.onNegotiationNeeded = async () => {

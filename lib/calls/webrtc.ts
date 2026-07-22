@@ -13,6 +13,7 @@ export class CallConnection {
   private negotiationLock = false
 
   onRemoteStream: ((stream: MediaStream) => void) | null = null
+  onRemoteScreenStream: ((stream: MediaStream) => void) | null = null
   onIceFailed: (() => void) | null = null
   onConnectionLost: (() => void) | null = null
   onNegotiationNeeded: (() => void) | null = null
@@ -26,9 +27,16 @@ export class CallConnection {
       }
     }
 
+    let hasRemoteVideo = false
+
     this.pc.ontrack = (e) => {
       const [stream] = e.streams
-      if (stream) {
+      if (!stream) return
+      const videoTrack = stream.getVideoTracks()[0]
+      if (videoTrack && hasRemoteVideo) {
+        this.onRemoteScreenStream?.(stream)
+      } else {
+        if (videoTrack) hasRemoteVideo = true
         this.onRemoteStream?.(stream)
       }
     }
