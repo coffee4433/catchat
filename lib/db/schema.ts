@@ -104,4 +104,5 @@ export const friendRequests = pgTable('friend_requests', {
   toUserId: text('recipient_id').notNull(),
   status: text('status').notNull().default('pending'), // 'pending' | 'accepted' | 'rejected'
   createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at'),
 })
