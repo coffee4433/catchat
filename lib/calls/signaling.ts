@@ -1,6 +1,16 @@
 import { supabase } from '@/lib/supabase/client'
 import type { CallSignal, CallRequestPayload } from './types'
 
+export function subscribeAndWait(channel: ReturnType<typeof supabase.channel>): Promise<void> {
+  return new Promise<void>((resolve) => {
+    channel.subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        resolve()
+      }
+    })
+  })
+}
+
 export function subscribeIncomingCalls(
   userId: string,
   onRing: (payload: CallRequestPayload) => void,
@@ -21,6 +31,12 @@ export function createCallChannel(conversationId: number) {
   return supabase.channel(`call:${conversationId}`, {
     config: { broadcast: { self: false } },
   })
+}
+
+export async function createAndSubscribeCallChannel(conversationId: number) {
+  const channel = createCallChannel(conversationId)
+  await subscribeAndWait(channel)
+  return channel
 }
 
 export function subscribeCallChannel(

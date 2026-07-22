@@ -17,6 +17,7 @@ import {
   createCallChannel,
   subscribeCallChannel,
   sendCallSignal,
+  subscribeAndWait,
 } from '@/lib/calls/signaling'
 import type {
   CallState,
@@ -120,7 +121,7 @@ export function useCall(userId: string, userName: string) {
   const rejectCall = useCallback(
     async (incomingCallId: string) => {
       const chan = createCallChannel(conversationId!)
-      await chan.subscribe()
+      await subscribeAndWait(chan)
       await sendCallSignal(chan, 'call-reject', {
         from: userId,
         callId: incomingCallId,
@@ -195,7 +196,7 @@ export function useCall(userId: string, userName: string) {
       } catch {}
 
       const chan = createCallChannel(incomingConvId)
-      await chan.subscribe()
+      await subscribeAndWait(chan)
       channelRef.current = chan
 
       await sendCallSignal(chan, 'call-accept', {
@@ -309,7 +310,7 @@ export function useCall(userId: string, userName: string) {
       setState('connecting')
 
       const chan = createCallChannel(conversationId)
-      await chan.subscribe()
+      await subscribeAndWait(chan)
       channelRef.current = chan
 
       let localStreamObj: MediaStream | null = null
@@ -417,8 +418,9 @@ export function useCall(userId: string, userName: string) {
     if (state !== 'outgoing-ringing' && state !== 'connecting') return
 
     const chan = createCallChannel(conversationId)
-    chan.subscribe()
-    channelRef.current = chan
+    subscribeAndWait(chan).then(() => {
+      channelRef.current = chan
+    })
 
     const unsub = subscribeCallChannel(conversationId, {
       onAccept: () => {
