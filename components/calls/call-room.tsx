@@ -4,13 +4,11 @@ import {
   LiveKitRoom,
   RoomAudioRenderer,
   useTracks,
-  useSpeakingParticipants,
   GridLayout,
   ParticipantTile,
-  TrackRefContext,
 } from '@livekit/components-react'
 import { Track } from 'livekit-client'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { CallControls } from './call-controls'
 import { ScreenPicker } from './screen-picker'
 
@@ -28,8 +26,6 @@ function CallStage({ peerName, hasVideo }: { peerName: string; hasVideo: boolean
     ],
     { onlySubscribed: true },
   )
-
-  const speakingParticipants = useSpeakingParticipants()
 
   if (tracks.length === 0 && !hasVideo) {
     return (
@@ -58,6 +54,59 @@ function CallStage({ peerName, hasVideo }: { peerName: string; hasVideo: boolean
   )
 }
 
+function CallRoomInner({
+  callType,
+  peerName,
+  onDisconnected,
+}: {
+  callType: 'voice' | 'video'
+  peerName: string
+  onDisconnected: () => void
+}) {
+  const [minimized, setMinimized] = useState(false)
+  const durationRef = useRef<HTMLSpanElement>(null)
+
+  useEffect(() => {
+    const start = Date.now()
+    const timer = setInterval(() => {
+      const d = Math.floor((Date.now() - start) / 1000)
+      const m = Math.floor(d / 60)
+      const s = d % 60
+      if (durationRef.current) {
+        durationRef.current.textContent = formatDuration(d)
+      }
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [])
+
+  return minimized ? (
+    <div className="flex items-center gap-3">
+      <span ref={durationRef} className="text-sm font-medium text-white">00:00</span>
+      <CallControls onHangUp={onDisconnected} />
+    </div>
+  ) : (
+    <>
+      <div className="relative flex-1">
+        <RoomAudioRenderer />
+        <CallStage peerName={peerName} hasVideo={callType === 'video'} />
+        <ScreenPicker />
+      </div>
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1">
+        <span ref={durationRef} className="text-sm text-white/60">00:00</span>
+      </div>
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2">
+        <CallControls onHangUp={onDisconnected} />
+      </div>
+      <button
+        onClick={() => setMinimized(!minimized)}
+        className="absolute top-4 left-4 rounded-lg bg-white/10 px-3 py-1 text-sm text-white/70 hover:bg-white/20"
+      >
+        {minimized ? 'Expand' : 'Minimize'}
+      </button>
+    </>
+  )
+}
+
 export function CallRoom({
   token,
   serverUrl,
@@ -71,9 +120,6 @@ export function CallRoom({
   peerName: string
   onDisconnected: () => void
 }) {
-  const [duration, setDuration] = useState(0)
-  const [minimized, setMinimized] = useState(false)
-
   return (
     <LiveKitRoom
       token={token}
@@ -82,42 +128,10 @@ export function CallRoom({
       audio
       video={callType === 'video'}
       data-lk-theme="default"
-      onConnected={() => {
-        const start = Date.now()
-        const timer = setInterval(() => {
-          setDuration(Math.floor((Date.now() - start) / 1000))
-        }, 1000)
-        return () => clearInterval(timer)
-      }}
       onDisconnected={onDisconnected}
-      className={minimized ? 'fixed bottom-4 right-4 z-50 rounded-2xl border border-border bg-card p-2 shadow-2xl' : 'fixed inset-0 z-40 flex flex-col bg-black'}
+      className="fixed inset-0 z-40 flex flex-col bg-black"
     >
-      {minimized ? (
-        <div className="flex items-center gap-3">
-          <span className="text-sm font-medium text-white">{formatDuration(duration)}</span>
-          <CallControls onHangUp={onDisconnected} />
-        </div>
-      ) : (
-        <>
-          <div className="relative flex-1">
-            <RoomAudioRenderer />
-            <CallStage peerName={peerName} hasVideo={callType === 'video'} />
-            <ScreenPicker />
-          </div>
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1">
-            <p className="text-sm text-white/60">{formatDuration(duration)}</p>
-          </div>
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2">
-            <CallControls onHangUp={onDisconnected} />
-          </div>
-          <button
-            onClick={() => setMinimized(!minimized)}
-            className="absolute top-4 left-4 rounded-lg bg-white/10 px-3 py-1 text-sm text-white/70 hover:bg-white/20"
-          >
-            {minimized ? 'Expand' : 'Minimize'}
-          </button>
-        </>
-      )}
+      <CallRoomInner callType={callType} peerName={peerName} onDisconnected={onDisconnected} />
     </LiveKitRoom>
   )
 }
