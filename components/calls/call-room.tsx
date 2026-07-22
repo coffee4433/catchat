@@ -6,6 +6,7 @@ import {
   useTracks,
   GridLayout,
   ParticipantTile,
+  VideoTrack,
 } from '@livekit/components-react'
 import { Track } from 'livekit-client'
 import { useEffect, useRef, useState } from 'react'
@@ -20,11 +21,11 @@ function formatDuration(seconds: number) {
 
 function ScreenShareView() {
   const allTracks = useTracks([{ source: Track.Source.ScreenShare, withPlaceholder: false }], { onlySubscribed: false })
-  const remoteScreenTracks = allTracks.filter(t => !t.participant.isLocal)
-  if (remoteScreenTracks.length === 0) return null
+  const remote = allTracks.filter(t => !t.participant.isLocal && t.publication)
+  if (remote.length === 0) return null
   return (
     <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000' }}>
-      <ParticipantTile trackRef={remoteScreenTracks[0]} />
+      <VideoTrack trackRef={remote[0] as any} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
     </div>
   )
 }
