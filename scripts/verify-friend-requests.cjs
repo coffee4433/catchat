@@ -1,0 +1,6 @@
+const { Pool } = require('pg')
+require('dotenv').config()
+const p = new Pool({ connectionString: process.env.DATABASE_URL })
+p.query("SELECT column_name, is_nullable, column_default FROM information_schema.columns WHERE table_name = 'friend_requests'")
+  .then(r => { console.log(JSON.stringify(r.rows)); p.end() })
+  .catch(e => { console.log(e.message); p.end() })

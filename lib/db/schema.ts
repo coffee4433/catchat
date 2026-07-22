@@ -100,8 +100,8 @@ export const calls = pgTable('calls', {
 
 export const friendRequests = pgTable('friend_requests', {
   id: serial('id').primaryKey(),
-  fromUserId: text('fromUserId').notNull(),
-  toUserId: text('toUserId').notNull(),
+  fromUserId: text('requester_id').notNull(),
+  toUserId: text('recipient_id').notNull(),
   status: text('status').notNull().default('pending'), // 'pending' | 'accepted' | 'rejected'
-  createdAt: timestamp('createdAt').notNull().defaultNow(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
 })
