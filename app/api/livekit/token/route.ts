@@ -43,7 +43,7 @@ export async function POST(req: Request) {
     const token = new AccessToken(apiKey, apiSecret, {
       identity: session.user.id,
       name: session.user.name,
-      ttl: '10m',
+      ttl: '4h',
     })
 
     token.addGrant({
