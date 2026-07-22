@@ -18,14 +18,28 @@ function formatDuration(seconds: number) {
   return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
 }
 
+function ScreenShareView() {
+  const allTracks = useTracks([{ source: Track.Source.ScreenShare, withPlaceholder: false }], { onlySubscribed: false })
+  const remoteScreenTracks = allTracks.filter(t => !t.participant.isLocal)
+  if (remoteScreenTracks.length === 0) return null
+  return (
+    <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000' }}>
+      <ParticipantTile trackRef={remoteScreenTracks[0]} />
+    </div>
+  )
+}
+
 function CallStage({ peerName, hasVideo }: { peerName: string; hasVideo: boolean }) {
   const tracks = useTracks(
     [
       { source: Track.Source.Camera, withPlaceholder: true },
       { source: Track.Source.ScreenShare, withPlaceholder: false },
     ],
-    { onlySubscribed: true },
+    { onlySubscribed: false },
   )
+
+  const cameraTracks = tracks.filter(t => t.source === Track.Source.Camera)
+  const hasScreenShare = tracks.some(t => t.source === Track.Source.ScreenShare && !t.participant.isLocal)
 
   if (tracks.length === 0 && !hasVideo) {
     return (
@@ -48,9 +62,16 @@ function CallStage({ peerName, hasVideo }: { peerName: string; hasVideo: boolean
   }
 
   return (
-    <GridLayout tracks={tracks} style={{ height: '100%' }}>
-      <ParticipantTile />
-    </GridLayout>
+    <div style={{ position: 'relative', height: '100%', display: 'flex' }}>
+      {hasScreenShare && (
+        <ScreenShareView />
+      )}
+      <div style={hasScreenShare ? { position: 'absolute', bottom: 16, right: 16, zIndex: 10, display: 'flex', flexDirection: 'column', gap: 8, maxHeight: '40%' } : { flex: 1 }}>
+        <GridLayout tracks={cameraTracks} style={{ height: hasScreenShare ? 'auto' : '100%' }}>
+          <ParticipantTile />
+        </GridLayout>
+      </div>
+    </div>
   )
 }
 
