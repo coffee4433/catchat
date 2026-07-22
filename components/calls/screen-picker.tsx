@@ -22,6 +22,7 @@ export function ScreenPicker() {
     if (!api) return
 
     const unsub = api.onSources((s: ScreenSource[]) => {
+      console.log('[ScreenPicker] sources received:', s.length)
       setSources(s)
       setOpen(true)
     })
