@@ -70,7 +70,14 @@ export async function broadcastCallRequest(payload: CallRequestPayload, calleeId
   const channel = supabase.channel(`incoming-calls:${calleeId}`, {
     config: { broadcast: { self: false } },
   })
-  await channel.subscribe()
+
+  await new Promise<void>((resolve) => {
+    channel.subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        resolve()
+      }
+    })
+  })
 
   await channel.send({
     type: 'broadcast',

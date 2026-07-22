@@ -204,14 +204,20 @@ export function useCall(userId: string, userName: string) {
       })
 
       let localStreamObj: MediaStream | null = null
-      if (incomingType === 'video') {
-        localStreamObj = await getAudioVideoStream()
-        setCamOn(true)
-      } else {
-        localStreamObj = await getAudioStream()
+      try {
+        if (incomingType === 'video') {
+          localStreamObj = await getAudioVideoStream()
+          setCamOn(true)
+        } else {
+          localStreamObj = await getAudioStream()
+        }
+        setMicOn(true)
+      } catch {
+        setMicOn(false)
       }
-      setLocalStream(localStreamObj)
-      setMicOn(true)
+      if (localStreamObj) {
+        setLocalStream(localStreamObj)
+      }
 
       const conn = new CallConnection()
       connRef.current = conn
@@ -248,7 +254,9 @@ export function useCall(userId: string, userName: string) {
         endCall('ended')
       }
 
-      localStreamObj.getTracks().forEach((t) => conn.pc.addTrack(t, localStreamObj!))
+      if (localStreamObj) {
+        localStreamObj.getTracks().forEach((t) => conn.pc.addTrack(t, localStreamObj!))
+      }
     },
     [userId, endCall],
   )
@@ -263,14 +271,20 @@ export function useCall(userId: string, userName: string) {
       channelRef.current = chan
 
       let localStreamObj: MediaStream | null = null
-      if (targetCallType === 'video') {
-        localStreamObj = await getAudioVideoStream()
-        setCamOn(true)
-      } else {
-        localStreamObj = await getAudioStream()
+      try {
+        if (targetCallType === 'video') {
+          localStreamObj = await getAudioVideoStream()
+          setCamOn(true)
+        } else {
+          localStreamObj = await getAudioStream()
+        }
+        setMicOn(true)
+      } catch {
+        setMicOn(false)
       }
-      setLocalStream(localStreamObj)
-      setMicOn(true)
+      if (localStreamObj) {
+        setLocalStream(localStreamObj)
+      }
 
       const conn = new CallConnection()
       connRef.current = conn
@@ -307,7 +321,9 @@ export function useCall(userId: string, userName: string) {
         endCall('ended')
       }
 
-      localStreamObj.getTracks().forEach((t) => conn.pc.addTrack(t, localStreamObj!))
+      if (localStreamObj) {
+        localStreamObj.getTracks().forEach((t) => conn.pc.addTrack(t, localStreamObj!))
+      }
     },
     [callId, conversationId, userId, endCall],
   )
