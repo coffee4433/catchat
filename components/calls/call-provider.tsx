@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { subscribeIncomingCalls, createCallChannel, broadcastCallInvite, subscribeAndWait, sendCallSignal } from '@/lib/calls/signaling'
 import type { ActiveCall, CallType, CallInvitePayload } from '@/lib/calls/types'
 import type { AppUser } from '@/components/chat-app'
@@ -39,6 +39,7 @@ export function CallProvider({
   } | null>(null)
   const [callerNameCache, setCallerNameCache] = useState<Record<string, string>>({})
   const [channel, setChannel] = useState<ReturnType<typeof createCallChannel> | null>(null)
+  const ringTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     const unsub = subscribeIncomingCalls(user.id, (payload: CallInvitePayload) => {
@@ -87,20 +88,33 @@ export function CallProvider({
 
       chan
         .on('broadcast', { event: 'call:accept' }, async () => {
+          if (ringTimeoutRef.current) {
+            clearTimeout(ringTimeoutRef.current)
+            ringTimeoutRef.current = null
+          }
           await fetchTokenAndJoin(callId, convId, type, calleeName)
         })
         .on('broadcast', { event: 'call:decline' }, () => {
+          if (ringTimeoutRef.current) {
+            clearTimeout(ringTimeoutRef.current)
+            ringTimeoutRef.current = null
+          }
           setActiveCall(null)
           setChannel(null)
         })
         .on('broadcast', { event: 'call:cancel' }, () => {
+          if (ringTimeoutRef.current) {
+            clearTimeout(ringTimeoutRef.current)
+            ringTimeoutRef.current = null
+          }
           setActiveCall(null)
           setChannel(null)
         })
 
-      const timeout = setTimeout(() => {
+      ringTimeoutRef.current = setTimeout(() => {
         setActiveCall(null)
         setChannel(null)
+        ringTimeoutRef.current = null
       }, 30000)
       setChannel(chan)
     },
