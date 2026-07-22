@@ -524,8 +524,10 @@ export function useCall(userId: string, userName: string) {
   }, [camOn, micOn, screenOn, userId, callId])
 
   const startScreenShare = useCallback(async () => {
+    console.log('[use-call] startScreenShare called')
     try {
       const stream = await getScreenStream()
+      console.log('[use-call] screen stream obtained')
       setScreenStream(stream)
       if (connRef.current) {
         await connRef.current.addScreenTrack(stream)
@@ -541,16 +543,6 @@ export function useCall(userId: string, userName: string) {
             })
           }
         }
-        try {
-          const reoffer = await connRef.current.negotiate()
-          if (channelRef.current && callId) {
-            await sendCallSignal(channelRef.current, 'renegotiate', {
-              from: userId,
-              callId,
-              sdp: reoffer,
-            })
-          }
-        } catch {}
       }
       setScreenOn(true)
       if (channelRef.current && callId) {
@@ -571,6 +563,9 @@ export function useCall(userId: string, userName: string) {
     if (screenStream) {
       screenStream.getTracks().forEach((t) => t.stop())
       setScreenStream(null)
+    }
+    if (localStream && connRef.current) {
+      connRef.current.restoreCameraTrack(localStream)
     }
     setScreenOn(false)
     if (channelRef.current && callId) {

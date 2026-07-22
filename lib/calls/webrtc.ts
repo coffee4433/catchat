@@ -99,15 +99,27 @@ export class CallConnection {
 
   async addScreenTrack(stream: MediaStream) {
     const videoTrack = stream.getVideoTracks()[0]
-    console.log('[webrtc] addScreenTrack videoTrack:', videoTrack?.kind, videoTrack?.readyState)
-    if (videoTrack) {
-      videoTrack.contentHint = 'detail'
-      videoTrack.onended = () => {
-        console.log('[webrtc] screen track ended')
-        this.onScreenEnded?.()
-      }
-      const transceiver = this.pc.addTransceiver(videoTrack, { direction: 'sendonly' })
-      console.log('[webrtc] addTransceiver done, mid:', transceiver.mid)
+    if (!videoTrack) return
+    videoTrack.contentHint = 'detail'
+    videoTrack.onended = () => {
+      this.onScreenEnded?.()
+    }
+    const sender = this.pc.getSenders().find((s) => s.track?.kind === 'video')
+    if (sender) {
+      await sender.replaceTrack(videoTrack)
+      console.log('[webrtc] replaced camera with screen via replaceTrack')
+    } else {
+      console.log('[webrtc] no video sender found, adding track')
+      this.pc.addTrack(videoTrack, stream)
+    }
+  }
+
+  async restoreCameraTrack(cameraStream: MediaStream) {
+    const videoTrack = cameraStream.getVideoTracks()[0]
+    if (!videoTrack) return
+    const sender = this.pc.getSenders().find((s) => s.track?.kind === 'video')
+    if (sender) {
+      await sender.replaceTrack(videoTrack)
     }
   }
 
