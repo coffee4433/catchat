@@ -284,8 +284,12 @@ export function useCall(userId: string, userName: string) {
         },
         onRenegotiate: async (p) => {
           if (p.callId !== incomingCallId) return
-          const answer = await conn.handleRenegotiation(p.sdp)
-          await sendCallSignal(chan, 'renegotiate', { from: userId, callId: incomingCallId, sdp: answer })
+          if (p.sdp.type === 'answer') {
+            await conn.pc.setRemoteDescription(new RTCSessionDescription(p.sdp))
+          } else {
+            const answer = await conn.handleRenegotiation(p.sdp)
+            await sendCallSignal(chan, 'renegotiate', { from: userId, callId: incomingCallId, sdp: answer })
+          }
         },
         onCallEnd: () => { endCall('ended') },
         onMediaState: (p) => {
