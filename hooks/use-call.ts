@@ -536,6 +536,16 @@ export function useCall(userId: string, userName: string) {
             })
           }
         }
+        try {
+          const reoffer = await connRef.current.negotiate()
+          if (channelRef.current && callId) {
+            await sendCallSignal(channelRef.current, 'renegotiate', {
+              from: userId,
+              callId,
+              sdp: reoffer,
+            })
+          }
+        } catch {}
       }
       setScreenOn(true)
       if (channelRef.current && callId) {
