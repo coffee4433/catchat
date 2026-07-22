@@ -32,12 +32,15 @@ export class CallConnection {
 
     this.pc.ontrack = (e) => {
       const [stream] = e.streams
+      console.log('[webrtc] ontrack:', e.track.kind, 'streams:', e.streams.length, 'hasRemoteVideo:', hasRemoteVideo)
       if (!stream) return
       const videoTrack = stream.getVideoTracks()[0]
       if (videoTrack && hasRemoteVideo) {
+        console.log('[webrtc] ontrack → onRemoteScreenStream')
         this.onRemoteScreenStream?.(stream)
       } else {
         if (videoTrack) hasRemoteVideo = true
+        console.log('[webrtc] ontrack → onRemoteStream')
         this.onRemoteStream?.(stream)
       }
     }
@@ -96,12 +99,15 @@ export class CallConnection {
 
   async addScreenTrack(stream: MediaStream) {
     const videoTrack = stream.getVideoTracks()[0]
+    console.log('[webrtc] addScreenTrack videoTrack:', videoTrack?.kind, videoTrack?.readyState)
     if (videoTrack) {
       videoTrack.contentHint = 'detail'
       videoTrack.onended = () => {
+        console.log('[webrtc] screen track ended')
         this.onScreenEnded?.()
       }
-      this.pc.addTransceiver(videoTrack, { direction: 'sendonly' })
+      const transceiver = this.pc.addTransceiver(videoTrack, { direction: 'sendonly' })
+      console.log('[webrtc] addTransceiver done, mid:', transceiver.mid)
     }
   }
 
@@ -166,7 +172,9 @@ export class CallConnection {
 
   async negotiate(): Promise<RTCSessionDescriptionInit> {
     this.negotiationLock = true
+    console.log('[webrtc] negotiate() creating offer...')
     const offer = await this.pc.createOffer()
+    console.log('[webrtc] negotiate() offer type:', offer.type)
     await this.pc.setLocalDescription(offer)
     this.negotiationLock = false
     return offer

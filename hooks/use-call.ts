@@ -236,6 +236,7 @@ export function useCall(userId: string, userName: string) {
       }
 
       conn.onRemoteScreenStream = (stream) => {
+        console.log('[use-call] onRemoteScreenStream', stream.getVideoTracks().length, 'tracks')
         setScreenStream(stream)
         setRemoteMediaState((prev) => ({ ...prev, screenOn: true }))
       }
@@ -283,12 +284,13 @@ export function useCall(userId: string, userName: string) {
           await conn.addIceCandidate(p.candidate)
         },
         onRenegotiate: async (p) => {
-          if (p.callId !== incomingCallId) return
+          if (p.callId !== callId) return
+          console.log('[use-call] onRenegotiate type:', p.sdp.type)
           if (p.sdp.type === 'answer') {
             await conn.pc.setRemoteDescription(new RTCSessionDescription(p.sdp))
           } else {
             const answer = await conn.handleRenegotiation(p.sdp)
-            await sendCallSignal(chan, 'renegotiate', { from: userId, callId: incomingCallId, sdp: answer })
+            await sendCallSignal(chan, 'renegotiate', { from: userId, callId, sdp: answer })
           }
         },
         onCallEnd: () => { endCall('ended') },
@@ -343,6 +345,7 @@ export function useCall(userId: string, userName: string) {
       }
 
       conn.onRemoteScreenStream = (stream) => {
+        console.log('[use-call] onRemoteScreenStream', stream.getVideoTracks().length, 'tracks')
         setScreenStream(stream)
         setRemoteMediaState((prev) => ({ ...prev, screenOn: true }))
       }
