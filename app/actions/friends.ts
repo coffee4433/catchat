@@ -121,6 +121,8 @@ export async function getPendingRequests(): Promise<FriendRequestWithUser[]> {
     .orderBy(desc(friendRequests.createdAt))
 
   const allRequests = [...incoming, ...outgoing]
+  if (allRequests.length === 0) return []
+
   const allUserIds = new Set<string>()
   for (const r of allRequests) {
     allUserIds.add(r.fromUserId)
