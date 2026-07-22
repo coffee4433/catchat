@@ -52,6 +52,7 @@ let mainWindow
 let splashWindow
 let nextServer
 let pendingDisplayMediaCallback = null
+let pendingScreenSources = []
 
 function setupAutoUpdater() {
   autoUpdater.autoDownload = false
@@ -175,9 +176,10 @@ function createWindow() {
   session.defaultSession.setDisplayMediaRequestHandler(
     (request, callback) => {
       desktopCapturer.getSources({ types: ['screen', 'window'] }).then((sources) => {
+        pendingScreenSources = sources
+        pendingDisplayMediaCallback = callback
         mainWindow.webContents.send('screen-share:sources',
           sources.map(s => ({ id: s.id, name: s.name, thumbnail: s.thumbnail.toDataURL() })))
-        pendingDisplayMediaCallback = callback
       }).catch(() => {
         callback(undefined)
       })
@@ -188,15 +190,13 @@ function createWindow() {
   ipcMain.handle('screen-share:select', (_e, sourceId) => {
     if (pendingDisplayMediaCallback) {
       if (sourceId) {
-        desktopCapturer.getSources({ types: ['screen', 'window'] }).then((sources) => {
-          const source = sources.find(s => s.id === sourceId)
-          pendingDisplayMediaCallback(source ? { video: source } : undefined)
-          pendingDisplayMediaCallback = null
-        })
+        const source = pendingScreenSources.find(s => s.id === sourceId)
+        pendingDisplayMediaCallback(source ? { video: source } : undefined)
       } else {
         pendingDisplayMediaCallback(undefined)
-        pendingDisplayMediaCallback = null
       }
+      pendingDisplayMediaCallback = null
+      pendingScreenSources = []
     }
   })
 
