@@ -4,6 +4,7 @@ import { MessageSquare, Plus, Search, Trash2 } from 'lucide-react'
 import type { ConversationListItem } from '@/app/actions/chat'
 import { deleteConversation } from '@/app/actions/chat'
 import { useLanguage } from '@/lib/i18n'
+import { FriendRequestsPanel } from '@/components/friend-requests-panel'
 
 function initialsOf(name: string) {
   return name
@@ -108,6 +109,7 @@ export function Sidebar({
       </div>
 
       <nav className="thin-scroll flex-1 overflow-y-auto px-2 pb-3" aria-label={t.conversationsLabel}>
+        <FriendRequestsPanel onChatWithUser={(id) => onSelectConversation(id)} />
         <div className="mt-1 mb-1 flex items-center justify-between px-2">
           <span className="text-[12px] font-semibold text-muted-foreground">
             {t.groupChats}

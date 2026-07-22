@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion'
 import { X } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 interface ScreenSource {
   id: string
@@ -20,9 +20,14 @@ export function ScreenPickerModal({
   onClose: () => void
 }) {
   const [sources, setSources] = useState<ScreenSource[]>([])
+  const gotSources = useRef(false)
 
   useEffect(() => {
-    if (!open) return
+    if (!open) {
+      gotSources.current = false
+      setSources([])
+      return
+    }
     const screenShareApi = (window as any).screenShare as
       | {
           onSources: (cb: (sources: ScreenSource[]) => void) => () => void
@@ -32,11 +37,28 @@ export function ScreenPickerModal({
 
     if (screenShareApi) {
       const unsub = screenShareApi.onSources((s: ScreenSource[]) => {
+        gotSources.current = true
         setSources(s)
       })
       return () => unsub()
     }
   }, [open])
+
+  const handleSelect = async (sourceId: string) => {
+    const screenShareApi = (window as any).screenShare
+    if (screenShareApi) {
+      await screenShareApi.select(sourceId)
+    }
+    onSelect(sourceId)
+  }
+
+  const handleCancel = () => {
+    const screenShareApi = (window as any).screenShare
+    if (screenShareApi) {
+      screenShareApi.select(null).catch(() => {})
+    }
+    onClose()
+  }
 
   return (
     <AnimatePresence>
@@ -58,7 +80,7 @@ export function ScreenPickerModal({
                 Choose what to share
               </h2>
               <button
-                onClick={onClose}
+                onClick={handleCancel}
                 className="rounded-md p-1 text-muted-foreground hover:bg-secondary hover:text-foreground"
               >
                 <X className="size-5" />
@@ -66,10 +88,15 @@ export function ScreenPickerModal({
             </div>
 
             <div className="grid max-h-80 grid-cols-2 gap-3 overflow-auto">
+              {sources.length === 0 && (
+                <p className="col-span-2 py-8 text-center text-sm text-muted-foreground">
+                  {gotSources.current ? 'Loading previews...' : 'Waiting for screen sources...'}
+                </p>
+              )}
               {sources.map((source) => (
                 <button
                   key={source.id}
-                  onClick={() => onSelect(source.id)}
+                  onClick={() => handleSelect(source.id)}
                   className="flex flex-col items-center gap-2 rounded-xl border border-border bg-secondary p-3 text-left transition-colors hover:bg-secondary/80"
                 >
                   {source.thumbnail ? (

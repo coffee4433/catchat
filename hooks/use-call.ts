@@ -99,8 +99,7 @@ export function useCall(userId: string, userName: string) {
         }
       }
       cleanAll()
-    },
-    [callId, userId],
+    }, [callId, userId],
   )
 
   const cleanAll = useCallback(() => {
@@ -314,7 +313,8 @@ export function useCall(userId: string, userName: string) {
   )
 
   useEffect(() => {
-    if (state !== 'outgoing-ringing' || !callId || !conversationId) return
+    if (!callId || !conversationId) return
+    if (state !== 'outgoing-ringing' && state !== 'connecting') return
 
     const chan = createCallChannel(conversationId)
     chan.subscribe()
@@ -342,68 +342,71 @@ export function useCall(userId: string, userName: string) {
   }, [state, callId, conversationId, callType, connectAsCaller, endCall])
 
   useEffect(() => {
-    if (state === 'connecting' && callId && channelRef.current && connRef.current) {
-      const chan = channelRef.current
-      const conn = connRef.current
-      const currentCallId = callId
+    if (!callId || !conversationId) return
+    if (state !== 'connecting' && state !== 'in-call') return
+    if (!channelRef.current || !connRef.current) return
 
-      const unsub = subscribeCallChannel(conversationId!, {
-        onAccept: () => {},
-        onReject: () => {
-          endCall('rejected')
-        },
-        onCancel: () => {
-          endCall('missed')
-        },
-        onSdpOffer: async (p) => {
-          if (p.callId !== currentCallId) return
-          await conn.handleOffer(p.sdp)
-          const answer = await conn.createAnswer()
-          await sendCallSignal(chan, 'sdp-answer', {
-            from: userId,
-            callId: currentCallId,
-            sdp: answer,
-          })
-          setState('in-call')
-          startDuration()
-          startQuality()
-        },
-        onSdpAnswer: async (p) => {
-          if (p.callId !== currentCallId) return
-          await conn.handleAnswer(p.sdp)
-          setState('in-call')
-          startDuration()
-          startQuality()
-        },
-        onIceCandidate: async (p) => {
-          if (p.callId !== currentCallId) return
-          await conn.addIceCandidate(p.candidate)
-        },
-        onRenegotiate: async (p) => {
-          if (p.callId !== currentCallId) return
-          const answer = await conn.handleRenegotiation(p.sdp)
-          await sendCallSignal(chan, 'renegotiate', {
-            from: userId,
-            callId: currentCallId,
-            sdp: answer,
-          })
-        },
-        onCallEnd: () => {
-          endCall('ended')
-        },
-        onMediaState: (p) => {
-          if (p.callId !== currentCallId) return
-          setRemoteMediaState({
-            micOn: p.micOn,
-            camOn: p.camOn,
-            screenOn: p.screenOn,
-          })
-        },
-      })
+    const chan = channelRef.current
+    const conn = connRef.current
+    const currentCallId = callId
+    let subscribed = true
 
-      return () => {
-        unsub.unsubscribe()
-      }
+    subscribeCallChannel(conversationId, {
+      onAccept: () => {},
+      onReject: () => {
+        endCall('rejected')
+      },
+      onCancel: () => {
+        endCall('missed')
+      },
+      onSdpOffer: async (p) => {
+        if (!subscribed || p.callId !== currentCallId) return
+        await conn.handleOffer(p.sdp)
+        const answer = await conn.createAnswer()
+        await sendCallSignal(chan, 'sdp-answer', {
+          from: userId,
+          callId: currentCallId,
+          sdp: answer,
+        })
+        setState('in-call')
+        startDuration()
+        startQuality()
+      },
+      onSdpAnswer: async (p) => {
+        if (!subscribed || p.callId !== currentCallId) return
+        await conn.handleAnswer(p.sdp)
+        setState('in-call')
+        startDuration()
+        startQuality()
+      },
+      onIceCandidate: async (p) => {
+        if (!subscribed || p.callId !== currentCallId) return
+        await conn.addIceCandidate(p.candidate)
+      },
+      onRenegotiate: async (p) => {
+        if (!subscribed || p.callId !== currentCallId) return
+        const answer = await conn.handleRenegotiation(p.sdp)
+        await sendCallSignal(chan, 'renegotiate', {
+          from: userId,
+          callId: currentCallId,
+          sdp: answer,
+        })
+      },
+      onCallEnd: () => {
+        endCall('ended')
+      },
+      onMediaState: (p) => {
+        if (!subscribed || p.callId !== currentCallId) return
+        setRemoteMediaState({
+          micOn: p.micOn,
+          camOn: p.camOn,
+          screenOn: p.screenOn,
+        })
+      },
+    })
+
+    return () => {
+      subscribed = false
     }
   }, [state, callId, conversationId, userId, endCall])
 

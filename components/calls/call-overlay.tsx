@@ -5,6 +5,7 @@ import { Mic, MicOff, Video, VideoOff, MonitorUp } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import type { ActiveCall } from '@/lib/calls/types'
 import { CallControls } from './call-controls'
+import { ScreenPickerModal } from './screen-picker-modal'
 import { useCallContext } from './call-provider'
 
 function initialsOf(name: string) {
@@ -31,6 +32,8 @@ export function CallOverlay({ activeCall }: { activeCall: ActiveCall }) {
     duration,
     connectionQuality,
     camOn,
+    startScreenShare,
+    stopScreenShare,
   } = useCallContext()
 
   const remoteVideoRef = useRef<HTMLVideoElement>(null)
@@ -38,6 +41,24 @@ export function CallOverlay({ activeCall }: { activeCall: ActiveCall }) {
   const screenVideoRef = useRef<HTMLVideoElement>(null)
   const remoteAudioRef = useRef<HTMLAudioElement>(null)
   const [minimized, setMinimized] = useState(false)
+  const [screenPickerOpen, setScreenPickerOpen] = useState(false)
+
+  const isElectron = typeof window !== 'undefined' && 'screenShare' in window
+
+  const handleScreenShare = async () => {
+    if (isElectron) {
+      setScreenPickerOpen(true)
+      setTimeout(async () => {
+        try {
+          await Promise.resolve(startScreenShare())
+        } finally {
+          setScreenPickerOpen(false)
+        }
+      }, 50)
+    } else {
+      startScreenShare()
+    }
+  }
 
   useEffect(() => {
     if (remoteVideoRef.current && remoteStream) {
@@ -170,7 +191,7 @@ export function CallOverlay({ activeCall }: { activeCall: ActiveCall }) {
             </div>
 
             <div className="absolute bottom-6 left-1/2 -translate-x-1/2">
-              <CallControls />
+              <CallControls onStartScreenShare={handleScreenShare} />
             </div>
           </>
         )}
@@ -180,9 +201,15 @@ export function CallOverlay({ activeCall }: { activeCall: ActiveCall }) {
             <span className="text-sm font-medium text-foreground">
               {formatDuration(duration)}
             </span>
-            <CallControls />
+            <CallControls onStartScreenShare={handleScreenShare} />
           </>
         )}
+
+        <ScreenPickerModal
+          open={screenPickerOpen}
+          onSelect={() => {}}
+          onClose={() => setScreenPickerOpen(false)}
+        />
 
         <button
           onClick={() => setMinimized(!minimized)}

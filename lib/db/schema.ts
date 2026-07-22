@@ -97,3 +97,11 @@ export const calls = pgTable('calls', {
   answeredAt: timestamp('answeredAt'),
   endedAt: timestamp('endedAt'),
 })
+
+export const friendRequests = pgTable('friend_requests', {
+  id: serial('id').primaryKey(),
+  fromUserId: text('fromUserId').notNull(),
+  toUserId: text('toUserId').notNull(),
+  status: text('status').notNull().default('pending'), // 'pending' | 'accepted' | 'rejected'
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+})

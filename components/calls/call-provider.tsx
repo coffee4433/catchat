@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { useCall } from '@/hooks/use-call'
-import { subscribeIncomingCalls } from '@/lib/calls/signaling'
+import { subscribeIncomingCalls, createCallChannel } from '@/lib/calls/signaling'
 import { createDirectConversation } from '@/app/actions/chat'
 import type { ActiveCall, CallRequestPayload, CallType } from '@/lib/calls/types'
 import type { AppUser } from '@/components/chat-app'
@@ -27,7 +27,7 @@ interface CallContextValue {
   hangUp: () => void
   toggleMic: () => void
   toggleCam: () => void
-  startScreenShare: () => void
+  startScreenShare: () => Promise<void> | void
   stopScreenShare: () => void
 }
 
@@ -94,6 +94,19 @@ export function CallProvider({
       unsub()
     }
   }, [user.id, call.state])
+
+  useEffect(() => {
+    if (!incomingCall) return
+    const chan = createCallChannel(incomingCall.conversationId)
+    const dismiss = () => setIncomingCall(null)
+    chan
+      .on('broadcast', { event: 'call-cancel' }, dismiss)
+      .on('broadcast', { event: 'call-end' }, dismiss)
+      .subscribe()
+    return () => {
+      chan.unsubscribe()
+    }
+  }, [incomingCall])
 
   const handleAccept = () => {
     if (!incomingCall) return

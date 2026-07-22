@@ -1,10 +1,11 @@
 'use client'
 
 import { AnimatePresence, motion } from 'framer-motion'
-import { Loader2, Search, UserPlus, X } from 'lucide-react'
+import { Loader2, Search, UserPlus, X, Check } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import useSWR from 'swr'
 import { createDirectConversation, searchUsers, type UserSearchResult } from '@/app/actions/chat'
+import { sendFriendRequest } from '@/app/actions/friends'
 import { useLanguage } from '@/lib/i18n'
 
 function initialsOf(name: string) {
@@ -37,6 +38,7 @@ export function NewChatModal({
   const { t } = useLanguage()
   const [query, setQuery] = useState('')
   const [startingWith, setStartingWith] = useState<string | null>(null)
+  const [requested, setRequested] = useState<Set<string>>(new Set())
   const inputRef = useRef<HTMLInputElement>(null)
   const debouncedQuery = useDebouncedValue(query, 250)
 
@@ -50,6 +52,7 @@ export function NewChatModal({
     if (open) {
       setQuery('')
       setStartingWith(null)
+      setRequested(new Set())
       requestAnimationFrame(() => inputRef.current?.focus())
     }
   }, [open])
@@ -63,13 +66,17 @@ export function NewChatModal({
     return () => window.removeEventListener('keydown', handler)
   }, [open, onClose])
 
-  const handleStartChat = async (userId: string) => {
+  const handleAddFriend = async (userId: string) => {
     if (startingWith) return
     setStartingWith(userId)
     try {
-      const { id } = await createDirectConversation(userId)
-      onConversationCreated(id)
-      onClose()
+      await sendFriendRequest(userId)
+      setRequested((prev) => new Set(prev).add(userId))
+    } catch (e) {
+      // May already have a pending request
+      if (e instanceof Error && e.message.includes('already sent')) {
+        setRequested((prev) => new Set(prev).add(userId))
+      }
     } finally {
       setStartingWith(null)
     }
@@ -142,7 +149,7 @@ export function NewChatModal({
                     key={u.id}
                     role="option"
                     aria-selected={false}
-                    onClick={() => handleStartChat(u.id)}
+                    onClick={() => handleAddFriend(u.id)}
                     disabled={startingWith !== null}
                     className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors hover:bg-secondary disabled:opacity-60"
                   >
@@ -158,10 +165,15 @@ export function NewChatModal({
                       <span className="block truncate text-[13px] font-medium">{u.name}</span>
                       <span className="block truncate text-[11px] text-muted-foreground">{u.email}</span>
                     </span>
-                    {startingWith === u.id ? (
+                    {requested.has(u.id) ? (
+                      <span className="flex shrink-0 items-center gap-1 text-[11px] font-medium text-green-500">
+                        <Check className="size-3.5" />
+                        Requested
+                      </span>
+                    ) : startingWith === u.id ? (
                       <Loader2 className="size-4 shrink-0 animate-spin text-muted-foreground" />
                     ) : (
-                      <span className="shrink-0 text-[11px] font-medium text-muted-foreground">{t.newChatActionLabel}</span>
+                      <span className="shrink-0 text-[11px] font-medium text-muted-foreground">Add Friend</span>
                     )}
                   </button>
                 ))

@@ -50,6 +50,7 @@ function getUpdater() {
     onDownloadProgress: (cb: (p: DownloadProgress) => void) => () => void
     onDownloaded: (cb: (info: UpdateInfo) => void) => () => void
     onError: (cb: (msg: string) => void) => () => void
+    checkForUpdates?: () => Promise<unknown>
     downloadUpdate: () => Promise<void>
     quitAndInstall: () => void
     getVersion?: () => Promise<string>

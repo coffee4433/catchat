@@ -3,7 +3,11 @@
 import { Mic, MicOff, Video, VideoOff, MonitorUp, MonitorOff, PhoneOff } from 'lucide-react'
 import { useCallContext } from './call-provider'
 
-export function CallControls() {
+export function CallControls({
+  onStartScreenShare,
+}: {
+  onStartScreenShare?: () => void
+}) {
   const {
     micOn,
     camOn,
@@ -40,7 +44,7 @@ export function CallControls() {
       </button>
 
       <button
-        onClick={screenOn ? stopScreenShare : startScreenShare}
+        onClick={screenOn ? stopScreenShare : (onStartScreenShare || startScreenShare)}
         className={`${btn} ${screenOn ? 'bg-primary text-primary-foreground' : 'bg-secondary text-foreground'}`}
         title={screenOn ? 'Stop sharing' : 'Share screen'}
       >
