@@ -76,6 +76,7 @@ export function Sidebar({
   activeConversationId,
   onSelectConversation,
   onConversationsChange,
+  currentUserId,
 }: {
   onOpenSearch: () => void
   onOpenNewChat: () => void
@@ -83,6 +84,7 @@ export function Sidebar({
   activeConversationId: number | null
   onSelectConversation: (id: number | null) => void
   onConversationsChange: () => void
+  currentUserId: string
 }) {
   const { t } = useLanguage()
 
@@ -109,7 +111,7 @@ export function Sidebar({
       </div>
 
       <nav className="thin-scroll flex-1 overflow-y-auto px-2 pb-3" aria-label={t.conversationsLabel}>
-        <FriendRequestsPanel onChatWithUser={(id) => onSelectConversation(id)} />
+        <FriendRequestsPanel currentUserId={currentUserId} onChatWithUser={(id) => onSelectConversation(id)} />
         <div className="mt-1 mb-1 flex items-center justify-between px-2">
           <span className="text-[12px] font-semibold text-muted-foreground">
             {t.groupChats}

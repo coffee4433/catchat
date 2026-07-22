@@ -89,6 +89,7 @@ export function ChatApp({
             activeConversationId={activeConversationId}
             onSelectConversation={setActiveConversationId}
             onConversationsChange={() => mutateConversations()}
+            currentUserId={user.id}
           />
         </div>
         <ChatThread

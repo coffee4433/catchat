@@ -3,7 +3,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { Loader2, Search, UserPlus, X, Check } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import useSWR from 'swr'
+import useSWR, { mutate as globalMutate } from 'swr'
 import { createDirectConversation, searchUsers, type UserSearchResult } from '@/app/actions/chat'
 import { sendFriendRequest } from '@/app/actions/friends'
 import { useLanguage } from '@/lib/i18n'
@@ -71,6 +71,7 @@ export function NewChatModal({
     setStartingWith(userId)
     try {
       await sendFriendRequest(userId)
+      globalMutate('friend-requests')
       setRequested((prev) => new Set(prev).add(userId))
     } catch (e) {
       // May already have a pending request
