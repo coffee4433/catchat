@@ -7,6 +7,12 @@ export const metadata: Metadata = {
   description:
     'A team collaboration messenger with threads, channels and a lightning-fast command search.',
   generator: 'v0.app',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    title: 'CatChat',
+    statusBarStyle: 'black-translucent',
+  },
 }
 
 export const viewport: Viewport = {
@@ -31,6 +37,11 @@ export default function RootLayout({
       <body className="font-sans antialiased" suppressHydrationWarning>
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js')}`,
+          }}
+        />
         <script
           dangerouslySetInnerHTML={{
             __html: `(()=>{const e=new MutationObserver(()=>{document.querySelectorAll("[bis_skin_checked]").forEach(n=>n.removeAttribute("bis_skin_checked"))});e.observe(document.documentElement,{attributes:!0,childList:!0,subtree:!0});try{document.querySelectorAll("[bis_skin_checked]").forEach(n=>n.removeAttribute("bis_skin_checked"))}catch(e){}})();`,
