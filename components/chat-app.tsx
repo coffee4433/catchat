@@ -12,6 +12,7 @@ import { SearchModal } from '@/components/search-modal'
 import { SettingsModal } from '@/components/settings-modal'
 import { Sidebar } from '@/components/sidebar'
 import { UserDock } from '@/components/user-dock'
+import { CallProvider } from '@/components/calls/call-provider'
 import { themes } from '@/lib/themes'
 
 export type AppUser = { id: string; name: string; email: string; image?: string | null; banner?: string | null }
@@ -77,72 +78,74 @@ export function ChatApp({
     conversations.find((c) => c.id === activeConversationId) ?? null
 
   return (
-    <main className="relative flex h-dvh overflow-hidden bg-background p-3 pl-0">
-      <IconRail />
-      <div className="hidden h-full lg:block ml-3">
-        <Sidebar
-          onOpenSearch={() => setSearchOpen(true)}
-          onOpenNewChat={() => setNewChatOpen(true)}
-          conversations={conversations}
-          activeConversationId={activeConversationId}
-          onSelectConversation={setActiveConversationId}
-          onConversationsChange={() => mutateConversations()}
+    <CallProvider user={user}>
+      <main className="relative flex h-dvh overflow-hidden bg-background p-3 pl-0">
+        <IconRail />
+        <div className="hidden h-full lg:block ml-3">
+          <Sidebar
+            onOpenSearch={() => setSearchOpen(true)}
+            onOpenNewChat={() => setNewChatOpen(true)}
+            conversations={conversations}
+            activeConversationId={activeConversationId}
+            onSelectConversation={setActiveConversationId}
+            onConversationsChange={() => mutateConversations()}
+          />
+        </div>
+        <ChatThread
+          infoOpen={infoOpen}
+          onToggleInfo={() => setInfoOpen((v) => !v)}
+          user={user}
+          conversation={activeConversation}
+          onConversationChange={(id) => {
+            setActiveConversationId(id)
+            mutateConversations()
+          }}
+          onConversationInfoChange={mutateConversationInfo}
         />
-      </div>
-      <ChatThread
-        infoOpen={infoOpen}
-        onToggleInfo={() => setInfoOpen((v) => !v)}
-        user={user}
-        conversation={activeConversation}
-        onConversationChange={(id) => {
-          setActiveConversationId(id)
-          mutateConversations()
-        }}
-        onConversationInfoChange={mutateConversationInfo}
-      />
-      <AnimatePresence initial={false}>
-        {infoOpen && activeConversation && (
-          <motion.div
-            key="info-panel"
-            initial={{ width: 0, opacity: 0, x: 32, marginLeft: 0 }}
-            animate={{ width: 288, opacity: 1, x: 0, marginLeft: 12 }}
-            exit={{ width: 0, opacity: 0, x: 32, marginLeft: 0 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 34 }}
-            className="hidden h-full overflow-hidden lg:block"
-          >
-            <InfoPanel conversation={activeConversation} currentUserId={user.id} />
-          </motion.div>
-        )}
-      </AnimatePresence>
-      <SearchModal
-        open={searchOpen}
-        onClose={closeSearch}
-        onSelectConversation={(id) => {
-          setActiveConversationId(id)
-          closeSearch()
-        }}
-        onStartChatWithUser={(id) => {
-          setActiveConversationId(id)
-          mutateConversations()
-          closeSearch()
-        }}
-      />
-      <NewChatModal
-        open={newChatOpen}
-        onClose={closeNewChat}
-        onConversationCreated={(id) => {
-          setActiveConversationId(id)
-          mutateConversations()
-        }}
-      />
-      <SettingsModal
-        open={settingsOpen}
-        onClose={closeSettings}
-        theme={theme}
-        onThemeChange={setTheme}
-        user={user}
-      />
-      <UserDock onOpenSettings={() => setSettingsOpen(true)} user={user} />
-    </main>
+        <AnimatePresence initial={false}>
+          {infoOpen && activeConversation && (
+            <motion.div
+              key="info-panel"
+              initial={{ width: 0, opacity: 0, x: 32, marginLeft: 0 }}
+              animate={{ width: 288, opacity: 1, x: 0, marginLeft: 12 }}
+              exit={{ width: 0, opacity: 0, x: 32, marginLeft: 0 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 34 }}
+              className="hidden h-full overflow-hidden lg:block"
+            >
+              <InfoPanel conversation={activeConversation} currentUserId={user.id} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <SearchModal
+          open={searchOpen}
+          onClose={closeSearch}
+          onSelectConversation={(id) => {
+            setActiveConversationId(id)
+            closeSearch()
+          }}
+          onStartChatWithUser={(id) => {
+            setActiveConversationId(id)
+            mutateConversations()
+            closeSearch()
+          }}
+        />
+        <NewChatModal
+          open={newChatOpen}
+          onClose={closeNewChat}
+          onConversationCreated={(id) => {
+            setActiveConversationId(id)
+            mutateConversations()
+          }}
+        />
+        <SettingsModal
+          open={settingsOpen}
+          onClose={closeSettings}
+          theme={theme}
+          onThemeChange={setTheme}
+          user={user}
+        />
+        <UserDock onOpenSettings={() => setSettingsOpen(true)} user={user} />
+      </main>
+    </CallProvider>
   )
 }

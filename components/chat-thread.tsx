@@ -57,6 +57,9 @@ import {
 import { reportTypingSupabase, stopTypingSupabase } from '@/app/actions/typing-supabase'
 import { supabase } from '@/lib/supabase/client'
 import { AddMembersModal } from '@/components/add-members-modal'
+import { useCallContext } from '@/components/calls/call-provider'
+import { CallMessageBubble } from '@/components/calls/call-message-bubble'
+import { getCallHistory, type CallRecord } from '@/app/actions/calls'
 import type { Conversation } from '@/components/chat-app'
 
 function formatDateLabel(date: Date | string) {
@@ -266,6 +269,29 @@ export function ChatThread({
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const [prefs] = usePrefs()
+
+  const { activeCall, startOutgoingCall } = useCallContext()
+  const [callHistory, setCallHistory] = useState<CallRecord[]>([])
+
+  const handleStartCall = (type: 'audio' | 'video') => {
+    if (!conversation?.isDirect || !conversation?.otherUser) return
+    startOutgoingCall(
+      conversation.id,
+      type,
+      conversation.otherUser.id,
+      conversation.otherUser.name,
+    )
+  }
+
+  useEffect(() => {
+    if (conversation?.id) {
+      getCallHistory(conversation.id)
+        .then(setCallHistory)
+        .catch(() => setCallHistory([]))
+    } else {
+      setCallHistory([])
+    }
+  }, [conversation?.id])
 
   const formatTime = (date: Date | string) => {
     return new Date(date).toLocaleTimeString([], {
@@ -941,16 +967,47 @@ export function ChatThread({
   const renderMessages = () => {
     const elements: React.ReactNode[] = []
 
-    for (let i = 0; i < allMessages.length; i++) {
-      const msg = allMessages[i]
-      const prev = allMessages[i - 1]
+    const timelineItems: Array<
+      | { type: 'call'; data: CallRecord; timestamp: Date }
+      | { type: 'message'; data: (typeof allMessages)[number]; timestamp: Date }
+    > = []
 
-      // Find referenced original reply message locally
-      const replyOriginal = msg.replyToId
-        ? allMessages.find((m) => m.id === msg.replyToId)
-        : null
+    for (const call of callHistory) {
+      timelineItems.push({ type: 'call', data: call, timestamp: new Date(call.startedAt) })
+    }
+    for (const msg of allMessages) {
+      timelineItems.push({ type: 'message', data: msg, timestamp: new Date(msg.createdAt) })
+    }
 
-      // Parse reactions list
+    timelineItems.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
+
+    let lastTimestamp: Date | null = null
+
+    for (let i = 0; i < timelineItems.length; i++) {
+      const item = timelineItems[i]
+
+      if (!lastTimestamp || !isSameDay(lastTimestamp, item.timestamp)) {
+        elements.push(
+          <DateSeparator key={`date-${item.type}-${item.data.id}`} label={formatDateLabel(item.timestamp)} />,
+        )
+        lastTimestamp = item.timestamp
+      }
+
+      if (item.type === 'call') {
+        elements.push(
+          <CallMessageBubble
+            key={`call-${item.data.id}`}
+            call={item.data}
+            currentUserId={user.id}
+          />,
+        )
+        continue
+      }
+
+      const msg = item.data
+      const msgIdx = allMessages.indexOf(msg)
+      const prev = allMessages[msgIdx - 1]
+
       let parsedReactions: ReactionData[] = []
       if (msg.reactions) {
         try {
@@ -960,12 +1017,12 @@ export function ChatThread({
         }
       }
 
-      // Add date separator if this is the first message or a different day
-      if (!prev || !isSameDay(prev.createdAt, msg.createdAt)) {
-        elements.push(
-          <DateSeparator key={`date-${msg.id}`} label={formatDateLabel(msg.createdAt)} />,
-        )
-      }
+      // Find referenced original reply message locally
+      const replyOriginal = msg.replyToId
+        ? allMessages.find((m) => m.id === msg.replyToId)
+        : null
+
+      // Parse reactions list
 
       elements.push(
         <div
@@ -1260,21 +1317,27 @@ export function ChatThread({
           )}
         </div>
         <div className="flex items-center gap-1 text-muted-foreground shrink-0 select-none">
-          {/* Call button (mockup) */}
-          <button
-            aria-label={lang === 'es' ? 'Iniciar llamada de voz' : 'Start Voice Call'}
-            className="rounded-md p-1.5 transition-colors hover:bg-secondary text-muted-foreground hover:text-foreground"
-          >
-            <Phone className="size-4.5" />
-          </button>
+          {/* Voice Call button */}
+          {conversation?.isDirect && (
+            <button
+              onClick={() => handleStartCall('audio')}
+              aria-label={lang === 'es' ? 'Iniciar llamada de voz' : 'Start Voice Call'}
+              className="rounded-md p-1.5 transition-colors hover:bg-secondary text-muted-foreground hover:text-foreground"
+            >
+              <Phone className="size-4.5" />
+            </button>
+          )}
 
-          {/* Video button (mockup) */}
-          <button
-            aria-label={lang === 'es' ? 'Iniciar videollamada' : 'Start Video Call'}
-            className="rounded-md p-1.5 transition-colors hover:bg-secondary text-muted-foreground hover:text-foreground"
-          >
-            <Video className="size-4.5" />
-          </button>
+          {/* Video Call button */}
+          {conversation?.isDirect && (
+            <button
+              onClick={() => handleStartCall('video')}
+              aria-label={lang === 'es' ? 'Iniciar videollamada' : 'Start Video Call'}
+              className="rounded-md p-1.5 transition-colors hover:bg-secondary text-muted-foreground hover:text-foreground"
+            >
+              <Video className="size-4.5" />
+            </button>
+          )}
 
           {/* Pinned Messages Button (Fully functional) */}
           <button
