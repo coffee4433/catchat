@@ -3,7 +3,7 @@
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { friendRequests, user } from '@/lib/db/schema'
-import { and, desc, eq, or, inArray } from 'drizzle-orm'
+import { and, desc, eq, inArray } from 'drizzle-orm'
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 
@@ -14,7 +14,7 @@ async function getUserId() {
 }
 
 export type FriendRequestWithUser = {
-  id: number
+  id: string
   fromUserId: string
   toUserId: string
   status: string
@@ -41,14 +41,14 @@ export async function sendFriendRequest(toUserId: string) {
 
   const [request] = await db
     .insert(friendRequests)
-    .values({ fromUserId: userId, toUserId })
+    .values({ id: crypto.randomUUID(), fromUserId: userId, toUserId })
     .returning()
 
   revalidatePath('/')
   return request
 }
 
-export async function acceptFriendRequest(requestId: number) {
+export async function acceptFriendRequest(requestId: string) {
   const userId = await getUserId()
   const [req] = await db
     .select()
@@ -69,7 +69,7 @@ export async function acceptFriendRequest(requestId: number) {
   revalidatePath('/')
 }
 
-export async function rejectFriendRequest(requestId: number) {
+export async function rejectFriendRequest(requestId: string) {
   const userId = await getUserId()
   await db
     .update(friendRequests)

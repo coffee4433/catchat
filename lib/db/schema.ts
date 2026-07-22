@@ -99,10 +99,10 @@ export const calls = pgTable('calls', {
 })
 
 export const friendRequests = pgTable('friend_requests', {
-  id: serial('id').primaryKey(),
+  id: text('id').primaryKey(),
   fromUserId: text('requester_id').notNull(),
   toUserId: text('recipient_id').notNull(),
-  status: text('status').notNull().default('pending'), // 'pending' | 'accepted' | 'rejected'
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at'),
+  status: text('status').notNull().default('pending'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }),
 })

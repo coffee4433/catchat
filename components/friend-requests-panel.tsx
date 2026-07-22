@@ -28,7 +28,7 @@ export function FriendRequestsPanel({
     { refreshInterval: 5000, revalidateOnFocus: true },
   )
 
-  const [acting, setActing] = useState<number | null>(null)
+  const [acting, setActing] = useState<string | null>(null)
 
   const incoming = requests.filter((r) => r.status === 'pending' && r.toUserId === currentUserId)
 
@@ -46,7 +46,7 @@ export function FriendRequestsPanel({
     }
   }
 
-  const handleReject = async (reqId: number) => {
+  const handleReject = async (reqId: string) => {
     if (acting) return
     setActing(reqId)
     try {
