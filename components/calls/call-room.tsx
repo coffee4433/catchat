@@ -12,6 +12,7 @@ import {
 import { Track } from 'livekit-client'
 import { useState } from 'react'
 import { CallControls } from './call-controls'
+import { ScreenPicker } from './screen-picker'
 
 function formatDuration(seconds: number) {
   const m = Math.floor(seconds / 60)
@@ -101,6 +102,7 @@ export function CallRoom({
           <div className="relative flex-1">
             <RoomAudioRenderer />
             <CallStage peerName={peerName} hasVideo={callType === 'video'} />
+            <ScreenPicker />
           </div>
           <div className="absolute top-4 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1">
             <p className="text-sm text-white/60">{formatDuration(duration)}</p>

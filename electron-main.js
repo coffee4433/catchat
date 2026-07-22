@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require('electron')
+const { app, BrowserWindow, ipcMain, desktopCapturer, session } = require('electron')
 const path = require('path')
 const fs = require('fs')
 const http = require('http')
@@ -51,6 +51,7 @@ try {
 let mainWindow
 let splashWindow
 let nextServer
+let pendingDisplayMediaCallback = null
 
 function setupAutoUpdater() {
   autoUpdater.autoDownload = false
@@ -169,6 +170,35 @@ function createWindow() {
       callback(allowedPermissions.includes(permission))
     },
   )
+
+  // Set up display media request handler for screen sharing
+  session.defaultSession.setDisplayMediaRequestHandler(
+    (request, callback) => {
+      desktopCapturer.getSources({ types: ['screen', 'window'] }).then((sources) => {
+        mainWindow.webContents.send('screen-share:sources',
+          sources.map(s => ({ id: s.id, name: s.name, thumbnail: s.thumbnail.toDataURL() })))
+        pendingDisplayMediaCallback = callback
+      }).catch(() => {
+        callback(undefined)
+      })
+    },
+    { useSystemPicker: false },
+  )
+
+  ipcMain.handle('screen-share:select', (_e, sourceId) => {
+    if (pendingDisplayMediaCallback) {
+      if (sourceId) {
+        desktopCapturer.getSources({ types: ['screen', 'window'] }).then((sources) => {
+          const source = sources.find(s => s.id === sourceId)
+          pendingDisplayMediaCallback(source ? { video: source } : undefined)
+          pendingDisplayMediaCallback = null
+        })
+      } else {
+        pendingDisplayMediaCallback(undefined)
+        pendingDisplayMediaCallback = null
+      }
+    }
+  })
 
   mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL, isMainFrame) => {
     console.error('Electron failed to load URL:', validatedURL, errorCode, errorDescription)
