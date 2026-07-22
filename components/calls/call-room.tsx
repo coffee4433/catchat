@@ -19,13 +19,43 @@ function formatDuration(seconds: number) {
   return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
 }
 
+function LocalScreenPreview() {
+  const allTracks = useTracks([{ source: Track.Source.ScreenShare, withPlaceholder: false }], { onlySubscribed: false })
+  const local = allTracks.filter(t => t.participant.isLocal && t.publication)
+  if (local.length === 0) return null
+  return (
+    <div style={{ position: 'absolute', bottom: 16, left: 16, width: 200, borderRadius: 8, overflow: 'hidden', border: '2px solid rgba(255,255,255,0.2)', zIndex: 10 }}>
+      <VideoTrack trackRef={local[0] as any} style={{ width: '100%', height: 'auto' }} />
+    </div>
+  )
+}
+
 function ScreenShareView() {
   const allTracks = useTracks([{ source: Track.Source.ScreenShare, withPlaceholder: false }], { onlySubscribed: false })
   const remote = allTracks.filter(t => !t.participant.isLocal && t.publication)
+  const videoRef = useRef<HTMLVideoElement>(null)
+
+  useEffect(() => {
+    console.log('[ScreenShareView] remote tracks:', remote.length, remote.map(t => t.participant.identity))
+    const el = videoRef.current
+    if (!el || remote.length === 0) return
+    const pub = remote[0].publication
+    if (!pub) return
+    const track = pub.videoTrack
+    console.log('[ScreenShareView] track:', track?.kind, track?.isMuted)
+    if (!track) return
+    const mediaStream = new MediaStream([track.mediaStreamTrack])
+    el.srcObject = mediaStream
+    el.play().catch((e) => console.error('[ScreenShareView] play error:', e))
+    return () => {
+      el.srcObject = null
+    }
+  }, [remote])
+
   if (remote.length === 0) return null
   return (
     <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000' }}>
-      <VideoTrack trackRef={remote[0] as any} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+      <video ref={videoRef} autoPlay playsInline style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
     </div>
   )
 }
@@ -112,6 +142,7 @@ function CallRoomInner({
         <RoomAudioRenderer />
         <CallStage peerName={peerName} hasVideo={callType === 'video'} />
         <ScreenPicker />
+        <LocalScreenPreview />
       </div>
       <div className="absolute top-4 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1">
         <span ref={durationRef} className="text-sm text-white/60">00:00</span>
