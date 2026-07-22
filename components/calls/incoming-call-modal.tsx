@@ -1,6 +1,6 @@
 'use client'
 
-import { motion, AnimatePresence } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import { Phone, PhoneOff, Video } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import type { CallType } from '@/lib/calls/types'
@@ -18,7 +18,6 @@ export function IncomingCallModal({
   callerName,
   callerImage,
   callType,
-  error,
   onAccept,
   onReject,
   onTimeout,
@@ -26,7 +25,6 @@ export function IncomingCallModal({
   callerName: string
   callerImage: string | null
   callType: CallType
-  error: string | null
   onAccept: () => void
   onReject: () => void
   onTimeout: () => void
@@ -67,11 +65,7 @@ export function IncomingCallModal({
               className="mb-4 flex size-20 items-center justify-center overflow-hidden rounded-full bg-secondary ring-4 ring-primary/30"
             >
               {callerImage ? (
-                <img
-                  src={callerImage}
-                  alt={callerName}
-                  className="size-full object-cover"
-                />
+                <img src={callerImage} alt={callerName} className="size-full object-cover" />
               ) : (
                 <span className="text-2xl font-bold text-muted-foreground">
                   {initialsOf(callerName)}
@@ -79,16 +73,10 @@ export function IncomingCallModal({
               )}
             </motion.div>
 
-            <h2 className="mb-1 text-lg font-semibold text-foreground">
-              {callerName}
-            </h2>
+            <h2 className="mb-1 text-lg font-semibold text-foreground">{callerName}</h2>
             <p className="mb-6 text-sm text-muted-foreground">
               {callType === 'video' ? 'Incoming video call...' : 'Incoming voice call...'}
             </p>
-
-            {error && (
-              <p className="mb-4 text-sm text-red-500">{error}</p>
-            )}
 
             <div className="flex gap-4">
               <button
@@ -101,11 +89,7 @@ export function IncomingCallModal({
                 onClick={onAccept}
                 className="flex size-14 items-center justify-center rounded-full bg-green-500 text-white shadow-lg transition-transform hover:scale-110 active:scale-95"
               >
-                {callType === 'video' ? (
-                  <Video className="size-6" />
-                ) : (
-                  <Phone className="size-6" />
-                )}
+                {callType === 'video' ? <Video className="size-6" /> : <Phone className="size-6" />}
               </button>
             </div>
           </motion.div>

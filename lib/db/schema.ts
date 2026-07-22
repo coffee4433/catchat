@@ -86,18 +86,6 @@ export const messages = pgTable('messages', {
   readBy: text('readBy'), // JSON array de user IDs que han leído el mensaje
 })
 
-export const calls = pgTable('calls', {
-  id: text('id').primaryKey(),
-  conversationId: integer('conversationId').notNull(),
-  callerId: text('callerId').notNull(),
-  calleeId: text('calleeId').notNull(),
-  type: text('type').notNull(), // 'audio' | 'video'
-  status: text('status').notNull(), // 'ringing' | 'accepted' | 'rejected' | 'missed' | 'ended'
-  startedAt: timestamp('startedAt').notNull().defaultNow(),
-  answeredAt: timestamp('answeredAt'),
-  endedAt: timestamp('endedAt'),
-})
-
 export const friendRequests = pgTable('friend_requests', {
   id: text('id').primaryKey(),
   fromUserId: text('requester_id').notNull(),

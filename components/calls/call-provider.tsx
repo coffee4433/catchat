@@ -1,34 +1,16 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useState } from 'react'
-import { useCall } from '@/hooks/use-call'
-import { subscribeIncomingCalls, createCallChannel } from '@/lib/calls/signaling'
-import { createDirectConversation } from '@/app/actions/chat'
-import type { ActiveCall, CallRequestPayload, CallType } from '@/lib/calls/types'
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import { subscribeIncomingCalls, createCallChannel, broadcastCallInvite, subscribeAndWait, sendCallSignal } from '@/lib/calls/signaling'
+import type { ActiveCall, CallType, CallInvitePayload } from '@/lib/calls/types'
 import type { AppUser } from '@/components/chat-app'
 import { IncomingCallModal } from './incoming-call-modal'
-import { CallOverlay } from './call-overlay'
+import { CallRoom } from './call-room'
 
 interface CallContextValue {
   activeCall: ActiveCall | null
-  state: ReturnType<typeof useCall>['state']
-  duration: number
-  connectionQuality: { rtt: number; packetLoss: number }
-  localStream: MediaStream | null
-  remoteStream: MediaStream | null
-  screenStream: MediaStream | null
-  micOn: boolean
-  camOn: boolean
-  screenOn: boolean
-  remoteMediaState: { micOn: boolean; camOn: boolean; screenOn: boolean }
   startOutgoingCall: (convId: number, type: CallType, calleeId: string, calleeName: string) => void
-  acceptIncomingCall: (callId: string, convId: number, type: CallType, callerId: string, callerName: string) => void
-  rejectIncomingCall: (callId: string) => void
-  hangUp: () => void
-  toggleMic: () => void
-  toggleCam: () => void
-  startScreenShare: () => Promise<void> | void
-  stopScreenShare: () => void
+  endCall: () => void
 }
 
 const CallContext = createContext<CallContextValue | null>(null)
@@ -46,8 +28,8 @@ export function CallProvider({
   user: AppUser
   children: React.ReactNode
 }) {
-  const call = useCall(user.id, user.name)
-  const [incomingCall, setIncomingCall] = useState<{
+  const [activeCall, setActiveCall] = useState<ActiveCall | null>(null)
+  const [incoming, setIncoming] = useState<{
     callId: string
     conversationId: number
     callType: CallType
@@ -55,130 +37,167 @@ export function CallProvider({
     callerName: string
     callerImage: string | null
   } | null>(null)
-  const [incomingError, setIncomingError] = useState<string | null>(null)
+  const [callerNameCache, setCallerNameCache] = useState<Record<string, string>>({})
+  const [channel, setChannel] = useState<ReturnType<typeof createCallChannel> | null>(null)
 
   useEffect(() => {
-    const unsub = subscribeIncomingCalls(user.id, (payload: CallRequestPayload) => {
-      if (call.state !== 'idle') {
+    const unsub = subscribeIncomingCalls(user.id, (payload: CallInvitePayload) => {
+      if (activeCall) {
         return
       }
-
-      fetch(`/api/users/${payload.from}`)
-        .then((r) => {
-          if (!r.ok) throw new Error('User not found')
-          return r.json()
-        })
-        .then((data) => {
-          setIncomingCall({
-            callId: payload.callId,
-            conversationId: payload.conversationId,
-            callType: payload.callType,
-            callerId: payload.from,
-            callerName: data.name || 'Unknown',
-            callerImage: data.image || null,
-          })
-        })
-        .catch(() => {
-          setIncomingCall({
-            callId: payload.callId,
-            conversationId: payload.conversationId,
-            callType: payload.callType,
-            callerId: payload.from,
-            callerName: 'Unknown',
-            callerImage: null,
-          })
-        })
+      setCallerNameCache((prev) => ({ ...prev, [payload.from]: payload.fromName }))
+      setIncoming({
+        callId: payload.callId,
+        conversationId: payload.conversationId,
+        callType: payload.callType,
+        callerId: payload.from,
+        callerName: payload.fromName,
+        callerImage: null,
+      })
     })
 
-    return () => {
-      unsub()
-    }
-  }, [user.id, call.state])
+    return () => unsub()
+  }, [user.id, activeCall])
 
-  useEffect(() => {
-    if (!incomingCall) return
-    const chan = createCallChannel(incomingCall.conversationId)
-    const dismiss = () => setIncomingCall(null)
-    chan
-      .on('broadcast', { event: 'call-cancel' }, dismiss)
-      .on('broadcast', { event: 'call-end' }, dismiss)
-      .subscribe()
-    return () => {
-      chan.unsubscribe()
-    }
-  }, [incomingCall])
-
-  const handleAccept = () => {
-    if (!incomingCall) return
-
-    createDirectConversation(incomingCall.callerId)
-      .then((result) => {
-        call.acceptIncoming(
-          incomingCall.callId,
-          result.id,
-          incomingCall.callType,
-          incomingCall.callerId,
-          incomingCall.callerName,
-        )
-        setIncomingCall(null)
-        setIncomingError(null)
+  const startOutgoingCall = useCallback(
+    async (convId: number, type: CallType, calleeId: string, calleeName: string) => {
+      const callId = crypto.randomUUID()
+      setActiveCall({
+        callId,
+        conversationId: convId,
+        callType: type,
+        state: 'outgoing-ringing',
+        peerName: calleeName,
       })
-      .catch((e) => {
-        setIncomingError(e instanceof Error ? e.message : 'Failed to create conversation')
-      })
-  }
 
-  const handleReject = () => {
-    if (!incomingCall) return
-    call.rejectCall(incomingCall.callId)
-    setIncomingCall(null)
-  }
+      await broadcastCallInvite(
+        {
+          from: user.id,
+          fromName: user.name,
+          callId,
+          conversationId: convId,
+          callType: type,
+        },
+        calleeId,
+      )
 
-  const handleStartOutgoing = (convId: number, type: CallType, calleeId: string, calleeName: string) => {
-    call.outgoingCall(convId, type, calleeId, calleeName)
-  }
+      const chan = createCallChannel(convId)
+      await subscribeAndWait(chan)
+      setChannel(chan)
+
+      chan
+        .on('broadcast', { event: 'call:accept' }, async () => {
+          await fetchTokenAndJoin(callId, convId, type, calleeName)
+        })
+        .on('broadcast', { event: 'call:decline' }, () => {
+          setActiveCall(null)
+          setChannel(null)
+        })
+        .on('broadcast', { event: 'call:cancel' }, () => {
+          setActiveCall(null)
+          setChannel(null)
+        })
+
+      const timeout = setTimeout(() => {
+        setActiveCall(null)
+        setChannel(null)
+      }, 30000)
+      setChannel(chan)
+    },
+    [user.id, user.name],
+  )
+
+  const fetchTokenAndJoin = useCallback(
+    async (callId: string, convId: number, type: CallType, peerName: string) => {
+      try {
+        const res = await fetch('/api/livekit/token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ conversationId: convId }),
+        })
+        if (!res.ok) throw new Error('Token fetch failed')
+        const { token, url } = await res.json()
+        setActiveCall({
+          callId,
+          conversationId: convId,
+          callType: type,
+          state: 'in-call',
+          peerName,
+          token,
+          livekitUrl: url,
+        })
+      } catch {
+        setActiveCall(null)
+        setChannel(null)
+      }
+    },
+    [],
+  )
+
+  const handleAcceptIncoming = useCallback(async () => {
+    if (!incoming) return
+
+    const chan = createCallChannel(incoming.conversationId)
+    await subscribeAndWait(chan)
+    setChannel(chan)
+
+    await sendCallSignal(chan, 'call:accept', {
+      from: user.id,
+      callId: incoming.callId,
+    })
+
+    await fetchTokenAndJoin(
+      incoming.callId,
+      incoming.conversationId,
+      incoming.callType,
+      incoming.callerName,
+    )
+    setIncoming(null)
+  }, [incoming, user.id, fetchTokenAndJoin])
+
+  const handleRejectIncoming = useCallback(async () => {
+    if (!incoming) return
+    const chan = createCallChannel(incoming.conversationId)
+    await subscribeAndWait(chan)
+    await sendCallSignal(chan, 'call:decline', {
+      from: user.id,
+      callId: incoming.callId,
+    })
+    setIncoming(null)
+  }, [incoming, user.id])
+
+  const endCall = useCallback(() => {
+    setActiveCall(null)
+    setChannel(null)
+  }, [])
 
   return (
     <CallContext.Provider
       value={{
-        activeCall: call.activeCall,
-        state: call.state,
-        duration: call.duration,
-        connectionQuality: call.connectionQuality,
-        localStream: call.localStream,
-        remoteStream: call.remoteStream,
-        screenStream: call.screenStream,
-        micOn: call.micOn,
-        camOn: call.camOn,
-        screenOn: call.screenOn,
-        remoteMediaState: call.remoteMediaState,
-        startOutgoingCall: handleStartOutgoing,
-        acceptIncomingCall: call.acceptIncoming,
-        rejectIncomingCall: call.rejectCall,
-        hangUp: call.hangUp,
-        toggleMic: call.toggleMic,
-        toggleCam: call.toggleCam,
-        startScreenShare: call.startScreenShare,
-        stopScreenShare: call.stopScreenShare,
+        activeCall,
+        startOutgoingCall,
+        endCall,
       }}
     >
       {children}
-      {incomingCall && (
+      {incoming && (
         <IncomingCallModal
-          callerName={incomingCall.callerName}
-          callerImage={incomingCall.callerImage}
-          callType={incomingCall.callType}
-          error={incomingError}
-          onAccept={handleAccept}
-          onReject={handleReject}
-          onTimeout={() => {
-            call.timeoutCall(incomingCall.callId)
-            setIncomingCall(null)
-          }}
+          callerName={incoming.callerName}
+          callerImage={incoming.callerImage}
+          callType={incoming.callType}
+          onAccept={handleAcceptIncoming}
+          onReject={handleRejectIncoming}
+          onTimeout={() => setIncoming(null)}
         />
       )}
-      {call.activeCall && (
-        <CallOverlay activeCall={call.activeCall} />
+      {activeCall?.state === 'in-call' && activeCall.token && activeCall.livekitUrl && (
+        <CallRoom
+          token={activeCall.token}
+          serverUrl={activeCall.livekitUrl}
+          callType={activeCall.callType}
+          peerName={activeCall.peerName}
+          onDisconnected={endCall}
+        />
       )}
     </CallContext.Provider>
   )

@@ -43,12 +43,3 @@ contextBridge.exposeInMainWorld("updater", {
   quitAndInstall: () => ipcRenderer.invoke("update:install"),
   getVersion: () => ipcRenderer.invoke("app:version"),
 });
-
-contextBridge.exposeInMainWorld("screenShare", {
-  onSources: (cb) => {
-    const listener = (_e, sources) => cb(sources);
-    ipcRenderer.on("screen-share:sources", listener);
-    return () => ipcRenderer.removeListener("screen-share:sources", listener);
-  },
-  select: (sourceId) => ipcRenderer.invoke("screen-share:select", sourceId),
-});

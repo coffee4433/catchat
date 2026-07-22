@@ -58,8 +58,6 @@ import { reportTypingSupabase, stopTypingSupabase } from '@/app/actions/typing-s
 import { supabase } from '@/lib/supabase/client'
 import { AddMembersModal } from '@/components/add-members-modal'
 import { useCallContext } from '@/components/calls/call-provider'
-import { CallMessageBubble } from '@/components/calls/call-message-bubble'
-import { getCallHistory, type CallRecord } from '@/app/actions/calls'
 import type { Conversation } from '@/components/chat-app'
 
 function formatDateLabel(date: Date | string) {
@@ -270,10 +268,9 @@ export function ChatThread({
 
   const [prefs] = usePrefs()
 
-  const { activeCall, startOutgoingCall } = useCallContext()
-  const [callHistory, setCallHistory] = useState<CallRecord[]>([])
+  const { startOutgoingCall } = useCallContext()
 
-  const handleStartCall = (type: 'audio' | 'video') => {
+  const handleStartCall = (type: 'voice' | 'video') => {
     if (!conversation?.isDirect || !conversation?.otherUser) return
     startOutgoingCall(
       conversation.id,
@@ -282,16 +279,6 @@ export function ChatThread({
       conversation.otherUser.name,
     )
   }
-
-  useEffect(() => {
-    if (conversation?.id) {
-      getCallHistory(conversation.id)
-        .then(setCallHistory)
-        .catch(() => setCallHistory([]))
-    } else {
-      setCallHistory([])
-    }
-  }, [conversation?.id])
 
   const formatTime = (date: Date | string) => {
     return new Date(date).toLocaleTimeString([], {
@@ -967,46 +954,9 @@ export function ChatThread({
   const renderMessages = () => {
     const elements: React.ReactNode[] = []
 
-    const timelineItems: Array<
-      | { type: 'call'; data: CallRecord; timestamp: Date }
-      | { type: 'message'; data: (typeof allMessages)[number]; timestamp: Date }
-    > = []
-
-    for (const call of callHistory) {
-      timelineItems.push({ type: 'call', data: call, timestamp: new Date(call.startedAt) })
-    }
-    for (const msg of allMessages) {
-      timelineItems.push({ type: 'message', data: msg, timestamp: new Date(msg.createdAt) })
-    }
-
-    timelineItems.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
-
-    let lastTimestamp: Date | null = null
-
-    for (let i = 0; i < timelineItems.length; i++) {
-      const item = timelineItems[i]
-
-      if (!lastTimestamp || !isSameDay(lastTimestamp, item.timestamp)) {
-        elements.push(
-          <DateSeparator key={`date-${item.type}-${item.data.id}`} label={formatDateLabel(item.timestamp)} />,
-        )
-        lastTimestamp = item.timestamp
-      }
-
-      if (item.type === 'call') {
-        elements.push(
-          <CallMessageBubble
-            key={`call-${item.data.id}`}
-            call={item.data}
-            currentUserId={user.id}
-          />,
-        )
-        continue
-      }
-
-      const msg = item.data
-      const msgIdx = allMessages.indexOf(msg)
-      const prev = allMessages[msgIdx - 1]
+    for (let i = 0; i < allMessages.length; i++) {
+      const msg = allMessages[i]
+      const prev = allMessages[i - 1]
 
       let parsedReactions: ReactionData[] = []
       if (msg.reactions) {
@@ -1320,7 +1270,7 @@ export function ChatThread({
           {/* Voice Call button */}
           {conversation?.isDirect && (
             <button
-              onClick={() => handleStartCall('audio')}
+              onClick={() => handleStartCall('voice')}
               aria-label={lang === 'es' ? 'Iniciar llamada de voz' : 'Start Voice Call'}
               className="rounded-md p-1.5 transition-colors hover:bg-secondary text-muted-foreground hover:text-foreground"
             >

@@ -1,8 +1,0 @@
-const path = require('path')
-require('dotenv').config({ path: path.join(__dirname, '..', '.env.local') })
-const { Pool } = require('pg')
-const p = new Pool({ connectionString: process.env.DATABASE_URL })
-
-p.query("SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'friend_requests'")
-  .then(r => { console.log(JSON.stringify(r.rows)); p.end() })
-  .catch(e => { console.log(e.message); p.end() })
