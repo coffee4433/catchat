@@ -334,6 +334,13 @@ export function useCall(userId: string, userName: string) {
       if (localStreamObj) {
         localStreamObj.getTracks().forEach((t) => conn.pc.addTrack(t, localStreamObj!))
       }
+
+      const offer = await conn.createOffer()
+      await sendCallSignal(chan, 'sdp-offer', {
+        from: userId,
+        callId,
+        sdp: offer,
+      })
     },
     [callId, conversationId, userId, endCall],
   )
@@ -394,6 +401,7 @@ export function useCall(userId: string, userName: string) {
           callId: currentCallId,
           sdp: answer,
         })
+        conn.established = true
         setState('in-call')
         startDuration()
         startQuality()
@@ -401,6 +409,7 @@ export function useCall(userId: string, userName: string) {
       onSdpAnswer: async (p) => {
         if (!subscribed || p.callId !== currentCallId) return
         await conn.handleAnswer(p.sdp)
+        conn.established = true
         setState('in-call')
         startDuration()
         startQuality()
@@ -435,24 +444,6 @@ export function useCall(userId: string, userName: string) {
       subscribed = false
     }
   }, [state, callId, conversationId, userId, endCall])
-
-  useEffect(() => {
-    if (state === 'in-call' && connRef.current) {
-      const offer = connRef.current.createOffer().then((sdp) => {
-        if (channelRef.current && callId) {
-          sendCallSignal(channelRef.current, 'sdp-offer', {
-            from: userId,
-            callId,
-            sdp,
-          })
-        }
-      })
-
-      return () => {
-        connRef.current?.close()
-      }
-    }
-  }, [state, callId, userId])
 
   const startDuration = useCallback(() => {
     setDuration(0)

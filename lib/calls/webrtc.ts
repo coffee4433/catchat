@@ -17,6 +17,7 @@ export class CallConnection {
   onIceFailed: (() => void) | null = null
   onConnectionLost: (() => void) | null = null
   onNegotiationNeeded: (() => void) | null = null
+  established = false
 
   constructor() {
     this.pc = createPeer()
@@ -48,6 +49,7 @@ export class CallConnection {
     }
 
     this.pc.onnegotiationneeded = () => {
+      if (!this.established) return
       if (this.negotiationLock) return
       this.onNegotiationNeeded?.()
     }
