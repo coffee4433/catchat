@@ -14,10 +14,11 @@ export function CallControls({ onHangUp }: { onHangUp: () => void }) {
     if (screenEnabled) {
       await localParticipant.setScreenShareEnabled(false)
     } else {
-      console.log('[CallControls] enabling screen share...')
       try {
-        await localParticipant.setScreenShareEnabled(true)
-        console.log('[CallControls] screen share enabled')
+        await localParticipant.setScreenShareEnabled(true, {
+          resolution: { width: 1920, height: 1080, frameRate: 60 },
+          contentHint: 'detail',
+        })
       } catch (e) {
         console.error('[CallControls] screen share failed:', e)
       }

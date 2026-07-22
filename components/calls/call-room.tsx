@@ -179,7 +179,9 @@ export function CallRoom({
       serverUrl={serverUrl}
       connect
       audio
-      video={callType === 'video'}
+      video={callType === 'video' ? {
+        resolution: { width: 1920, height: 1080, frameRate: 60 },
+      } : false}
       data-lk-theme="default"
       onDisconnected={onDisconnected}
       className="fixed inset-0 z-40 flex flex-col bg-black"
