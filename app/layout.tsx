@@ -35,7 +35,7 @@ export default function RootLayout({
         {/* Theme init: apply saved theme before first paint to prevent flash */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(()=>{try{const t=localStorage.getItem('cz-theme')||'light';const dark=['dark','midnight','forest','coffee','cyber'];document.documentElement.setAttribute('data-theme',t);document.documentElement.classList.add(dark.includes(t)?'dark':'light');document.documentElement.classList.remove(dark.includes(t)?'light':'dark')}catch(e){}})();`,
+            __html: `(()=>{try{const t=localStorage.getItem('cz-theme')||'industrial';const dark=['dark','midnight','forest','coffee','cyber'];document.documentElement.setAttribute('data-theme',t);document.documentElement.classList.add(dark.includes(t)?'dark':'light');document.documentElement.classList.remove(dark.includes(t)?'light':'dark')}catch(e){}})();`,
           }}
         />
       </head>
