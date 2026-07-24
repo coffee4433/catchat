@@ -138,12 +138,46 @@ ipcMain.handle('get:config', () => {
 ipcMain.handle('get:git-commits', async () => {
   const cfg = loadConfig()
   if (!cfg.projectPath) return []
+  const { exec } = require('child_process')
+
   return new Promise((resolve) => {
-    const { exec } = require('child_process')
-    exec('git log -n 15 --oneline', { cwd: cfg.projectPath }, (err, stdout) => {
-      if (err || !stdout) return resolve([])
-      const commits = stdout.split('\n').map((l) => l.trim()).filter(Boolean)
-      resolve(commits)
+    exec('git describe --tags --abbrev=0', { cwd: cfg.projectPath }, (errTag, stdoutTag) => {
+      const lastTag = !errTag && stdoutTag ? stdoutTag.trim() : null
+      const logCmd = lastTag ? `git log ${lastTag}..HEAD --oneline` : 'git log -n 10 --oneline'
+
+      exec(logCmd, { cwd: cfg.projectPath }, (errLog, stdoutLog) => {
+        let commits = []
+        if (!errLog && stdoutLog) {
+          commits = stdoutLog
+            .split('\n')
+            .map((l) => l.trim())
+            .filter((l) => l.length > 0 && !/\bRelease v\d/i.test(l))
+        }
+
+        if (commits.length === 0) {
+          exec('git status --short', { cwd: cfg.projectPath }, (errStatus, stdoutStatus) => {
+            if (!errStatus && stdoutStatus) {
+              const modifiedFiles = stdoutStatus
+                .split('\n')
+                .map((l) => l.trim())
+                .filter(Boolean)
+                .slice(0, 10)
+              if (modifiedFiles.length > 0) {
+                return resolve(['Cambios locales sin comitear:\n' + modifiedFiles.join('\n')])
+              }
+            }
+            exec('git log -n 5 --oneline', { cwd: cfg.projectPath }, (_, fallbackLog) => {
+              const fallbackCommits = (fallbackLog || '')
+                .split('\n')
+                .map((l) => l.trim())
+                .filter(Boolean)
+              resolve(fallbackCommits)
+            })
+          })
+        } else {
+          resolve(commits)
+        }
+      })
     })
   })
 })

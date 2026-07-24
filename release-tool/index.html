@@ -1570,6 +1570,8 @@ function setVersion(ver) {
   $('currentVer').textContent = 'v' + ver
   $('setupNote').classList.remove('visible')
   $('releaseCard').style.display = 'flex'
+  notesInput.value = ''
+  resetAiChat()
   versionInput.focus()
 }
 
