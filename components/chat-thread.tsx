@@ -1250,7 +1250,8 @@ export function ChatThread({
     <section className="relative flex h-full min-w-0 flex-1 flex-col rounded-2xl border border-border bg-card shadow-sm ml-3">
       <header className="flex items-center justify-between border-b border-border px-4 py-3">
         <div className="flex min-w-0 items-center gap-1.5 text-sm">
-          <span className="flex size-5 items-center justify-center rounded bg-secondary text-[11px] font-semibold text-muted-foreground">
+          <span className="led shrink-0 text-success" aria-hidden style={{ animation: 'led-blink 2.4s ease-in-out infinite' }} />
+          <span className="flex size-5 items-center justify-center rounded-lg bg-secondary text-[11px] font-semibold text-muted-foreground">
             #
           </span>
           <span className="truncate font-semibold">
