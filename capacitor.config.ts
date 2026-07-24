@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'CatChat',
   webDir: 'out',
   server: {
-    url: 'https://catchat-one.vercel.app',
+    url: 'https://catchat-three.vercel.app',
     cleartext: false,
   },
   android: {

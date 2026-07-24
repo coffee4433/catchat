@@ -60,7 +60,7 @@ function setupAutoUpdater() {
 
   autoUpdater.setFeedURL({
     provider: 'generic',
-    url: 'https://catchat-one.vercel.app/updates/',
+    url: 'https://catchat-three.vercel.app/updates/',
   })
 
   ipcMain.handle('update:check', async () => {
