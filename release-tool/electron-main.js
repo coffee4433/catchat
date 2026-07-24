@@ -124,7 +124,7 @@ ipcMain.handle('get:config', () => {
   return { projectPath: cfg.projectPath || '', hasToken: !!cfg.ghToken }
 })
 
-ipcMain.handle('release', async (_event, version, notes) => {
+ipcMain.handle('release', async (_event, version, notes, showModal) => {
   const cfg = loadConfig()
   if (!cfg.projectPath) throw new Error('No project selected')
 
@@ -133,7 +133,13 @@ ipcMain.handle('release', async (_event, version, notes) => {
   return new Promise((resolve, reject) => {
     const child = spawn('node', [releaseScript], {
       cwd: cfg.projectPath,
-      env: { ...process.env, RELEASE_VERSION: version, RELEASE_NOTES: notes || '', GH_TOKEN: cfg.ghToken || process.env.GH_TOKEN || '' },
+      env: {
+        ...process.env,
+        RELEASE_VERSION: version,
+        RELEASE_NOTES: notes || '',
+        SHOW_RELEASE_MODAL: showModal ? 'true' : 'false',
+        GH_TOKEN: cfg.ghToken || process.env.GH_TOKEN || '',
+      },
       shell: true,
     })
 

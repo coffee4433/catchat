@@ -5,7 +5,7 @@ contextBridge.exposeInMainWorld('releaseTool', {
   selectProject: () => ipcRenderer.invoke('select:project'),
   saveToken: (token) => ipcRenderer.invoke('save:token', token),
   getConfig: () => ipcRenderer.invoke('get:config'),
-  release: (version, notes) => ipcRenderer.invoke('release', version, notes),
+  release: (version, notes, showModal) => ipcRenderer.invoke('release', version, notes, showModal),
   onOutput: (cb) => {
     const fn = (_e, chunk) => cb(chunk)
     ipcRenderer.on('release:output', fn)

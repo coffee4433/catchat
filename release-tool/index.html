@@ -293,12 +293,88 @@
 
   .form-grid {
     display: grid;
-    grid-template-columns: 180px 1fr auto;
-    gap: 12px;
-    align-items: end;
+    grid-template-columns: 160px 1fr;
+    gap: 14px;
+    align-items: start;
   }
 
   #version { font-family: var(--mono); }
+
+  /* Quick templates & notes editor */
+  .notes-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .tmpl-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .tmpl-btn {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .tmpl-btn:hover {
+    background: rgba(255,255,255,0.08);
+    color: var(--fg);
+    border-color: var(--accent);
+  }
+  textarea#notes {
+    width: 100%;
+    min-height: 84px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px;
+    color: var(--fg);
+    font-family: var(--sans);
+    font-size: 12.5px;
+    line-height: 1.5;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  textarea#notes:focus {
+    border-color: var(--accent);
+  }
+
+  /* Actions & Checkbox row */
+  .publish-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding-top: 4px;
+    border-top: 1px solid var(--border);
+  }
+  .modal-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    user-select: none;
+  }
+  .modal-toggle:hover {
+    color: var(--fg);
+  }
+  .modal-toggle input[type="checkbox"] {
+    accent-color: var(--accent);
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+  }
 
   .btn-publish {
     height: 40px;
@@ -776,9 +852,25 @@
             <input id="version" type="text" placeholder="1.2.3" spellcheck="false">
           </div>
           <div class="field">
-            <span class="field-label">Release notes <span style="color:var(--faint);font-weight:400">(optional)</span></span>
-            <input id="notes" type="text" placeholder="What changed in this release...">
+            <div class="notes-header">
+              <span class="field-label">Release notes <span style="color:var(--faint);font-weight:400">(optional)</span></span>
+              <div class="tmpl-toolbar">
+                <button type="button" class="tmpl-btn" onclick="insertTemplate('✨ ')">✨ Novedades</button>
+                <button type="button" class="tmpl-btn" onclick="insertTemplate('🐛 ')">🐛 Correcciones</button>
+                <button type="button" class="tmpl-btn" onclick="insertTemplate('⚡ ')">⚡ Rendimiento</button>
+                <button type="button" class="tmpl-btn" onclick="insertTemplate('🎨 ')">🎨 UI</button>
+              </div>
+            </div>
+            <textarea id="notes" placeholder="What changed in this release... (Usa viñetas - ✨, 🐛, ⚡, 🎨)"></textarea>
           </div>
+        </div>
+
+        <div class="publish-bar">
+          <label class="modal-toggle" title="Si está marcado, CatChat mostrará una ventana flotante con las Novedades al abrir esta versión">
+            <input type="checkbox" id="showModalCheck" checked>
+            <span>Mostrar modal flotante de Novedades en CatChat</span>
+          </label>
+
           <button class="btn-publish" id="publishBtn" onclick="publish()">
             <svg id="publishIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/>
@@ -787,6 +879,7 @@
             <span id="publishLabel">Publish</span>
           </button>
         </div>
+
         <div class="version-diff" id="versionDiff"></div>
       </section>
 
@@ -1189,6 +1282,18 @@ function scrollResultIntoView() {
   })
 }
 
+function insertTemplate(prefix) {
+  const notes = $('notes')
+  const val = notes.value
+  if (!val) {
+    notes.value = prefix
+  } else {
+    notes.value = val + (val.endsWith('\n') ? '' : '\n') + prefix
+  }
+  notes.focus()
+  notes.selectionStart = notes.selectionEnd = notes.value.length
+}
+
 function publish() {
   const ver = versionInput.value.trim()
   if (!/^\d+\.\d+\.\d+$/.test(ver) || running) return
@@ -1215,7 +1320,8 @@ function publish() {
   statusDot.className = 'status-dot running'
   statusText.textContent = 'Publishing v' + ver + '…'
 
-  api.release(ver, notesInput.value.trim()).catch(() => {
+  const showModal = Boolean($('showModalCheck').checked)
+  api.release(ver, notesInput.value.trim(), showModal).catch(() => {
     running = false
     publishBtn.disabled = false
     publishLabel.textContent = 'Publish'

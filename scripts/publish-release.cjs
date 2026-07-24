@@ -153,13 +153,14 @@ async function publish() {
   const ghBase = `https://github.com/${OWNER}/${REPO}/releases/download/${tag}`
   let ymlContent = fs.readFileSync(latestYml, 'utf8')
   ymlContent = ymlContent.replace(/url: CatChat-Setup/g, `url: ${ghBase}/CatChat-Setup`)
-  ymlContent = ymlContent.replace(/path: CatChat Setup/g, '# path: CatChat Setup')
+  const showReleaseModal = process.env.SHOW_RELEASE_MODAL !== 'false'
+  ymlContent += `showReleaseModal: ${showReleaseModal ? 'true' : 'false'}\n`
   if (releaseBody) {
     const formattedNotes = releaseBody.split('\n').map((line) => `  ${line}`).join('\n')
-    ymlContent += `\nreleaseNotes: |\n${formattedNotes}\n`
+    ymlContent += `releaseNotes: |\n${formattedNotes}\n`
   }
   fs.writeFileSync(path.join(publicDir, 'latest.yml'), ymlContent)
-  console.log('latest.yml (with releaseNotes) copied to public/updates/ for Vercel')
+  console.log('latest.yml (with releaseNotes & showReleaseModal) copied to public/updates/ for Vercel')
 
   // Auto git push
   try {

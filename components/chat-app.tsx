@@ -12,6 +12,7 @@ import { SearchModal } from '@/components/search-modal'
 import { SettingsModal } from '@/components/settings-modal'
 import { Sidebar } from '@/components/sidebar'
 import { UserDock } from '@/components/user-dock'
+import { ReleaseNotesModal } from '@/components/release-notes-modal'
 import { CallProvider } from '@/components/calls/call-provider'
 import { themes } from '@/lib/themes'
 
@@ -145,6 +146,7 @@ export function ChatApp({
           onThemeChange={setTheme}
           user={user}
         />
+        <ReleaseNotesModal />
         <UserDock onOpenSettings={() => setSettingsOpen(true)} user={user} />
       </main>
     </CallProvider>
