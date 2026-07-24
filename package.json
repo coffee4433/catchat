@@ -64,6 +64,7 @@
       "repo": "catchat"
     },
     "files": [
+      ".next/**/*",
       "electron-main.js",
       "preload.js",
       "electron/**/*",
