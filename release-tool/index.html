@@ -1161,7 +1161,13 @@
         <span class="ai-badge">🤖 DeepSeek AI Assistant</span>
         <h3 style="font-size:14px;font-weight:700">Asistente de Release Notes</h3>
       </div>
-      <button class="win-btn" onclick="closeAiModal()" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+      <div style="display:flex;align-items:center;gap:6px">
+        <button type="button" class="btn-secondary" onclick="resetAiChat()" title="Iniciar una nueva sesión de IA limpia">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          Nueva Sesión
+        </button>
+        <button class="win-btn" onclick="closeAiModal()" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+      </div>
     </div>
     
     <div class="ai-chat-body" id="aiChatFeed">
@@ -1440,6 +1446,20 @@ function markDeepseekSaved() {
 
 let chatMessages = []
 
+function resetAiChat() {
+  chatMessages = []
+  const feed = $('aiChatFeed')
+  if (feed) {
+    feed.innerHTML = `
+      <div class="ai-chat-msg assistant">
+        <div class="msg-avatar">🤖</div>
+        <div class="msg-bubble">¡Hola! Nueva sesión iniciada. Háblame de los cambios que realizaste o presiona <strong>"Auto-detectar Git"</strong> y redactaré o actualizaré las notas en Markdown.</div>
+      </div>
+    `
+  }
+  if ($('aiError')) $('aiError').style.display = 'none'
+}
+
 function openAiModal() {
   $('aiError').style.display = 'none'
   $('aiError').textContent = ''
@@ -1698,6 +1718,7 @@ function resetAll() {
   notesInput.value = ''
   versionDiff.innerHTML = ''
   resetFeed()
+  resetAiChat()
   lines = 0
   lineCount.textContent = '0 lines'
   termGlyph.className = 'term-glyph'
