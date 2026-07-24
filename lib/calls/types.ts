@@ -17,8 +17,9 @@ export interface ActiveCall {
   callId: string
   conversationId: number
   callType: CallType
-  state: 'outgoing-ringing' | 'incoming-ringing' | 'in-call' | 'ended'
+  state: 'outgoing-ringing' | 'incoming-ringing' | 'in-call' | 'ended' | 'cancelled' | 'no-answer'
   peerName: string
+  peerImage?: string | null
   token?: string
   livekitUrl?: string
 }

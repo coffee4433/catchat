@@ -25,13 +25,19 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className="light bg-background" suppressHydrationWarning>
+    <html lang="en" className="bg-background" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap"
           rel="stylesheet"
+        />
+        {/* Theme init: apply saved theme before first paint to prevent flash */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(()=>{try{const t=localStorage.getItem('cz-theme')||'light';const dark=['dark','midnight','forest','coffee','cyber'];document.documentElement.setAttribute('data-theme',t);document.documentElement.classList.add(dark.includes(t)?'dark':'light');document.documentElement.classList.remove(dark.includes(t)?'light':'dark')}catch(e){}})();`,
+          }}
         />
       </head>
       <body className="font-sans antialiased" suppressHydrationWarning>

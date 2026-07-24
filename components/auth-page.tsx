@@ -2,7 +2,7 @@ import { AuthCard } from '@/components/auth/auth-card'
 
 export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
   return (
-    <div data-theme="industrial" className="bg-background text-foreground">
+    <div className="bg-background text-foreground">
       <main className="relative flex min-h-svh items-center justify-center overflow-hidden px-4 py-12">
         {/* Top-left light hotspot to reinforce the neumorphic light source */}
         <div

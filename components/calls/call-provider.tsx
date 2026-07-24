@@ -6,10 +6,12 @@ import type { ActiveCall, CallType, CallInvitePayload } from '@/lib/calls/types'
 import type { AppUser } from '@/components/chat-app'
 import { IncomingCallModal } from './incoming-call-modal'
 import { CallRoom } from './call-room'
+import { OutgoingCallOverlay } from './outgoing-call-overlay'
 
 interface CallContextValue {
   activeCall: ActiveCall | null
-  startOutgoingCall: (convId: number, type: CallType, calleeId: string, calleeName: string) => void
+  startOutgoingCall: (convId: number, type: CallType, calleeId: string, calleeName: string, calleeImage?: string | null) => void
+  cancelOutgoingCall: () => void
   endCall: () => void
 }
 
@@ -61,7 +63,7 @@ export function CallProvider({
   }, [user.id, activeCall])
 
   const startOutgoingCall = useCallback(
-    async (convId: number, type: CallType, calleeId: string, calleeName: string) => {
+    async (convId: number, type: CallType, calleeId: string, calleeName: string, calleeImage?: string | null) => {
       const callId = crypto.randomUUID()
       setActiveCall({
         callId,
@@ -69,6 +71,7 @@ export function CallProvider({
         callType: type,
         state: 'outgoing-ringing',
         peerName: calleeName,
+        peerImage: calleeImage ?? null,
       })
 
       await broadcastCallInvite(
@@ -112,8 +115,11 @@ export function CallProvider({
         })
 
       ringTimeoutRef.current = setTimeout(() => {
-        setActiveCall(null)
-        setChannel(null)
+        setActiveCall((prev) => prev?.state === 'outgoing-ringing' ? { ...prev, state: 'no-answer' } : null)
+        setTimeout(() => {
+          setActiveCall(null)
+          setChannel(null)
+        }, 2500)
         ringTimeoutRef.current = null
       }, 30000)
       setChannel(chan)
@@ -180,6 +186,18 @@ export function CallProvider({
     setIncoming(null)
   }, [incoming, user.id])
 
+  const cancelOutgoingCall = useCallback(() => {
+    if (channel) {
+      sendCallSignal(channel, 'call:cancel', { from: user.id }).catch(() => {})
+    }
+    if (ringTimeoutRef.current) {
+      clearTimeout(ringTimeoutRef.current)
+      ringTimeoutRef.current = null
+    }
+    setActiveCall(null)
+    setChannel(null)
+  }, [channel, user.id])
+
   const endCall = useCallback(() => {
     setActiveCall(null)
     setChannel(null)
@@ -190,6 +208,7 @@ export function CallProvider({
       value={{
         activeCall,
         startOutgoingCall,
+        cancelOutgoingCall,
         endCall,
       }}
     >
@@ -202,6 +221,14 @@ export function CallProvider({
           onAccept={handleAcceptIncoming}
           onReject={handleRejectIncoming}
           onTimeout={() => setIncoming(null)}
+        />
+      )}
+      {(activeCall?.state === 'outgoing-ringing' || activeCall?.state === 'no-answer') && (
+        <OutgoingCallOverlay
+          peerName={activeCall.peerName}
+          peerImage={activeCall.peerImage}
+          callType={activeCall.callType}
+          onCancel={cancelOutgoingCall}
         />
       )}
       {activeCall?.state === 'in-call' && activeCall.token && activeCall.livekitUrl && (

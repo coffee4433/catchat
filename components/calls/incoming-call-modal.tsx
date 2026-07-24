@@ -57,40 +57,60 @@ export function IncomingCallModal({
             animate={{ scale: 1, y: 0, opacity: 1 }}
             exit={{ scale: 0.8, y: 40, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="flex w-full max-w-sm flex-col items-center rounded-2xl border border-border bg-card p-8 shadow-2xl"
+            className="flex w-full max-w-sm flex-col items-center rounded-2xl border border-border bg-card p-10 shadow-2xl"
           >
-            <motion.div
-              animate={{ scale: [1, 1.05, 1] }}
-              transition={{ repeat: Infinity, duration: 2 }}
-              className="mb-4 flex size-20 items-center justify-center overflow-hidden rounded-full bg-secondary ring-4 ring-primary/30"
-            >
-              {callerImage ? (
-                <img src={callerImage} alt={callerName} className="size-full object-cover" />
-              ) : (
-                <span className="text-2xl font-bold text-muted-foreground">
-                  {initialsOf(callerName)}
-                </span>
-              )}
-            </motion.div>
+            {/* Avatar with ripple rings */}
+            <div className="relative mb-6">
+              <div className="call-ring-pulse relative flex size-28 items-center justify-center overflow-hidden rounded-full bg-secondary">
+                {callerImage ? (
+                  <img src={callerImage} alt={callerName} className="size-full object-cover" />
+                ) : (
+                  <span className="text-3xl font-bold text-muted-foreground">
+                    {initialsOf(callerName)}
+                  </span>
+                )}
+              </div>
+            </div>
 
-            <h2 className="mb-1 text-lg font-semibold text-foreground">{callerName}</h2>
-            <p className="mb-6 text-sm text-muted-foreground">
-              {callType === 'video' ? 'Incoming video call...' : 'Incoming voice call...'}
+            {/* Caller info */}
+            <h2 className="mb-1 text-xl font-bold text-foreground">{callerName}</h2>
+            <p className="mb-8 flex items-center gap-2 text-sm text-muted-foreground">
+              {callType === 'video' ? (
+                <>
+                  <Video className="size-4" />
+                  Incoming video call
+                </>
+              ) : (
+                <>
+                  <Phone className="size-4" />
+                  Incoming voice call
+                </>
+              )}
             </p>
 
-            <div className="flex gap-4">
-              <button
-                onClick={onReject}
-                className="flex size-14 items-center justify-center rounded-full bg-red-500 text-white shadow-lg transition-transform hover:scale-110 active:scale-95"
-              >
-                <PhoneOff className="size-6" />
-              </button>
-              <button
-                onClick={onAccept}
-                className="flex size-14 items-center justify-center rounded-full bg-green-500 text-white shadow-lg transition-transform hover:scale-110 active:scale-95"
-              >
-                {callType === 'video' ? <Video className="size-6" /> : <Phone className="size-6" />}
-              </button>
+            {/* Accept / Reject buttons */}
+            <div className="flex items-center gap-6">
+              <div className="flex flex-col items-center gap-1.5">
+                <button
+                  onClick={onReject}
+                  className="flex size-16 items-center justify-center rounded-full bg-red-500 text-white shadow-lg transition-all hover:scale-110 hover:bg-red-600 active:scale-95"
+                >
+                  <PhoneOff className="size-7" />
+                </button>
+                <span className="text-xs text-muted-foreground">Decline</span>
+              </div>
+
+              <div className="flex flex-col items-center gap-1.5">
+                <motion.button
+                  onClick={onAccept}
+                  animate={{ scale: [1, 1.06, 1] }}
+                  transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
+                  className="flex size-16 items-center justify-center rounded-full bg-green-500 text-white shadow-lg transition-all hover:scale-110 hover:bg-green-600 active:scale-95"
+                >
+                  {callType === 'video' ? <Video className="size-7" /> : <Phone className="size-7" />}
+                </motion.button>
+                <span className="text-xs text-muted-foreground">Accept</span>
+              </div>
             </div>
           </motion.div>
         </motion.div>

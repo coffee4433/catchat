@@ -58,6 +58,8 @@ import { reportTypingSupabase, stopTypingSupabase } from '@/app/actions/typing-s
 import { supabase } from '@/lib/supabase/client'
 import { AddMembersModal } from '@/components/add-members-modal'
 import { useCallContext } from '@/components/calls/call-provider'
+import { UserPopover, type PopoverUser } from '@/components/user-popover'
+import { UserProfileModal } from '@/components/user-profile-modal'
 import type { Conversation } from '@/components/chat-app'
 
 function formatDateLabel(date: Date | string) {
@@ -277,6 +279,7 @@ export function ChatThread({
       type,
       conversation.otherUser.id,
       conversation.otherUser.name,
+      conversation.otherUser.image,
     )
   }
 
@@ -342,6 +345,11 @@ export function ChatThread({
   const [languageSearch, setLanguageSearch] = useState('')
   const [favorites, setFavorites] = useState<string[]>(['en', 'es'])
   const searchInputRef = useRef<HTMLInputElement>(null)
+
+  // User popover / profile modal state
+  const [popoverUser, setPopoverUser] = useState<PopoverUser | null>(null)
+  const [popoverAnchor, setPopoverAnchor] = useState<DOMRect | null>(null)
+  const [profileModalUser, setProfileModalUser] = useState<PopoverUser | null>(null)
 
   useEffect(() => {
     getTranslatorFavorites().then(setFavorites).catch(() => {})
@@ -1090,7 +1098,14 @@ export function ChatThread({
               </div>
             )}
             {/* Avatar */}
-            <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-secondary text-[12px] font-semibold text-muted-foreground mt-0.5">
+            <button
+              onClick={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect()
+                setPopoverUser({ id: msg.userId, name: msg.senderName, image: msg.senderImage })
+                setPopoverAnchor(rect)
+              }}
+              className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-secondary text-[12px] font-semibold text-muted-foreground mt-0.5 cursor-pointer hover:opacity-80 transition-opacity"
+            >
               {msg.senderImage ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -1101,12 +1116,19 @@ export function ChatThread({
               ) : (
                 initialsOf(msg.senderName)
               )}
-            </span>
+            </button>
 
             {/* Content Area */}
             <div className="min-w-0 flex-1">
               <div className="flex items-baseline gap-2">
-                <span className="text-[13.5px] font-semibold hover:underline cursor-pointer text-foreground">
+                <span
+                  onClick={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect()
+                    setPopoverUser({ id: msg.userId, name: msg.senderName, image: msg.senderImage })
+                    setPopoverAnchor(rect)
+                  }}
+                  className="text-[13.5px] font-semibold hover:underline cursor-pointer text-foreground"
+                >
                   {msg.senderName}
                 </span>
                 {prefs.showTimestamps && (
@@ -1679,7 +1701,7 @@ export function ChatThread({
                           </div>
 
                           {/* Scrollable list */}
-                          <div className="overflow-y-auto flex-1 px-1.5 pb-1.5 space-y-0.5">
+                          <div className="overflow-y-auto flex-1 px-1.5 pb-1.5 space-y-0.5 thin-scroll">
                             {/* Off */}
                             <button
                               onClick={() => {
@@ -2798,6 +2820,30 @@ export function ChatThread({
           onMembersAdded={() => {
             onConversationInfoChange?.(conversation.id)
           }}
+        />
+      )}
+
+      {/* User popover */}
+      {popoverUser && popoverAnchor && (
+        <UserPopover
+          user={popoverUser}
+          currentUserId={user.id}
+          anchorRect={popoverAnchor}
+          onClose={() => { setPopoverUser(null); setPopoverAnchor(null) }}
+          onOpenFullProfile={() => {
+            setProfileModalUser(popoverUser)
+            setPopoverUser(null)
+            setPopoverAnchor(null)
+          }}
+        />
+      )}
+
+      {/* Full profile modal */}
+      {profileModalUser && (
+        <UserProfileModal
+          user={profileModalUser}
+          currentUserId={user.id}
+          onClose={() => setProfileModalUser(null)}
         />
       )}
 

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">CatChat</string>
+    <string name="title_activity_main">CatChat</string>
+    <string name="package_name">app.catchat.chat</string>
+    <string name="custom_url_scheme">app.catchat.chat</string>
+</resources>

@@ -61,20 +61,34 @@ export function SettingsModal({
 }) {
   const { t } = useLanguage()
   const [active, setActive] = useState<Section>('profile')
+  const [sidebarSearch, setSidebarSearch] = useState('')
 
-  const sections: { id: Section; label: string; icon: React.ReactNode }[] = [
-    { id: 'profile', label: t.profileSection, icon: <UserIcon className="size-4" /> },
-    { id: 'appearance', label: t.appearanceSection, icon: <Palette className="size-4" /> },
-    { id: 'chat', label: t.chatSection, icon: <MessageCircle className="size-4" /> },
-    { id: 'notifications', label: t.notificationsSection, icon: <Bell className="size-4" /> },
-    { id: 'privacy', label: t.privacySection, icon: <Lock className="size-4" /> },
-    { id: 'language', label: t.languageSection, icon: <Globe className="size-4" /> },
-    { id: 'account', label: t.accountSection, icon: <Shield className="size-4" /> },
+  // Grouped navigation sections matching Discord's structure
+  const generalSections: { id: Section; label: string; icon: React.ReactNode }[] = [
+    { id: 'profile', label: t.profileSection, icon: <UserIcon className="size-5" /> },
+    { id: 'privacy', label: t.privacySection, icon: <Lock className="size-5" /> },
+    { id: 'notifications', label: t.notificationsSection, icon: <Bell className="size-5" /> },
   ]
+
+  const appSections: { id: Section; label: string; icon: React.ReactNode }[] = [
+    { id: 'appearance', label: t.appearanceSection, icon: <Palette className="size-5" /> },
+    { id: 'chat', label: t.chatSection, icon: <MessageCircle className="size-5" /> },
+    { id: 'language', label: t.languageSection, icon: <Globe className="size-5" /> },
+    { id: 'account', label: t.accountSection, icon: <Shield className="size-5" /> },
+  ]
+
+  const allSections = [...generalSections, ...appSections]
+
+  // Filter sections by search
+  const filterSections = (sections: typeof generalSections) =>
+    sidebarSearch.trim()
+      ? sections.filter((s) => s.label.toLowerCase().includes(sidebarSearch.toLowerCase()))
+      : sections
 
   useEffect(() => {
     if (!open) return
     setActive('profile')
+    setSidebarSearch('')
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
     }
@@ -107,36 +121,111 @@ export function SettingsModal({
             transition={{ type: 'spring', stiffness: 400, damping: 34 }}
             className="relative flex h-[90dvh] max-h-[820px] w-full max-w-5xl overflow-hidden rounded-2xl border border-border bg-card shadow-2xl"
           >
-            {/* Left nav */}
-            <nav className="hidden w-64 shrink-0 flex-col border-r border-border bg-background/50 p-3 sm:flex">
-              <p className="px-2 pt-1 pb-3 text-[12px] font-semibold text-muted-foreground">{t.settingsModalTitle}</p>
-              {sections.map((s) => (
+            {/* ── Discord-style Left nav ──────────── */}
+            <nav className="hidden w-[252px] shrink-0 flex-col border-r border-border bg-background/50 sm:flex">
+              {/* Profile card at top */}
+              <div className="border-b border-border p-3">
                 <button
-                  key={s.id}
-                  onClick={() => setActive(s.id)}
-                  aria-current={active === s.id}
-                  className={`flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[13.5px] transition-colors ${
-                    active === s.id
-                      ? 'bg-secondary font-semibold text-foreground'
-                      : 'text-muted-foreground font-medium hover:bg-secondary/60 hover:text-foreground'
-                  }`}
+                  onClick={() => setActive('profile')}
+                  className="flex w-full items-center gap-3 rounded-xl p-2 text-left transition-colors hover:bg-secondary/60"
                 >
-                  {s.icon}
-                  {s.label}
+                  <span className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-secondary text-xs font-semibold text-muted-foreground">
+                    {user.image ? (
+                      <img src={user.image} alt="" className="size-full object-cover" />
+                    ) : (
+                      initialsOf(user.name)
+                    )}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[14px] font-semibold text-foreground">{user.name}</p>
+                    <p className="truncate text-[12px] text-muted-foreground">{t.profileSection}</p>
+                  </div>
                 </button>
-              ))}
+              </div>
+
+              {/* Search bar */}
+              <div className="px-3 py-2.5">
+                <div className="flex items-center gap-2 rounded-lg border border-border bg-secondary/40 px-2.5 py-1.5">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="shrink-0 text-muted-foreground">
+                    <path d="M15.62 17.03a9 9 0 1 1 1.41-1.41l4.68 4.67a1 1 0 0 1-1.42 1.42l-4.67-4.68ZM17 10a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z" fill="currentColor" fillRule="evenodd" clipRule="evenodd" />
+                  </svg>
+                  <input
+                    type="text"
+                    placeholder={t.searchPlaceholder || 'Search'}
+                    value={sidebarSearch}
+                    onChange={(e) => setSidebarSearch(e.target.value)}
+                    className="min-w-0 flex-1 bg-transparent text-[13px] text-foreground outline-none placeholder:text-muted-foreground/60"
+                  />
+                </div>
+              </div>
+
+              {/* Scrollable nav */}
+              <div className="thin-scroll flex-1 overflow-y-auto px-2 pb-3">
+                {/* General section */}
+                {filterSections(generalSections).length > 0 && (
+                  <div className="mb-1">
+                    <p className="px-2.5 pt-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      General
+                    </p>
+                    {filterSections(generalSections).map((s) => (
+                      <button
+                        key={s.id}
+                        onClick={() => setActive(s.id)}
+                        aria-current={active === s.id}
+                        className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[13.5px] transition-colors ${
+                          active === s.id
+                            ? 'bg-secondary font-semibold text-foreground'
+                            : 'text-muted-foreground font-medium hover:bg-secondary/60 hover:text-foreground'
+                        }`}
+                      >
+                        {s.icon}
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Divider */}
+                {filterSections(generalSections).length > 0 && filterSections(appSections).length > 0 && (
+                  <div className="mx-2.5 my-1.5 h-px bg-border" />
+                )}
+
+                {/* App Settings section */}
+                {filterSections(appSections).length > 0 && (
+                  <div className="mb-1">
+                    <p className="px-2.5 pt-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      {t.appearanceSection ? 'App Settings' : 'App Settings'}
+                    </p>
+                    {filterSections(appSections).map((s) => (
+                      <button
+                        key={s.id}
+                        onClick={() => setActive(s.id)}
+                        aria-current={active === s.id}
+                        className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[13.5px] transition-colors ${
+                          active === s.id
+                            ? 'bg-secondary font-semibold text-foreground'
+                            : 'text-muted-foreground font-medium hover:bg-secondary/60 hover:text-foreground'
+                        }`}
+                      >
+                        {s.icon}
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </nav>
 
-            {/* Content */}
+            {/* ── Content ────────────────────────── */}
             <div className="flex min-w-0 flex-1 flex-col">
               <header className="flex items-center justify-between border-b border-border px-5 py-4">
                 <h2 className="text-sm font-semibold capitalize">
-                  {sections.find((s) => s.id === active)?.label}
+                  {allSections.find((s) => s.id === active)?.label}
                 </h2>
                 <button
                   onClick={onClose}
                   aria-label={t.settingsModalCloseLabel}
-                  className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                  className="flex size-8 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
                 >
                   <X className="size-4" />
                 </button>
@@ -144,7 +233,7 @@ export function SettingsModal({
 
               {/* Mobile section tabs */}
               <div className="flex gap-1 overflow-x-auto border-b border-border px-3 py-2 sm:hidden">
-                {sections.map((s) => (
+                {allSections.map((s) => (
                   <button
                     key={s.id}
                     onClick={() => setActive(s.id)}
