@@ -394,14 +394,14 @@ export function UserDock({
           </div>
 
           {/* Discord Voice Call Dock Widget */}
-          <AnimatePresence initial={false}>
+          <AnimatePresence>
             {hasActiveCall && (
               <motion.div
                 key="voice-dock"
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: 'auto', opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.3, ease: 'easeOut' }}
+                transition={{ type: 'spring', stiffness: 350, damping: 30 }}
                 className="overflow-hidden"
               >
                 <DiscordVoiceDockWidget call={activeCall} />
