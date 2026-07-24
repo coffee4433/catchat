@@ -141,9 +141,10 @@ ipcMain.handle('get:git-commits', async () => {
   const { exec } = require('child_process')
 
   return new Promise((resolve) => {
-    exec('git describe --tags --abbrev=0', { cwd: cfg.projectPath }, (errTag, stdoutTag) => {
-      const lastTag = !errTag && stdoutTag ? stdoutTag.trim() : null
-      const logCmd = lastTag ? `git log ${lastTag}..HEAD --oneline` : 'git log -n 10 --oneline'
+    // Find the hash of the latest release commit ("Release vX.Y.Z")
+    exec('git log --grep="Release v" -n 1 --format="%H"', { cwd: cfg.projectPath }, (errRel, stdoutRel) => {
+      const lastReleaseHash = !errRel && stdoutRel ? stdoutRel.trim() : null
+      const logCmd = lastReleaseHash ? `git log ${lastReleaseHash}..HEAD --oneline` : 'git log -n 10 --oneline'
 
       exec(logCmd, { cwd: cfg.projectPath }, (errLog, stdoutLog) => {
         let commits = []
@@ -163,7 +164,7 @@ ipcMain.handle('get:git-commits', async () => {
                 .filter(Boolean)
                 .slice(0, 10)
               if (modifiedFiles.length > 0) {
-                return resolve(['Cambios locales sin comitear:\n' + modifiedFiles.join('\n')])
+                return resolve(['Cambios locales en desarrollo:\n' + modifiedFiles.join('\n')])
               }
             }
             exec('git log -n 5 --oneline', { cwd: cfg.projectPath }, (_, fallbackLog) => {
@@ -171,6 +172,7 @@ ipcMain.handle('get:git-commits', async () => {
                 .split('\n')
                 .map((l) => l.trim())
                 .filter(Boolean)
+                .filter((l) => !/\bRelease v\d/i.test(l))
               resolve(fallbackCommits)
             })
           })
