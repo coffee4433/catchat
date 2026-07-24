@@ -214,17 +214,22 @@ ipcMain.handle('generate:ai-notes', async (_event, userPrompt) => {
   const messages = [
     {
       role: 'system',
-      content: `Eres un asistente experto en software y notas de lanzamiento (Release Notes). Tu misión es transformar la información de cambios provista por el usuario en un documento Markdown profesional, estructurado, detallado y visualmente atractivo para la aplicación CatChat.
+      content: `Eres un asistente experto en software y notas de lanzamiento (Release Notes). Tu misión es transformar la información de cambios provista por el usuario en un documento Markdown profesional, estructurado, detallado y visualmente impresionante para la aplicación CatChat.
 
-Instrucciones de formato:
-1. Usa títulos de sección con emojis:
-   - ## ✨ Novedades
-   - ## 🐛 Correcciones y Mejoras
-   - ## ⚡ Rendimiento y Estabilidad
-   - ## 🎨 Interfaz y Experiencia
-2. Para cada cambio, escribe una viñeta (- ) con una explicación detallada, destacando beneficios clave para el usuario en **negrita**.
-3. Mantén un tono entusiasta, profesional y claro.
-4. Responde ÚNICAMENTE con el contenido en Markdown, sin comentarios ni introducciones.`
+Instrucciones de formato rico:
+1. Usa títulos de sección claros con emojis:
+   - ## ✨ Novedades Destacadas
+   - ## 🐛 Correcciones y Ajustes
+   - ## ⚡ Rendimiento y Optimización
+   - ## 🎨 UI & Experiencia de Usuario
+2. Puedes incluir cajas destacadas (Callouts / Alertas) formateadas así:
+   - > [!NOTE] Resumen ejecutivo de la versión.
+   - > [!TIP] Consejos o trucos sobre cómo usar la nueva función.
+   - > [!IMPORTANT] Avisos relevantes o cambios clave.
+3. Utiliza etiquetas o badges al inicio de las viñetas cuando corresponda:
+   - [NUEVO], [MEJORA], [FIX], [DISEÑO], [IMPORTANTE]
+4. Para cada cambio, escribe una viñeta (- ) detallada destacando conceptos clave en **negrita** o fragmentos de código en \`código\`.
+5. Responde ÚNICAMENTE con el documento Markdown final listo para publicar.`
     },
     {
       role: 'user',
@@ -245,15 +250,16 @@ ipcMain.handle('chat:ai-notes', async (_event, chatMessages) => {
     content: `Eres un asistente de IA conversacional especializado en crear y pulir Release Notes (Notas de lanzamiento) en Markdown para CatChat.
 
 Instrucciones:
-1. Ayuda al usuario a redactar, refinar y mejorar las Release Notes a través de la conversación.
-2. Cada vez que el usuario te mencione cambios, agregues funciones o te pida redactar las notas, genera o actualiza el documento Markdown completo y detallado.
-3. Formato recomendado:
-   - ## ✨ Novedades
-   - ## 🐛 Correcciones y Mejoras
-   - ## ⚡ Rendimiento y Estabilidad
-   - ## 🎨 Interfaz y Experiencia
-4. Usa viñetas (- ) con explicaciones claras, destacando puntos clave en **negrita**.
-5. Ofrece siempre el resultado final en Markdown listo para aplicar.`
+1. Ayuda al usuario a redactar, refinar y personalizar las Release Notes en un Markdown visualmente impresionante a través de la conversación.
+2. Formato rico recomendado:
+   - ## ✨ Novedades Destacadas
+   - ## 🐛 Correcciones y Ajustes
+   - ## ⚡ Rendimiento y Optimización
+   - ## 🎨 UI & Experiencia de Usuario
+   - Cajas destacadas: > [!NOTE] o > [!TIP] o > [!IMPORTANT]
+   - Badges al inicio de viñetas: [NUEVO], [MEJORA], [FIX], [DISEÑO]
+3. Usa viñetas (- ) con explicaciones claras, destacando puntos clave en **negrita** o \`código\`.
+4. Ofrece siempre el resultado final en Markdown formateado y listo para aplicar con el botón.`
   }
 
   const messages = [systemMessage, ...(chatMessages || [])]

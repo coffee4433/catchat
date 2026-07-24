@@ -1,7 +1,7 @@
 'use client'
 
 import { AnimatePresence, motion } from 'framer-motion'
-import { Sparkles, X, Check, Flame, Wrench, Zap, Palette, Rocket } from 'lucide-react'
+import { Sparkles, X, Check, Flame, Wrench, Zap, Palette, Rocket, Info, AlertTriangle } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 type LatestYmlData = {
@@ -40,14 +40,30 @@ function BulletIcon({ line }: { line: string }) {
   return <Rocket className="size-4 text-sky-400 shrink-0 mt-0.5" />
 }
 
-function renderMarkdownText(text: string) {
-  const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g)
+function renderFormattedBadgesAndText(text: string) {
+  const parts = text.split(/(\[\w+\]|\*\*[^*]+\*\*|`[^`]+`)/g)
   return parts.map((part, i) => {
     if (part.startsWith('**') && part.endsWith('**')) {
       return <strong key={i} className="font-semibold text-white">{part.slice(2, -2)}</strong>
     }
     if (part.startsWith('`') && part.endsWith('`')) {
-      return <code key={i} className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[12px] text-sky-300">{part.slice(1, -1)}</code>
+      return <code key={i} className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[12px] text-sky-300 border border-white/10">{part.slice(1, -1)}</code>
+    }
+    if (part.startsWith('[') && part.endsWith(']')) {
+      const tag = part.slice(1, -1).toUpperCase()
+      if (['NUEVO', 'NEW'].includes(tag)) {
+        return <span key={i} className="mr-1.5 inline-flex items-center rounded-md bg-emerald-500/20 px-1.5 py-0.5 text-[10px] font-bold text-emerald-300 border border-emerald-500/30 uppercase">NUEVO</span>
+      }
+      if (['FIX', 'CORRECCIÓN', 'CORRECCION'].includes(tag)) {
+        return <span key={i} className="mr-1.5 inline-flex items-center rounded-md bg-rose-500/20 px-1.5 py-0.5 text-[10px] font-bold text-rose-300 border border-rose-500/30 uppercase">FIX</span>
+      }
+      if (['MEJORA', 'PRO'].includes(tag)) {
+        return <span key={i} className="mr-1.5 inline-flex items-center rounded-md bg-indigo-500/20 px-1.5 py-0.5 text-[10px] font-bold text-indigo-300 border border-indigo-500/30 uppercase">MEJORA</span>
+      }
+      if (['UI', 'DISEÑO', 'DISENO'].includes(tag)) {
+        return <span key={i} className="mr-1.5 inline-flex items-center rounded-md bg-purple-500/20 px-1.5 py-0.5 text-[10px] font-bold text-purple-300 border border-purple-500/30 uppercase">UI</span>
+      }
+      return <span key={i} className="mr-1.5 inline-flex items-center rounded-md bg-sky-500/20 px-1.5 py-0.5 text-[10px] font-bold text-sky-300 border border-sky-500/30 uppercase">{tag}</span>
     }
     return part
   })
@@ -57,30 +73,68 @@ function FormattedMarkdownLine({ line }: { line: string }) {
   const trimmed = line.trim()
   if (!trimmed) return null
 
+  // Callout boxes (> [!NOTE], > [!TIP], > [!IMPORTANT], > [!WARNING])
+  if (trimmed.startsWith('>')) {
+    const content = trimmed.replace(/^>\s*/, '')
+    if (content.includes('[!TIP]') || content.includes('[!SUCCESS]')) {
+      return (
+        <div className="flex items-start gap-3 rounded-r-xl border-l-4 border-emerald-500 bg-emerald-500/10 p-3.5 text-[13px] text-emerald-200">
+          <Sparkles className="size-4 text-emerald-400 shrink-0 mt-0.5" />
+          <span className="flex-1">{renderFormattedBadgesAndText(content.replace(/\[!(TIP|SUCCESS)\]\s*/, ''))}</span>
+        </div>
+      )
+    }
+    if (content.includes('[!IMPORTANT]') || content.includes('[!STAR]')) {
+      return (
+        <div className="flex items-start gap-3 rounded-r-xl border-l-4 border-amber-500 bg-amber-500/10 p-3.5 text-[13px] text-amber-200">
+          <Flame className="size-4 text-amber-400 shrink-0 mt-0.5" />
+          <span className="flex-1">{renderFormattedBadgesAndText(content.replace(/\[!(IMPORTANT|STAR)\]\s*/, ''))}</span>
+        </div>
+      )
+    }
+    if (content.includes('[!WARNING]') || content.includes('[!ALERT]')) {
+      return (
+        <div className="flex items-start gap-3 rounded-r-xl border-l-4 border-rose-500 bg-rose-500/10 p-3.5 text-[13px] text-rose-200">
+          <AlertTriangle className="size-4 text-rose-400 shrink-0 mt-0.5" />
+          <span className="flex-1">{renderFormattedBadgesAndText(content.replace(/\[!(WARNING|ALERT)\]\s*/, ''))}</span>
+        </div>
+      )
+    }
+    // Default callout / note
+    return (
+      <div className="flex items-start gap-3 rounded-r-xl border-l-4 border-[#5865F2] bg-[#5865F2]/10 p-3.5 text-[13px] text-blue-200">
+        <Info className="size-4 text-[#7983f5] shrink-0 mt-0.5" />
+        <span className="flex-1">{renderFormattedBadgesAndText(content.replace(/\[!NOTE\]\s*/, ''))}</span>
+      </div>
+    )
+  }
+
+  // Section Headers (## Heading)
   if (trimmed.startsWith('#')) {
     const cleanHeader = trimmed.replace(/^#+\s*/, '')
     return (
-      <div className="pt-3 pb-1 border-b border-white/10 first:pt-0">
-        <h3 className="text-[14px] font-bold text-[#7983f5] flex items-center gap-2">
-          {renderMarkdownText(cleanHeader)}
-        </h3>
+      <div className="mt-4 mb-2 first:mt-0 flex items-center gap-2.5 rounded-xl bg-gradient-to-r from-[#5865F2]/20 via-[#7983f5]/10 to-transparent p-3 border border-[#5865F2]/30 text-[14.5px] font-bold text-white shadow-sm">
+        <Sparkles className="size-4 text-[#7983f5]" />
+        <span>{renderFormattedBadgesAndText(cleanHeader)}</span>
       </div>
     )
   }
 
+  // Bullet items (- item)
   if (trimmed.startsWith('-') || trimmed.startsWith('*') || trimmed.startsWith('•')) {
     const cleanBullet = trimmed.replace(/^[-*•]\s*/, '')
     return (
-      <div className="flex items-start gap-3 rounded-xl bg-white/5 p-3 text-[13.5px] leading-relaxed text-white/90 border border-white/5 shadow-sm">
+      <div className="flex items-start gap-3 rounded-xl bg-white/5 p-3 text-[13.5px] leading-relaxed text-white/90 border border-white/5 shadow-sm transition-all hover:bg-white/[0.07]">
         <BulletIcon line={cleanBullet} />
-        <span className="flex-1">{renderMarkdownText(cleanBullet)}</span>
+        <span className="flex-1">{renderFormattedBadgesAndText(cleanBullet)}</span>
       </div>
     )
   }
 
+  // Normal text paragraph
   return (
-    <p className="text-[13px] leading-relaxed text-white/80 px-1">
-      {renderMarkdownText(trimmed)}
+    <p className="text-[13px] leading-relaxed text-white/85 px-1 py-0.5">
+      {renderFormattedBadgesAndText(trimmed)}
     </p>
   )
 }
