@@ -1,11 +1,59 @@
-version: 0.3.16
+version: 0.3.17
 files:
-  - url: https://github.com/coffee4433/catchat/releases/download/v0.3.16/CatChat-Setup-0.3.16.exe
-    sha512: ueailqWDri2hUFvfl2axCGXPyGxz7fO94dEZNZ1Vy2tFpO0qDKzy15BP8I7tSc354BfKuU/oyR75hmEfCpRWzQ==
-    size: 240332160
-path: CatChat-Setup-0.3.16.exe
-sha512: ueailqWDri2hUFvfl2axCGXPyGxz7fO94dEZNZ1Vy2tFpO0qDKzy15BP8I7tSc354BfKuU/oyR75hmEfCpRWzQ==
-releaseDate: '2026-07-24T22:21:00.559Z'
-
+  - url: https://github.com/coffee4433/catchat/releases/download/v0.3.17/CatChat-Setup-0.3.17.exe
+    sha512: WJIMzXomgL9oj8abgA7oorZlSDKz8OSX9zHfKBtp1MI8zIczjR9zxLgZRwr5B/pbdiRyda4/sSGsYP7jFBh/lg==
+    size: 240629566
+path: CatChat-Setup-0.3.17.exe
+sha512: WJIMzXomgL9oj8abgA7oorZlSDKz8OSX9zHfKBtp1MI8zIczjR9zxLgZRwr5B/pbdiRyda4/sSGsYP7jFBh/lg==
+releaseDate: '2026-07-24T23:05:32.685Z'
+showReleaseModal: true
 releaseNotes: |
-  test test test
+  <!-- theme: {"headerGradient": "from-teal-400/25 via-blue-500/20 to-indigo-500/15", "btnBg": "bg-gradient-to-r from-teal-500 to-blue-600"} -->
+  
+  # 🎉 CatChat v0.3.16 — Notas de Lanzamiento
+  
+  > [!NOTE]
+  > Esta versión trae un **sistema completo de IA para notas de lanzamiento**, mejoras en el dock de llamadas de voz y un montón de pulidos visuales. Todo con un diseño moderno y fluido.
+  
+  ---
+  
+  ## ✨ Novedades Destacadas
+  
+  - **[NUEVO]** **Asistente interactivo de IA para Release Notes** con botón de aplicar en un solo clic.  
+    Ahora puedes conversar con la IA para ajustar el estilo visual de las notas (colores, gradientes, temas) y aplicarlo directamente.
+  
+  - **[NUEVO]** **Auto‑generación de notas con detección de Git**.  
+    La herramienta de lanzamiento detecta automáticamente los commits y genera notas en Markdown con callouts y badges.
+  
+  - **[NUEVO]** **Soporte para `deepseek-v4-pro` y `deepseek-v4-flash`** con fallback automático.  
+    Si un modelo falla, el sistema cambia al otro sin interrumpir el flujo.
+  
+  - **[NUEVO]** **Widget de llamada de voz tipo Discord** en la esquina inferior izquierda del dock de usuario.  
+    Incluye animaciones suaves de expansión, entrada con muelle y contracción al finalizar la llamada.
+  
+  - **[NUEVO]** **Campo `releaseNotes` en `latest.yml`** para notificaciones de actualización más ricas.
+  
+  - **[DISEÑO]** **Modal flotante de notas de lanzamiento al estilo Discord** dentro de CatChat, con plantillas de editor y un checkbox para activarlo desde la herramienta de lanzamiento.
+  
+  - **[DISEÑO]** **Esquinas redondeadas ultra‑suaves de 24px** en el modal de IA y en los callouts/badges Markdown.
+  
+  ---
+  
+  ## ⚡ Rendimiento y Optimización
+  
+  - **[MEJORA]** La IA ahora puede personalizar estilos visuales y temas de las notas de lanzamiento de forma dinámica según el gusto del usuario.
+  - **[MEJORA]** Mecanismo de fallback automático entre modelos de IA para evitar interrupciones.
+  
+  ---
+  
+  ## 🎨 UI & Experiencia de Usuario
+  
+  - **[ANIMACIÓN]** Animación de entrada tipo muelle (spring) al aceptar o iniciar una llamada de voz.
+  - **[ANIMACIÓN]** Animación de expansión suave en altura para el widget de llamada.
+  - **[ANIMACIÓN]** Contracción y salida reversa con colapso al finalizar la llamada.
+  - **[DISEÑO]** Callouts enriquecidos (notas, tips, advertencias) y badges con estilo visual renovado en todo CatChat.
+  
+  ---
+  
+  > [!TIP]  
+  > Prueba a escribirle a la IA pidiendo un “estilo cyberpunk” o “tema esmeralda” y verás cómo las notas se transforman al instante. ✨
