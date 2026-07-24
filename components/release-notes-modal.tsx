@@ -1,7 +1,7 @@
 'use client'
 
 import { AnimatePresence, motion } from 'framer-motion'
-import { Sparkles, X, Check, Flame, Wrench, Zap, Palette } from 'lucide-react'
+import { Sparkles, X, Check, Flame, Wrench, Zap, Palette, Rocket } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 type LatestYmlData = {
@@ -34,10 +34,55 @@ function parseYml(text: string): LatestYmlData {
 
 function BulletIcon({ line }: { line: string }) {
   if (line.includes('✨') || line.toLowerCase().includes('novedad')) return <Flame className="size-4 text-[#5865F2] shrink-0 mt-0.5" />
-  if (line.includes('🐛') || line.toLowerCase().includes('fix') || line.toLowerCase().includes('error')) return <Wrench className="size-4 text-emerald-400 shrink-0 mt-0.5" />
-  if (line.includes('⚡') || line.toLowerCase().includes('rendimiento')) return <Zap className="size-4 text-amber-400 shrink-0 mt-0.5" />
-  if (line.includes('🎨') || line.toLowerCase().includes('ui') || line.toLowerCase().includes('diseño')) return <Palette className="size-4 text-purple-400 shrink-0 mt-0.5" />
-  return <Sparkles className="size-4 text-sky-400 shrink-0 mt-0.5" />
+  if (line.includes('🐛') || line.toLowerCase().includes('fix') || line.toLowerCase().includes('error') || line.toLowerCase().includes('corrección')) return <Wrench className="size-4 text-emerald-400 shrink-0 mt-0.5" />
+  if (line.includes('⚡') || line.toLowerCase().includes('rendimiento') || line.toLowerCase().includes('estabilidad')) return <Zap className="size-4 text-amber-400 shrink-0 mt-0.5" />
+  if (line.includes('🎨') || line.toLowerCase().includes('ui') || line.toLowerCase().includes('diseño') || line.toLowerCase().includes('interfaz')) return <Palette className="size-4 text-purple-400 shrink-0 mt-0.5" />
+  return <Rocket className="size-4 text-sky-400 shrink-0 mt-0.5" />
+}
+
+function renderMarkdownText(text: string) {
+  const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g)
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={i} className="font-semibold text-white">{part.slice(2, -2)}</strong>
+    }
+    if (part.startsWith('`') && part.endsWith('`')) {
+      return <code key={i} className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[12px] text-sky-300">{part.slice(1, -1)}</code>
+    }
+    return part
+  })
+}
+
+function FormattedMarkdownLine({ line }: { line: string }) {
+  const trimmed = line.trim()
+  if (!trimmed) return null
+
+  if (trimmed.startsWith('#')) {
+    const cleanHeader = trimmed.replace(/^#+\s*/, '')
+    return (
+      <div className="pt-3 pb-1 border-b border-white/10 first:pt-0">
+        <h3 className="text-[14px] font-bold text-[#7983f5] flex items-center gap-2">
+          {renderMarkdownText(cleanHeader)}
+        </h3>
+      </div>
+    )
+  }
+
+  if (trimmed.startsWith('-') || trimmed.startsWith('*') || trimmed.startsWith('•')) {
+    const cleanBullet = trimmed.replace(/^[-*•]\s*/, '')
+    return (
+      <div className="flex items-start gap-3 rounded-xl bg-white/5 p-3 text-[13.5px] leading-relaxed text-white/90 border border-white/5 shadow-sm">
+        <BulletIcon line={cleanBullet} />
+        <span className="flex-1">{renderMarkdownText(cleanBullet)}</span>
+      </div>
+    )
+  }
+
+  return (
+    <p className="text-[13px] leading-relaxed text-white/80 px-1">
+      {renderMarkdownText(trimmed)}
+    </p>
+  )
 }
 
 export function ReleaseNotesModal() {
@@ -86,8 +131,7 @@ export function ReleaseNotesModal() {
 
   const lines = (data.releaseNotes || '')
     .split('\n')
-    .map((l) => l.trim())
-    .filter(Boolean)
+    .filter((l) => l.trim().length > 0)
 
   return (
     <AnimatePresence>
@@ -98,7 +142,7 @@ export function ReleaseNotesModal() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 16 }}
             transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-            className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-white/10 bg-[#1e1f22] text-white shadow-2xl"
+            className="relative w-full max-w-xl overflow-hidden rounded-3xl border border-white/10 bg-[#1e1f22] text-white shadow-2xl"
           >
             {/* Header section with gradient background */}
             <div className="relative border-b border-white/10 bg-gradient-to-br from-[#5865F2]/25 via-[#3b82f6]/10 to-transparent p-6">
@@ -130,12 +174,9 @@ export function ReleaseNotesModal() {
             </div>
 
             {/* Release notes body */}
-            <div className="max-h-[55vh] overflow-y-auto p-6 space-y-3">
+            <div className="max-h-[60vh] overflow-y-auto p-6 space-y-3">
               {lines.map((line, idx) => (
-                <div key={idx} className="flex items-start gap-3 rounded-xl bg-white/5 p-3 text-[13.5px] leading-relaxed text-white/90 border border-white/5">
-                  <BulletIcon line={line} />
-                  <span className="flex-1">{line.replace(/^[-*•]\s*/, '')}</span>
-                </div>
+                <FormattedMarkdownLine key={idx} line={line} />
               ))}
             </div>
 

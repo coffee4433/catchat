@@ -10,9 +10,10 @@ function loadConfig() {
   try {
     const cfg = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'))
     if (!cfg.ghToken) cfg.ghToken = ''
+    if (!cfg.deepseekKey) cfg.deepseekKey = ''
     return cfg
   }
-  catch { return { projectPath: '', ghToken: '' } }
+  catch { return { projectPath: '', ghToken: '', deepseekKey: '' } }
 }
 
 function saveConfig(cfg) {
@@ -119,9 +120,95 @@ ipcMain.handle('save:token', async (_event, token) => {
   return true
 })
 
+ipcMain.handle('save:deepseek-key', async (_event, key) => {
+  const cfg = { ...loadConfig(), deepseekKey: key }
+  saveConfig(cfg)
+  return true
+})
+
 ipcMain.handle('get:config', () => {
   const cfg = loadConfig()
-  return { projectPath: cfg.projectPath || '', hasToken: !!cfg.ghToken }
+  return {
+    projectPath: cfg.projectPath || '',
+    hasToken: !!cfg.ghToken,
+    hasDeepseekKey: !!cfg.deepseekKey,
+  }
+})
+
+ipcMain.handle('get:git-commits', async () => {
+  const cfg = loadConfig()
+  if (!cfg.projectPath) return []
+  return new Promise((resolve) => {
+    const { exec } = require('child_process')
+    exec('git log -n 15 --oneline', { cwd: cfg.projectPath }, (err, stdout) => {
+      if (err || !stdout) return resolve([])
+      const commits = stdout.split('\n').map((l) => l.trim()).filter(Boolean)
+      resolve(commits)
+    })
+  })
+})
+
+ipcMain.handle('generate:ai-notes', async (_event, userPrompt) => {
+  const cfg = loadConfig()
+  const apiKey = cfg.deepseekKey || process.env.DEEPSEEK_API_KEY
+  if (!apiKey) throw new Error('No hay API Key de DeepSeek configurada. Agrégala en la barra lateral.')
+
+  const https = require('https')
+  const payload = JSON.stringify({
+    model: 'deepseek-chat',
+    messages: [
+      {
+        role: 'system',
+        content: `Eres un asistente experto en software y notas de lanzamiento (Release Notes). Tu misión es transformar la información de cambios provista por el usuario en un documento Markdown profesional, estructurado, detallado y visualmente atractivo para la aplicación CatChat.
+
+Instrucciones de formato:
+1. Usa títulos de sección con emojis:
+   - ## ✨ Novedades
+   - ## 🐛 Correcciones y Mejoras
+   - ## ⚡ Rendimiento y Estabilidad
+   - ## 🎨 Interfaz y Experiencia
+2. Para cada cambio, escribe una viñeta (- ) con una explicación detallada, destacando beneficios clave para el usuario en **negrita**.
+3. Mantén un tono entusiasta, profesional y claro.
+4. Responde ÚNICAMENTE con el contenido en Markdown, sin comentarios ni introducciones.`
+      },
+      {
+        role: 'user',
+        content: `Lista de cambios / commits para este release:\n${userPrompt}`
+      }
+    ],
+    temperature: 0.7
+  })
+
+  return new Promise((resolve, reject) => {
+    const req = https.request('https://api.deepseek.com/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Length': Buffer.byteLength(payload)
+      }
+    }, (res) => {
+      let data = ''
+      res.on('data', (chunk) => { data += chunk })
+      res.on('end', () => {
+        try {
+          if (res.statusCode !== 200) {
+            const errJson = JSON.parse(data)
+            return reject(new Error(errJson.error?.message || `API Error HTTP ${res.statusCode}`))
+          }
+          const parsed = JSON.parse(data)
+          const reply = parsed.choices?.[0]?.message?.content || ''
+          resolve(reply.trim())
+        } catch {
+          reject(new Error('Error al procesar respuesta de DeepSeek API'))
+        }
+      })
+    })
+
+    req.on('error', (err) => reject(new Error('Error de conexión a DeepSeek: ' + err.message)))
+    req.write(payload)
+    req.end()
+  })
 })
 
 ipcMain.handle('release', async (_event, version, notes, showModal) => {
