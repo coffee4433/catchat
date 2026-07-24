@@ -1,12 +1,13 @@
 'use client'
 
 import { motion, AnimatePresence } from 'framer-motion'
-import { LogOut, Settings, Download, RotateCw, AlertCircle } from 'lucide-react'
+import { LogOut, Settings, Download, RotateCw, AlertCircle, Radio, Activity, PhoneOff, Mic, MicOff, Video, VideoOff, MonitorUp, MonitorOff, Sparkles } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { authClient } from '@/lib/auth-client'
 import { useLanguage } from '@/lib/i18n'
 import { ElectricBorder } from '@/components/electric-border'
+import { useCallContext } from '@/components/calls/call-provider'
 
 function initialsOf(name: string) {
   return name
@@ -55,6 +56,136 @@ function getUpdater() {
     quitAndInstall: () => void
     getVersion?: () => Promise<string>
   } | null
+}
+
+function DiscordVoiceDockWidget() {
+  const { activeCall, endCall, cancelOutgoingCall, room } = useCallContext()
+  const [, forceRender] = useState(0)
+
+  const localParticipant = room?.localParticipant
+
+  const micEnabled = localParticipant?.isMicrophoneEnabled ?? false
+  const camEnabled = localParticipant?.isCameraEnabled ?? false
+  const screenEnabled = localParticipant?.isScreenShareEnabled ?? false
+
+  const refresh = useCallback(() => forceRender((v) => v + 1), [])
+
+  const toggleMic = useCallback(async () => {
+    if (!localParticipant) return
+    await localParticipant.setMicrophoneEnabled(!micEnabled)
+    refresh()
+  }, [localParticipant, micEnabled, refresh])
+
+  const toggleCam = useCallback(async () => {
+    if (!localParticipant) return
+    await localParticipant.setCameraEnabled(!camEnabled)
+    refresh()
+  }, [localParticipant, camEnabled, refresh])
+
+  const toggleScreenShare = useCallback(async () => {
+    if (!localParticipant) return
+    if (screenEnabled) {
+      await localParticipant.setScreenShareEnabled(false)
+    } else {
+      try {
+        await localParticipant.setScreenShareEnabled(true, {
+          resolution: { width: 1920, height: 1080, frameRate: 60 },
+          contentHint: 'detail',
+        })
+      } catch (e) {
+        console.error('[DiscordVoiceDockWidget] screen share failed:', e)
+      }
+    }
+    refresh()
+  }, [localParticipant, screenEnabled, refresh])
+
+  if (!activeCall) return null
+
+  const peerName = activeCall.peerName || 'Llamada'
+  const isRinging = activeCall.state === 'outgoing-ringing'
+
+  return (
+    <div className="w-64 border-b border-border/50 bg-[#1e1f22] p-2.5 space-y-2">
+      {/* Header section: Connection status & Peer name */}
+      <div className="flex items-center justify-between px-0.5">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-[#23a55a]/15 text-[#23a55a]">
+            <Radio className="size-4 animate-pulse" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <span className="block text-[12px] font-semibold text-[#23a55a] leading-tight">
+              {isRinging ? 'Llamando...' : 'Voz conectada'}
+            </span>
+            <span className="block truncate text-[11px] font-medium text-white/70 leading-tight">
+              {peerName}
+            </span>
+          </div>
+        </div>
+
+        {/* Right side icons: Audio wave + Red hangup button */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <Activity className="size-3.5 text-white/40 animate-pulse" />
+          <button
+            onClick={isRinging ? cancelOutgoingCall : endCall}
+            title="Desconectar"
+            className="flex size-7 items-center justify-center rounded-lg bg-[#da373c] text-white transition-all hover:bg-[#a12828] active:scale-95 shadow-sm"
+          >
+            <PhoneOff className="size-3.5" />
+          </button>
+        </div>
+      </div>
+
+      {/* Control Pills Row (Camera, Screen Share, Activities/Grid, Mute) */}
+      <div className="grid grid-cols-4 gap-1.5 pt-0.5">
+        {/* Cam button */}
+        <button
+          onClick={toggleCam}
+          title={camEnabled ? 'Apagar cámara' : 'Encender cámara'}
+          className={`flex h-8 items-center justify-center rounded-lg transition-all ${
+            camEnabled
+              ? 'bg-white text-[#1e1f22] hover:bg-white/90'
+              : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'
+          }`}
+        >
+          {camEnabled ? <Video className="size-4" /> : <VideoOff className="size-4" />}
+        </button>
+
+        {/* Screen share button */}
+        <button
+          onClick={toggleScreenShare}
+          title={screenEnabled ? 'Dejar de compartir' : 'Compartir pantalla'}
+          className={`flex h-8 items-center justify-center rounded-lg transition-all ${
+            screenEnabled
+              ? 'bg-white text-[#1e1f22] hover:bg-white/90'
+              : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'
+          }`}
+        >
+          {screenEnabled ? <MonitorOff className="size-4" /> : <MonitorUp className="size-4" />}
+        </button>
+
+        {/* Activity button */}
+        <button
+          title="Actividades"
+          className="flex h-8 items-center justify-center rounded-lg bg-white/10 text-white/70 transition-all hover:bg-white/20 hover:text-white"
+        >
+          <Sparkles className="size-4" />
+        </button>
+
+        {/* Mic button */}
+        <button
+          onClick={toggleMic}
+          title={micEnabled ? 'Silenciar' : 'Activar micrófono'}
+          className={`flex h-8 items-center justify-center rounded-lg transition-all ${
+            micEnabled
+              ? 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'
+              : 'bg-[#da373c] text-white hover:bg-[#da373c]/90'
+          }`}
+        >
+          {micEnabled ? <Mic className="size-4" /> : <MicOff className="size-4" />}
+        </button>
+      </div>
+    </div>
+  )
 }
 
 export function UserDock({
@@ -172,8 +303,10 @@ export function UserDock({
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  const { activeCall } = useCallContext()
+  const hasActiveCall = Boolean(activeCall)
   const hasUpdate = update.phase !== 'idle'
-  const glowActive = showMenu || hasUpdate
+  const glowActive = showMenu || hasUpdate || hasActiveCall
 
   function handleToggle() {
     // If there's an update and menu is closed, show update panel
@@ -252,6 +385,9 @@ export function UserDock({
               </button>
             </div>
           </div>
+
+          {/* Discord Voice Call Dock Widget */}
+          {hasActiveCall && <DiscordVoiceDockWidget />}
 
           {/* Expanded panel */}
           <AnimatePresence initial={false}>
