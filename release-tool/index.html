@@ -340,7 +340,7 @@
     border-color: #5865F2;
   }
 
-  /* AI Modal Dialog Overlay */
+  /* AI Modal & Chat Overlay */
   .ai-modal-overlay {
     position: fixed;
     inset: 0;
@@ -354,7 +354,8 @@
   }
   .ai-modal {
     width: 100%;
-    max-width: 580px;
+    max-width: 640px;
+    height: 560px;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 18px;
@@ -367,7 +368,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 16px 20px;
+    padding: 14px 20px;
     border-bottom: 1px solid var(--border);
     background: var(--surface-2);
   }
@@ -380,30 +381,115 @@
     padding: 3px 8px;
     border-radius: 999px;
   }
-  .ai-modal-body {
-    padding: 20px;
+  .ai-chat-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
     display: flex;
     flex-direction: column;
     gap: 12px;
+    background: var(--bg);
   }
-  .ai-desc {
+  .ai-chat-msg {
+    display: flex;
+    gap: 10px;
+    max-width: 90%;
+  }
+  .ai-chat-msg.user {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+  }
+  .ai-chat-msg.assistant {
+    align-self: flex-start;
+  }
+  .msg-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--surface-2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+  }
+  .msg-bubble {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 10px 14px;
+    border-radius: 14px;
     font-size: 12.5px;
-    color: var(--muted);
     line-height: 1.5;
+    color: var(--fg);
+    white-space: pre-wrap;
+    word-break: break-word;
   }
-  .ai-actions-bar {
+  .ai-chat-msg.user .msg-bubble {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+  }
+  .apply-notes-btn {
+    margin-top: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    background: #5865F2;
+    color: #fff;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    box-shadow: 0 4px 12px rgba(88, 101, 242, 0.3);
+  }
+  .apply-notes-btn:hover {
+    background: #4752c4;
+    transform: translateY(-1px);
+  }
+  .ai-chat-input-bar {
+    padding: 12px 16px;
+    background: var(--surface-2);
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .ai-chat-actions {
     display: flex;
     align-items: center;
     justify-content: space-between;
   }
-  .btn-secondary {
-    height: 32px;
+  .ai-input-row {
+    display: flex;
+    gap: 8px;
+  }
+  #aiPromptInput {
+    flex: 1;
+    height: 38px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
     padding: 0 12px;
+    color: var(--fg);
+    font-family: var(--sans);
+    font-size: 12.5px;
+    outline: none;
+  }
+  #aiPromptInput:focus {
+    border-color: var(--accent);
+  }
+  .btn-secondary {
+    height: 30px;
+    padding: 0 10px;
     border-radius: 8px;
-    background: var(--surface-2);
+    background: var(--surface);
     border: 1px solid var(--border);
     color: var(--fg);
-    font-size: 12px;
+    font-size: 11.5px;
     font-weight: 600;
     cursor: pointer;
     display: inline-flex;
@@ -415,38 +501,12 @@
     background: rgba(255,255,255,0.08);
     border-color: var(--border-strong);
   }
-  #aiPromptInput {
-    width: 100%;
-    min-height: 110px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px;
-    color: var(--fg);
-    font-family: var(--sans);
-    font-size: 12.5px;
-    line-height: 1.5;
-    resize: vertical;
-    outline: none;
-  }
-  #aiPromptInput:focus {
-    border-color: var(--accent);
-  }
   .ai-error {
     font-size: 12px;
     color: var(--red);
     background: var(--red-soft);
     padding: 8px 12px;
     border-radius: 8px;
-  }
-  .ai-modal-footer {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 10px;
-    padding: 14px 20px;
-    border-top: 1px solid var(--border);
-    background: var(--surface-2);
   }
   textarea#notes {
     width: 100%;
@@ -1091,35 +1151,40 @@
   </div>
 </div>
 
-<!-- AI Generation Modal -->
+<!-- AI Generation Modal Chat -->
 <div class="ai-modal-overlay" id="aiModalOverlay" style="display:none">
   <div class="ai-modal">
     <div class="ai-modal-header">
       <div class="ai-title" style="display:flex;align-items:center;gap:8px">
-        <span class="ai-badge">🤖 DeepSeek AI</span>
-        <h3 style="font-size:14px;font-weight:700">Generar Release Notes con IA</h3>
+        <span class="ai-badge">🤖 DeepSeek AI Assistant</span>
+        <h3 style="font-size:14px;font-weight:700">Asistente de Release Notes</h3>
       </div>
       <button class="win-btn" onclick="closeAiModal()" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
     </div>
-    <div class="ai-modal-body">
-      <p class="ai-desc">Ingresa los cambios realizados o presiona <strong>"Auto-detectar desde Git"</strong> para extraer los últimos commits. DeepSeek creará un Markdown detallado para tu release.</p>
-      
-      <div class="ai-actions-bar">
-        <button type="button" class="btn-secondary" onclick="fetchGitCommits()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/></svg>
-          Auto-detectar desde Git
+    
+    <div class="ai-chat-body" id="aiChatFeed">
+      <div class="ai-chat-msg assistant">
+        <div class="msg-avatar">🤖</div>
+        <div class="msg-bubble">¡Hola! Soy tu asistente de Release Notes con DeepSeek AI. Háblame de los cambios que realizaste o presiona <strong>"Auto-detectar Git"</strong> y redactaré o actualizaré las notas en Markdown.</div>
+      </div>
+    </div>
+
+    <div class="ai-error" id="aiError" style="display:none;margin:0 16px 8px 16px"></div>
+
+    <div class="ai-chat-input-bar">
+      <div class="ai-chat-actions">
+        <button type="button" class="btn-secondary" onclick="fetchGitCommits()" title="Extraer últimos commits de Git">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/></svg>
+          Auto-detectar Git
         </button>
       </div>
 
-      <textarea id="aiPromptInput" rows="5" placeholder="Ej: Arreglado parpadeo en videollamada, añadido botón de pantalla completa estilo discord, nuevo widget de voz en dock..."></textarea>
-      
-      <div class="ai-error" id="aiError" style="display:none"></div>
-    </div>
-    <div class="ai-modal-footer">
-      <button type="button" class="btn-secondary" onclick="closeAiModal()">Cancelar</button>
-      <button type="button" class="btn-publish" id="aiSubmitBtn" onclick="runAiGeneration()">
-        <span>✨ Generar con DeepSeek</span>
-      </button>
+      <div class="ai-input-row">
+        <input type="text" id="aiPromptInput" placeholder="Escribe los cambios o dile a la IA qué ajustar..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAiChatMessage()}">
+        <button type="button" class="btn-publish" id="aiSubmitBtn" onclick="sendAiChatMessage()" style="height:38px;padding:0 16px">
+          <span>Enviar</span>
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -1366,10 +1431,13 @@ function markDeepseekSaved() {
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><span>Key saved</span>'
 }
 
+let chatMessages = []
+
 function openAiModal() {
   $('aiError').style.display = 'none'
   $('aiError').textContent = ''
   $('aiModalOverlay').style.display = 'flex'
+  $('aiPromptInput').focus()
 }
 
 function closeAiModal() {
@@ -1380,7 +1448,8 @@ async function fetchGitCommits() {
   try {
     const commits = await api.getGitCommits()
     if (commits && commits.length > 0) {
-      $('aiPromptInput').value = 'Commits recientes:\n' + commits.join('\n')
+      $('aiPromptInput').value = 'Extraje estos commits de Git:\n' + commits.join('\n')
+      $('aiPromptInput').focus()
     } else {
       $('aiError').textContent = 'No se encontraron commits de Git en el proyecto.'
       $('aiError').style.display = 'block'
@@ -1391,29 +1460,66 @@ async function fetchGitCommits() {
   }
 }
 
-async function runAiGeneration() {
-  const prompt = $('aiPromptInput').value.trim()
-  if (!prompt) {
-    $('aiError').textContent = 'Por favor ingresa los cambios o presiona "Auto-detectar desde Git".'
-    $('aiError').style.display = 'block'
-    return
+function renderChatMessage(role, text, isAiReply = false) {
+  const feed = $('aiChatFeed')
+  const msgDiv = document.createElement('div')
+  msgDiv.className = `ai-chat-msg ${role}`
+
+  const avatar = document.createElement('div')
+  avatar.className = 'msg-avatar'
+  avatar.textContent = role === 'user' ? '👤' : '🤖'
+
+  const bubble = document.createElement('div')
+  bubble.className = 'msg-bubble'
+  bubble.textContent = text
+
+  if (isAiReply) {
+    const applyBtn = document.createElement('button')
+    applyBtn.type = 'button'
+    applyBtn.className = 'apply-notes-btn'
+    applyBtn.innerHTML = '✨ Aplicar a Release Notes'
+    applyBtn.onclick = () => {
+      notesInput.value = text
+      closeAiModal()
+    }
+    bubble.appendChild(document.createElement('br'))
+    bubble.appendChild(applyBtn)
   }
 
+  msgDiv.appendChild(avatar)
+  msgDiv.appendChild(bubble)
+  feed.appendChild(msgDiv)
+  feed.scrollTop = feed.scrollHeight
+  return msgDiv
+}
+
+async function sendAiChatMessage() {
+  const input = $('aiPromptInput')
+  const text = input.value.trim()
+  if (!text) return
+
   $('aiError').style.display = 'none'
-  const btn = $('aiSubmitBtn')
-  btn.disabled = true
-  btn.innerHTML = '<span>🤖 Generando con DeepSeek...</span>'
+  input.value = ''
+
+  chatMessages.push({ role: 'user', content: text })
+  renderChatMessage('user', text)
+
+  const loadingMsg = renderChatMessage('assistant', '🤖 Pensando y redactando Release Notes...')
+  const submitBtn = $('aiSubmitBtn')
+  submitBtn.disabled = true
 
   try {
-    const markdownNotes = await api.generateAiNotes(prompt)
-    notesInput.value = markdownNotes
-    closeAiModal()
+    const reply = await api.chatAiNotes(chatMessages)
+    chatMessages.push({ role: 'assistant', content: reply })
+
+    loadingMsg.remove()
+    renderChatMessage('assistant', reply, true)
   } catch (e) {
-    $('aiError').textContent = e.message || 'Error al generar notas con DeepSeek.'
+    loadingMsg.remove()
+    $('aiError').textContent = e.message || 'Error al conectar con DeepSeek AI.'
     $('aiError').style.display = 'block'
   } finally {
-    btn.disabled = false
-    btn.innerHTML = '<span>✨ Generar con DeepSeek</span>'
+    submitBtn.disabled = false
   }
 }
 

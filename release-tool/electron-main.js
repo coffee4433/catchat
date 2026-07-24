@@ -211,6 +211,66 @@ Instrucciones de formato:
   })
 })
 
+ipcMain.handle('chat:ai-notes', async (_event, chatMessages) => {
+  const cfg = loadConfig()
+  const apiKey = cfg.deepseekKey || process.env.DEEPSEEK_API_KEY
+  if (!apiKey) throw new Error('No hay API Key de DeepSeek configurada. Agrégala en la barra lateral.')
+
+  const https = require('https')
+  const systemMessage = {
+    role: 'system',
+    content: `Eres un asistente de IA conversacional especializado en crear y pulir Release Notes (Notas de lanzamiento) en Markdown para CatChat.
+
+Instrucciones:
+1. Ayuda al usuario a redactar, refinar y mejorar las Release Notes a través de la conversación.
+2. Cada vez que el usuario te mencione cambios, agregues funciones o te pida redactar las notas, genera o actualiza el documento Markdown completo y detallado.
+3. Formato recomendado:
+   - ## ✨ Novedades
+   - ## 🐛 Correcciones y Mejoras
+   - ## ⚡ Rendimiento y Estabilidad
+   - ## 🎨 Interfaz y Experiencia
+4. Usa viñetas (- ) con explicaciones claras, destacando puntos clave en **negrita**.
+5. Ofrece siempre el resultado final en Markdown listo para aplicar.`
+  }
+
+  const payload = JSON.stringify({
+    model: 'deepseek-chat',
+    messages: [systemMessage, ...(chatMessages || [])],
+    temperature: 0.7
+  })
+
+  return new Promise((resolve, reject) => {
+    const req = https.request('https://api.deepseek.com/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Length': Buffer.byteLength(payload)
+      }
+    }, (res) => {
+      let data = ''
+      res.on('data', (chunk) => { data += chunk })
+      res.on('end', () => {
+        try {
+          if (res.statusCode !== 200) {
+            const errJson = JSON.parse(data)
+            return reject(new Error(errJson.error?.message || `API Error HTTP ${res.statusCode}`))
+          }
+          const parsed = JSON.parse(data)
+          const reply = parsed.choices?.[0]?.message?.content || ''
+          resolve(reply.trim())
+        } catch {
+          reject(new Error('Error al procesar respuesta de DeepSeek API'))
+        }
+      })
+    })
+
+    req.on('error', (err) => reject(new Error('Error de conexión a DeepSeek: ' + err.message)))
+    req.write(payload)
+    req.end()
+  })
+})
+
 ipcMain.handle('release', async (_event, version, notes, showModal) => {
   const cfg = loadConfig()
   if (!cfg.projectPath) throw new Error('No project selected')
