@@ -8,6 +8,12 @@ export type Theme = {
 
 export const themes: Theme[] = [
   {
+    id: 'industrial',
+    name: 'Industrial',
+    dark: false,
+    preview: { bg: '#e0e5ec', card: '#e6ebf2', accent: '#ff4757', text: '#2d3436' },
+  },
+  {
     id: 'light',
     name: 'Claro',
     dark: false,

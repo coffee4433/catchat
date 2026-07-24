@@ -34,7 +34,7 @@ export function ChatApp({
       const saved = localStorage.getItem('cz-theme')
       if (saved && themes.some((t) => t.id === saved)) return saved
     }
-    return 'light'
+    return 'industrial'
   })
   const [activeConversationId, setActiveConversationId] = useState<number | null>(
     initialConversations[0]?.id ?? null,
