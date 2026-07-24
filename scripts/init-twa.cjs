@@ -8,7 +8,7 @@ process.env.ANDROID_HOME = process.env.LOCALAPPDATA + '\\Android\\Sdk'
 const androidDir = path.join(__dirname, '..', 'android')
 if (!fs.existsSync(androidDir)) fs.mkdirSync(androidDir)
 
-const cmd = `npx bubblewrap init --manifest https://catchat-one.vercel.app/manifest.json --directory android --jdkPath "C:\\Program Files\\Eclipse Adoptium\\jdk-17.0.18.8-hotspot" --skipPrompts`
+const cmd = `npx bubblewrap init --manifest https://catchat-three.vercel.app/manifest.json --directory android --skipPrompts`
 
 console.log('Running:', cmd)
 

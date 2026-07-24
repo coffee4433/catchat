@@ -19,7 +19,7 @@ const nextConfig = {
   env: {
     NEXT_PUBLIC_APP_VERSION: pkg.version,
   },
-  turbopack: {},
+
   webpack: (config) => {
     config.resolve.alias['@'] = __dirname
     config.output.hashFunction = 'sha256'

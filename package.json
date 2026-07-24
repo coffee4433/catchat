@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "next dev",
     "dev:next": "next dev",
-    "build": "next build",
+    "build": "next build --webpack",
     "build:webpack": "next build --webpack",
     "start": "next start",
     "lint": "eslint .",
