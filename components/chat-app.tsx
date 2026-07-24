@@ -44,7 +44,12 @@ export function ChatApp({
   const { data: conversations = initialConversations, mutate: mutateConversations } = useSWR(
     'conversations',
     () => getConversations(),
-    { fallbackData: initialConversations },
+    {
+      fallbackData: initialConversations,
+      refreshInterval: 3000,
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
+    },
   )
 
   const mutateConversationInfo = useCallback((conversationId: number) => {

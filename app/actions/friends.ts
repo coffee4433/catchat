@@ -48,6 +48,8 @@ export async function sendFriendRequest(toUserId: string) {
   return request
 }
 
+import { ensureDirectConversation } from '@/app/actions/chat'
+
 export async function acceptFriendRequest(requestId: string) {
   const userId = await getUserId()
   const [req] = await db
@@ -66,6 +68,7 @@ export async function acceptFriendRequest(requestId: string) {
     .set({ status: 'accepted' })
     .where(eq(friendRequests.id, requestId))
 
+  await ensureDirectConversation(req.fromUserId, req.toUserId)
   revalidatePath('/')
 }
 

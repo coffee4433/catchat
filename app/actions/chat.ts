@@ -109,6 +109,40 @@ export async function createConversation(title?: string) {
   return conversation
 }
 
+export async function ensureDirectConversation(userA: string, userB: string) {
+  if (userA === userB) return null
+
+  const mine = db
+    .select({ conversationId: conversationParticipants.conversationId })
+    .from(conversationParticipants)
+    .where(eq(conversationParticipants.userId, userA))
+  const existing = await db
+    .select({ conversationId: conversationParticipants.conversationId })
+    .from(conversationParticipants)
+    .where(
+      and(
+        eq(conversationParticipants.userId, userB),
+        inArray(conversationParticipants.conversationId, mine),
+      ),
+    )
+
+  if (existing.length > 0) {
+    return { id: existing[0].conversationId, existing: true }
+  }
+
+  const [conversation] = await db
+    .insert(conversations)
+    .values({ userId: userA, title: 'Direct message' })
+    .returning()
+
+  await db.insert(conversationParticipants).values([
+    { conversationId: conversation.id, userId: userA },
+    { conversationId: conversation.id, userId: userB },
+  ])
+  revalidatePath('/')
+  return { id: conversation.id, existing: false }
+}
+
 /**
  * Creates (or reuses) a direct 1:1 conversation with another user.
  */
@@ -120,35 +154,9 @@ export async function createDirectConversation(otherUserId: string) {
   const [other] = await db.select({ id: user.id }).from(user).where(eq(user.id, otherUserId))
   if (!other) throw new Error('User not found')
 
-  // Reuse an existing direct conversation between the two users if any
-  const mine = db
-    .select({ conversationId: conversationParticipants.conversationId })
-    .from(conversationParticipants)
-    .where(eq(conversationParticipants.userId, userId))
-  const existing = await db
-    .select({ conversationId: conversationParticipants.conversationId })
-    .from(conversationParticipants)
-    .where(
-      and(
-        eq(conversationParticipants.userId, otherUserId),
-        inArray(conversationParticipants.conversationId, mine),
-      ),
-    )
-
-  if (existing.length > 0) {
-    return { id: existing[0].conversationId, existing: true }
-  }
-
-  const [conversation] = await db
-    .insert(conversations)
-    .values({ userId, title: 'Direct message' })
-    .returning()
-  await db.insert(conversationParticipants).values([
-    { conversationId: conversation.id, userId },
-    { conversationId: conversation.id, userId: otherUserId },
-  ])
-  revalidatePath('/')
-  return { id: conversation.id, existing: false }
+  const res = await ensureDirectConversation(userId, otherUserId)
+  if (!res) throw new Error('Could not create conversation')
+  return res
 }
 
 export async function renameConversation(id: number, title: string) {
