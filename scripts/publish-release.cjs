@@ -154,8 +154,12 @@ async function publish() {
   let ymlContent = fs.readFileSync(latestYml, 'utf8')
   ymlContent = ymlContent.replace(/url: CatChat-Setup/g, `url: ${ghBase}/CatChat-Setup`)
   ymlContent = ymlContent.replace(/path: CatChat Setup/g, '# path: CatChat Setup')
+  if (releaseBody) {
+    const formattedNotes = releaseBody.split('\n').map((line) => `  ${line}`).join('\n')
+    ymlContent += `\nreleaseNotes: |\n${formattedNotes}\n`
+  }
   fs.writeFileSync(path.join(publicDir, 'latest.yml'), ymlContent)
-  console.log('latest.yml copied to public/updates/ for Vercel')
+  console.log('latest.yml (with releaseNotes) copied to public/updates/ for Vercel')
 
   // Auto git push
   try {
