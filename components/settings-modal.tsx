@@ -1148,17 +1148,6 @@ function ReleaseNotesSettingsSection({ onClose }: { onClose: () => void }) {
             </p>
           </div>
         </div>
-
-        <button
-          onClick={() => {
-            onClose()
-            triggerReleaseNotesModal(data || undefined)
-          }}
-          className="shrink-0 flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-2 text-[12.5px] font-bold text-primary-foreground shadow-md transition-all hover:opacity-90 active:scale-95"
-        >
-          <Sparkles className="size-3.5" />
-          <span>{lang === 'es' ? 'Ver modal flotante' : 'Open modal'}</span>
-        </button>
       </div>
 
       {/* Release Notes Body */}
