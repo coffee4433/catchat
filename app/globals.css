@@ -306,14 +306,39 @@ html[data-theme='mint'] {
   --success-foreground: #ffffff;
   --radius: 1rem;
 
-  /* Neumorphic light/dark edge pair (top-left highlight, bottom-right shadow) */
-  --neu-dark: #babecc;
+  /* Neumorphic light/dark edge pair (top-left highlight, bottom-right shadow).
+     The extra inset hairlines simulate the beveled sheen of curved matte
+     plastic so raised surfaces read as real, tactile objects. */
+  --neu-dark: #b6bccb;
+  --neu-darker: #a3aabb;
   --neu-light: #ffffff;
-  --shadow-neu: 8px 8px 16px var(--neu-dark), -8px -8px 16px var(--neu-light);
-  --shadow-neu-sm: 5px 5px 10px var(--neu-dark), -5px -5px 10px var(--neu-light);
-  --shadow-neu-inset: inset 4px 4px 8px var(--neu-dark), inset -4px -4px 8px var(--neu-light);
-  --shadow-neu-pressed: inset 6px 6px 12px var(--neu-dark), inset -6px -6px 12px var(--neu-light);
-  --shadow-accent: 5px 5px 12px rgba(166, 50, 60, 0.45), -5px -5px 12px rgba(255, 110, 120, 0.4);
+  --shadow-neu:
+    10px 10px 22px var(--neu-dark),
+    -9px -9px 20px var(--neu-light),
+    inset 1px 1px 1px rgba(255, 255, 255, 0.55),
+    inset -1px -1px 2px rgba(163, 170, 187, 0.28);
+  --shadow-neu-sm:
+    5px 5px 11px var(--neu-dark),
+    -4px -4px 9px var(--neu-light),
+    inset 1px 1px 1px rgba(255, 255, 255, 0.6),
+    inset -1px -1px 1px rgba(163, 170, 187, 0.25);
+  --shadow-neu-inset:
+    inset 5px 5px 10px var(--neu-dark),
+    inset -5px -5px 10px var(--neu-light);
+  --shadow-neu-pressed:
+    inset 6px 6px 12px var(--neu-darker),
+    inset -5px -5px 10px var(--neu-light);
+  --shadow-neu-float:
+    16px 18px 36px rgba(120, 128, 148, 0.55),
+    -12px -12px 28px var(--neu-light),
+    inset 1px 1px 2px rgba(255, 255, 255, 0.6);
+  --shadow-accent:
+    5px 5px 14px rgba(150, 30, 42, 0.5),
+    -4px -4px 12px rgba(255, 130, 140, 0.55),
+    inset 1px 1px 2px rgba(255, 190, 195, 0.75),
+    inset -2px -2px 4px rgba(150, 30, 42, 0.4);
+  /* Diagonal surface sheen for the curved-plastic chassis look. */
+  --surface-sheen: linear-gradient(145deg, #eef2f8, #d8dfe9);
 }
 
 /* Theme-aware primitive shadows: neutral by default, neumorphic when industrial. */
@@ -332,10 +357,50 @@ html[data-theme='mint'] {
   --input-shadow-focus: var(--shadow-neu-inset), 0 0 0 2px var(--ring);
 }
 
-/* Give large structural surfaces the extruded chassis look under industrial. */
-[data-theme='industrial'] aside {
+/* The safety-red accent button gets a colored extrusion so it reads as a real
+   machined control surface, and physically depresses on press. */
+[data-theme='industrial'] .bg-primary {
+  box-shadow: var(--shadow-accent);
+  background-image: linear-gradient(145deg, #ff5b69, #f0303f);
+}
+[data-theme='industrial'] .bg-primary:active {
+  box-shadow: inset 3px 3px 8px rgba(150, 30, 42, 0.55), inset -2px -2px 6px rgba(255, 150, 158, 0.55);
+}
+
+/* Give the large structural surfaces the extruded chassis look: rounded,
+   borderless, sheened plastic panels that float above the base tray. */
+[data-theme='industrial'] aside,
+[data-theme='industrial'] section {
+  background-image: var(--surface-sheen);
   box-shadow: var(--shadow-neu);
   border-color: transparent !important;
+  border-radius: 1.5rem;
+}
+
+/* Recessed message-composer tray — carved into the chassis. */
+[data-theme='industrial'] footer > div {
+  background-image: none;
+  background-color: #dae0ea;
+  box-shadow: var(--shadow-neu-inset);
+  border-color: transparent !important;
+  border-radius: 1rem;
+}
+
+/* Conversation rows and icon buttons lift toward the light source on hover. */
+[data-theme='industrial'] nav [class*='rounded'] {
+  transition: box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+/* Floating dock reads as a raised control pod. */
+[data-theme='industrial'] .fixed [class*='rounded-2xl'] {
+  box-shadow: var(--shadow-neu-float);
+  background-image: var(--surface-sheen);
+}
+
+/* Round off the small square-cornered chips/badges the design still uses. */
+[data-theme='industrial'] [class*='rounded-[4px]'],
+[data-theme='industrial'] [class*='rounded-[5px]'] {
+  border-radius: 0.6rem !important;
 }
 
 /* Machined corner-screw decoration — four screw indentations, 14px inset. */

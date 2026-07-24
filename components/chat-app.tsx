@@ -111,7 +111,7 @@ export function ChatApp({
               animate={{ width: 288, opacity: 1, x: 0, marginLeft: 12 }}
               exit={{ width: 0, opacity: 0, x: 32, marginLeft: 0 }}
               transition={{ type: 'spring', stiffness: 300, damping: 34 }}
-              className="hidden h-full overflow-hidden lg:block"
+              className="hidden h-full overflow-hidden rounded-3xl lg:block"
             >
               <InfoPanel conversation={activeConversation} currentUserId={user.id} />
             </motion.div>
