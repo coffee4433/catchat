@@ -78,11 +78,32 @@ function RoomBridge() {
 
 function LocalScreenPreview() {
   const allTracks = useTracks([{ source: Track.Source.ScreenShare, withPlaceholder: false }], { onlySubscribed: false })
-  const local = allTracks.filter((t) => t.participant.isLocal && t.publication)
-  if (local.length === 0) return null
+  const localTrack = allTracks.find((t) => t.participant.isLocal && t.publication)
+  const track = localTrack?.publication?.videoTrack
+  const trackId = track?.mediaStreamTrack?.id || localTrack?.publication?.trackSid
+
+  const videoRef = useRef<HTMLVideoElement>(null)
+
+  useEffect(() => {
+    const el = videoRef.current
+    if (!el || !track) return
+    const mediaStream = new MediaStream([track.mediaStreamTrack])
+    el.srcObject = mediaStream
+    el.play().catch(() => {})
+
+    return () => {
+      el.srcObject = null
+    }
+  }, [trackId])
+
+  if (!localTrack || !track) return null
+
   return (
-    <div className="absolute bottom-20 left-4 z-10 w-44 overflow-hidden rounded-xl border-2 border-white/10 shadow-lg">
-      <VideoTrack trackRef={local[0] as any} style={{ width: '100%', height: 'auto' }} />
+    <div className="absolute bottom-20 left-4 z-30 w-52 overflow-hidden rounded-xl border border-white/20 bg-black/80 shadow-2xl backdrop-blur-md">
+      <div className="flex items-center justify-between px-2.5 py-1 bg-white/10 text-[11px] font-medium text-white/80">
+        <span>Tu pantalla</span>
+      </div>
+      <video ref={videoRef} autoPlay playsInline muted className="w-full h-auto object-contain max-h-36 bg-black" />
     </div>
   )
 }
@@ -148,8 +169,9 @@ function InCallStage({
   )
 
   const cameraTracks = tracks.filter((t) => t.source === Track.Source.Camera && t.publication)
-  const hasScreenShare = tracks.some((t) => t.source === Track.Source.ScreenShare && !t.participant.isLocal && t.publication)
-  const hasVideoContent = cameraTracks.length > 0 || hasScreenShare
+  const hasRemoteScreenShare = tracks.some((t) => t.source === Track.Source.ScreenShare && !t.participant.isLocal && t.publication)
+  const hasLocalScreenShare = tracks.some((t) => t.source === Track.Source.ScreenShare && t.participant.isLocal && t.publication)
+  const hasVideoContent = cameraTracks.length > 0 || hasRemoteScreenShare || hasLocalScreenShare
 
   return (
     <div className={`relative flex w-full flex-col items-center justify-center ${hasVideoContent ? 'h-[420px]' : 'h-[260px]'} transition-[height] duration-300`}>
@@ -159,10 +181,10 @@ function InCallStage({
 
       {hasVideoContent ? (
         <>
-          {hasScreenShare && <ScreenShareView />}
+          {hasRemoteScreenShare && <ScreenShareView />}
           <div
             className={
-              hasScreenShare
+              hasRemoteScreenShare
                 ? 'absolute bottom-20 right-4 z-10 flex max-h-[35%] w-52 flex-col gap-2'
                 : 'absolute inset-0 px-4 pb-20 pt-4'
             }
@@ -171,7 +193,6 @@ function InCallStage({
               <ParticipantTile />
             </GridLayout>
           </div>
-          <LocalScreenPreview />
         </>
       ) : (
         /* Voice call — Discord-style avatar pair */
@@ -192,6 +213,9 @@ function InCallStage({
           </motion.div>
         </div>
       )}
+
+      {/* Local screen share floating preview */}
+      <LocalScreenPreview />
 
       {/* Status pill top-left */}
       <div className="absolute left-4 top-3 z-20 flex items-center gap-2 text-[12px] font-medium text-white/60">
