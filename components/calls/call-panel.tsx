@@ -11,8 +11,8 @@ import {
   useRoomContext,
 } from '@livekit/components-react'
 import { Track } from 'livekit-client'
-import { Phone, Video, X } from 'lucide-react'
-import React, { useEffect, useRef } from 'react'
+import { Phone, Video, X, Maximize2, Minimize2 } from 'lucide-react'
+import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { useCallContext } from './call-provider'
 import { CallControls } from './call-controls'
 import { ScreenPicker } from './screen-picker'
@@ -114,7 +114,9 @@ const ScreenShareView = React.memo(function ScreenShareView() {
   const track = remoteTrack?.publication?.videoTrack
   const trackId = track?.mediaStreamTrack?.id || remoteTrack?.publication?.trackSid
 
+  const containerRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
+  const [isFullscreen, setIsFullscreen] = useState(false)
 
   useEffect(() => {
     const el = videoRef.current
@@ -128,10 +130,54 @@ const ScreenShareView = React.memo(function ScreenShareView() {
     }
   }, [trackId])
 
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement))
+    }
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
+  }, [])
+
+  const toggleFullscreen = useCallback(async () => {
+    if (!containerRef.current) return
+    if (!document.fullscreenElement) {
+      try {
+        await containerRef.current.requestFullscreen()
+      } catch (e) {
+        console.error('Failed to enter fullscreen:', e)
+      }
+    } else {
+      try {
+        await document.exitFullscreen()
+      } catch (e) {
+        console.error('Failed to exit fullscreen:', e)
+      }
+    }
+  }, [])
+
   if (!remoteTrack) return null
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-black">
+    <div ref={containerRef} className="group relative inset-0 flex h-full w-full items-center justify-center bg-black">
       <video ref={videoRef} autoPlay playsInline className="h-full w-full object-contain" />
+
+      {/* Top-right Fullscreen Toggle Button */}
+      <button
+        onClick={toggleFullscreen}
+        title={isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}
+        className="absolute top-4 right-4 z-30 flex items-center gap-1.5 rounded-xl bg-black/60 px-3 py-2 text-xs font-medium text-white/90 shadow-lg backdrop-blur-md transition-all hover:bg-black/80 hover:text-white hover:scale-105 active:scale-95"
+      >
+        {isFullscreen ? (
+          <>
+            <Minimize2 className="size-4" />
+            <span>Salir</span>
+          </>
+        ) : (
+          <>
+            <Maximize2 className="size-4" />
+            <span>Pantalla completa</span>
+          </>
+        )}
+      </button>
     </div>
   )
 })
