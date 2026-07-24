@@ -277,6 +277,7 @@ export function ChatThread({
       type,
       conversation.otherUser.id,
       conversation.otherUser.name,
+      conversation.otherUser.image,
     )
   }
 
