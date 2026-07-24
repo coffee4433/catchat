@@ -167,8 +167,8 @@ async function publish() {
       console.log(`Committing and pushing...`)
       execSync('git add -A', { cwd: root, stdio: 'pipe' })
       execSync(`git commit -m "Release ${tag}" --allow-empty`, { cwd: root, stdio: 'pipe' })
-      execSync('git push', { cwd: root, stdio: 'pipe' })
-      console.log('Pushed to Git\n')
+      execSync('git push origin main', { cwd: root, stdio: 'pipe' })
+      console.log('Pushed to Git (origin main)\n')
     }
   } catch (e) {
     console.log(`Git: ${e.stderr?.toString() || e.message}`)
