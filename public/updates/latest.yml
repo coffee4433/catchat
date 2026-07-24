@@ -1,23 +1,25 @@
-version: 0.3.18
+version: 0.3.19
 files:
-  - url: https://github.com/coffee4433/catchat/releases/download/v0.3.18/CatChat-Setup-0.3.18.exe
-    sha512: 86f6734tJy5E/gFToitBhtgnZAlaEljzzEgmJ0QuG/I9AQF7r7p7qIL/cOrSBc8hj0Bb7ZVs6H1RlRIu3plAsA==
-    size: 240835873
-path: CatChat-Setup-0.3.18.exe
-sha512: 86f6734tJy5E/gFToitBhtgnZAlaEljzzEgmJ0QuG/I9AQF7r7p7qIL/cOrSBc8hj0Bb7ZVs6H1RlRIu3plAsA==
-releaseDate: '2026-07-24T23:38:20.510Z'
+  - url: https://github.com/coffee4433/catchat/releases/download/v0.3.19/CatChat-Setup-0.3.19.exe
+    sha512: MzDc2JnjLExKfoOcQctd4L8P22Q2KL8McsbTHxkaMJOClsRZ6dAkn4deE7jdFK30og0QORrnlZ1wmSpw5WPiTQ==
+    size: 241061467
+path: CatChat-Setup-0.3.19.exe
+sha512: MzDc2JnjLExKfoOcQctd4L8P22Q2KL8McsbTHxkaMJOClsRZ6dAkn4deE7jdFK30og0QORrnlZ1wmSpw5WPiTQ==
+releaseDate: '2026-07-24T23:58:09.810Z'
 showReleaseModal: true
 releaseNotes: |
   ## ✨ Novedades Destacadas
-  
-  - [NUEVO] **Reinicio automático de la sesión de IA** al publicar una nueva versión de CatChat. La conversación se limpia para que empieces con un contexto fresco.  
-  - [NUEVO] Se añadió un **botón manual “Nueva Sesión”** para que puedas reiniciar la charla cuando quieras, sin esperar a una actualización.
+  - [MEJORA] La carga de archivos de gran tamaño (hasta 230 MB) ahora utiliza streaming nativo y reintentos automáticos para una mayor estabilidad.
   
   ## 🐛 Correcciones y Ajustes
+  - [FIX] **Carga de archivos grandes**: Solucionado un problema que impedía la subida de archivos binarios de gran tamaño (ej. 230 MB). Ahora se usa streaming nativo HTTPS con 3 reintentos automáticos en caso de fallo.
+  - [FIX] **Solicitudes de amistad en tiempo real**: Ahora, cuando aceptas una solicitud de amistad, el remitente ve la actualización instantáneamente sin necesidad de recargar la página.
   
-  - [FIX] Las **notas de la versión** ahora muestran **exclusivamente los cambios de la versión actual**. Se han corregido la extracción de commits y la limpieza automática de notas antiguas, evitando que se acumule información de lanzamientos previos.  
-  - [FIX] Eliminado el botón redundante “Open modal” del encabezado de Ajustes > Notas de la versión, dejando una interfaz más limpia.
+  > [!TIP]  
+  > Ahora puedes subir archivos adjuntos de gran tamaño con total confianza: el sistema reintentará la carga hasta 3 veces si hay problemas de red.
+  
+  ## ⚡ Rendimiento y Optimización
+  - La carga de archivos pesados utiliza streaming para reducir el consumo de memoria y mejorar la velocidad.
   
   ## 🎨 UI & Experiencia de Usuario
-  
-  - [DISEÑO] Encabezado de notas de la versión en Ajustes simplificado al retirar el botón modal que no se usaba.
+  - La lista de amigos se actualiza en tiempo real al aceptar solicitudes, mejorando la fluidez de la interacción.
