@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import {
   Bell,
   Check,
+  ChevronRight,
   Download,
   Globe,
   Keyboard,
@@ -13,6 +14,8 @@ import {
   MessageCircle,
   Moon,
   Palette,
+  Pencil,
+  Search,
   Shield,
   Sun,
   Trash2,
@@ -35,7 +38,7 @@ import { usePrefs } from '@/hooks/use-prefs'
 
 type AppUser = { id: string; name: string; email: string; image?: string | null; banner?: string | null }
 
-type Section = 'profile' | 'appearance' | 'chat' | 'notifications' | 'privacy' | 'language' | 'account'
+type Section = 'account' | 'profile' | 'privacy' | 'notifications' | 'appearance' | 'chat' | 'language'
 
 function initialsOf(name: string) {
   return name
@@ -59,35 +62,49 @@ export function SettingsModal({
   onThemeChange: (id: string) => void
   user: AppUser
 }) {
-  const { t } = useLanguage()
-  const [active, setActive] = useState<Section>('profile')
+  const { t, lang } = useLanguage()
+  const [active, setActive] = useState<Section>('account')
   const [sidebarSearch, setSidebarSearch] = useState('')
+  const contentRef = useRef<HTMLDivElement>(null)
 
-  // Grouped navigation sections matching Discord's structure
-  const generalSections: { id: Section; label: string; icon: React.ReactNode }[] = [
-    { id: 'profile', label: t.profileSection, icon: <UserIcon className="size-5" /> },
-    { id: 'privacy', label: t.privacySection, icon: <Lock className="size-5" /> },
-    { id: 'notifications', label: t.notificationsSection, icon: <Bell className="size-5" /> },
+  // Sub-navigation items for "Cuenta" (Account) section
+  const accountSubItems = [
+    { id: 'info-cuenta', label: lang === 'es' ? 'Información de cuenta' : 'Account Info' },
+    { id: 'pwd-seguridad', label: lang === 'es' ? 'Contraseña y seguridad' : 'Password & Security' },
+    { id: 'reputacion-cuenta', label: lang === 'es' ? 'Reputación de la cuenta' : 'Account Standing' },
   ]
 
-  const appSections: { id: Section; label: string; icon: React.ReactNode }[] = [
-    { id: 'appearance', label: t.appearanceSection, icon: <Palette className="size-5" /> },
-    { id: 'chat', label: t.chatSection, icon: <MessageCircle className="size-5" /> },
-    { id: 'language', label: t.languageSection, icon: <Globe className="size-5" /> },
-    { id: 'account', label: t.accountSection, icon: <Shield className="size-5" /> },
+  const scrollToSubItem = (id: string) => {
+    const el = document.getElementById(id)
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }
+
+  // Grouped navigation matching Discord exactly
+  const userSettings: { id: Section; label: string; icon: React.ReactNode; badge?: string }[] = [
+    { id: 'account', label: lang === 'es' ? 'Cuenta' : 'Account', icon: <UserIcon className="size-4" /> },
+    { id: 'profile', label: lang === 'es' ? 'Perfiles' : 'Profiles', icon: <Pencil className="size-4" /> },
+    { id: 'privacy', label: lang === 'es' ? 'Datos y privacidad' : 'Privacy & Safety', icon: <Lock className="size-4" /> },
+    { id: 'notifications', label: lang === 'es' ? 'Notificaciones' : 'Notifications', icon: <Bell className="size-4" /> },
   ]
 
-  const allSections = [...generalSections, ...appSections]
+  const appSettings: { id: Section; label: string; icon: React.ReactNode }[] = [
+    { id: 'appearance', label: lang === 'es' ? 'Apariencia' : 'Appearance', icon: <Palette className="size-4" /> },
+    { id: 'chat', label: lang === 'es' ? 'Chat y texto' : 'Text & Images', icon: <MessageCircle className="size-4" /> },
+    { id: 'language', label: lang === 'es' ? 'Idioma' : 'Language', icon: <Globe className="size-4" /> },
+  ]
 
-  // Filter sections by search
-  const filterSections = (sections: typeof generalSections) =>
+  const allSections = [...userSettings, ...appSettings]
+
+  const filterList = <T extends { label: string }>(items: T[]) =>
     sidebarSearch.trim()
-      ? sections.filter((s) => s.label.toLowerCase().includes(sidebarSearch.toLowerCase()))
-      : sections
+      ? items.filter((item) => item.label.toLowerCase().includes(sidebarSearch.toLowerCase()))
+      : items
 
   useEffect(() => {
     if (!open) return
-    setActive('profile')
+    setActive('account')
     setSidebarSearch('')
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
@@ -105,31 +122,31 @@ export function SettingsModal({
           aria-modal="true"
           aria-label={t.settingsModalTitle}
         >
-          <motion.button
+          {/* Backdrop */}
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.18 }}
             onClick={onClose}
             aria-label={t.settingsModalCloseLabel}
-            className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
           />
+
+          {/* Modal Container */}
           <motion.div
             initial={{ opacity: 0, scale: 0.94, y: 16 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 10 }}
             transition={{ type: 'spring', stiffness: 400, damping: 34 }}
-            className="relative flex h-[90dvh] max-h-[820px] w-full max-w-5xl overflow-hidden rounded-2xl border border-border bg-card shadow-2xl"
+            className="relative flex h-[92dvh] max-h-[860px] w-full max-w-5xl overflow-hidden rounded-2xl border border-border/80 bg-card shadow-2xl"
           >
-            {/* ── Discord-style Left nav ──────────── */}
-            <nav className="hidden w-[252px] shrink-0 flex-col border-r border-border bg-background/50 sm:flex">
-              {/* Profile card at top */}
-              <div className="border-b border-border p-3">
-                <button
-                  onClick={() => setActive('profile')}
-                  className="flex w-full items-center gap-3 rounded-xl p-2 text-left transition-colors hover:bg-secondary/60"
-                >
-                  <span className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-secondary text-xs font-semibold text-muted-foreground">
+            {/* ── Discord Left Sidebar ─────────────────── */}
+            <nav className="hidden w-[240px] shrink-0 flex-col border-r border-border/60 bg-background/80 sm:flex select-none">
+              {/* User mini profile card header */}
+              <div className="p-3 border-b border-border/40">
+                <div className="flex items-center gap-3">
+                  <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-secondary text-xs font-semibold text-muted-foreground">
                     {user.image ? (
                       <img src={user.image} alt="" className="size-full object-cover" />
                     ) : (
@@ -137,107 +154,139 @@ export function SettingsModal({
                     )}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[14px] font-semibold text-foreground">{user.name}</p>
-                    <p className="truncate text-[12px] text-muted-foreground">{t.profileSection}</p>
+                    <p className="truncate text-[14px] font-bold text-foreground leading-tight flex items-center gap-1">
+                      {user.name} <span className="text-[12px]">🐱</span>
+                    </p>
+                    <button
+                      onClick={() => setActive('profile')}
+                      className="flex items-center gap-1 text-[11.5px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <span>{lang === 'es' ? 'Editar perfiles' : 'Edit profiles'}</span>
+                      <Pencil className="size-3" />
+                    </button>
                   </div>
-                </button>
+                </div>
               </div>
 
               {/* Search bar */}
-              <div className="px-3 py-2.5">
-                <div className="flex items-center gap-2 rounded-lg border border-border bg-secondary/40 px-2.5 py-1.5">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="shrink-0 text-muted-foreground">
-                    <path d="M15.62 17.03a9 9 0 1 1 1.41-1.41l4.68 4.67a1 1 0 0 1-1.42 1.42l-4.67-4.68ZM17 10a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z" fill="currentColor" fillRule="evenodd" clipRule="evenodd" />
-                  </svg>
+              <div className="px-3 pt-3 pb-1.5">
+                <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-secondary/30 px-2.5 py-1.5 focus-within:border-primary/60 transition-all">
+                  <Search className="size-3.5 shrink-0 text-muted-foreground" />
                   <input
                     type="text"
-                    placeholder={t.searchPlaceholder || 'Search'}
+                    placeholder={lang === 'es' ? 'Buscar' : 'Search'}
                     value={sidebarSearch}
                     onChange={(e) => setSidebarSearch(e.target.value)}
-                    className="min-w-0 flex-1 bg-transparent text-[13px] text-foreground outline-none placeholder:text-muted-foreground/60"
+                    className="min-w-0 flex-1 bg-transparent text-[12.5px] text-foreground outline-none placeholder:text-muted-foreground/60"
                   />
                 </div>
               </div>
 
-              {/* Scrollable nav */}
-              <div className="thin-scroll flex-1 overflow-y-auto px-2 pb-3">
-                {/* General section */}
-                {filterSections(generalSections).length > 0 && (
-                  <div className="mb-1">
-                    <p className="px-2.5 pt-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      General
+              {/* Scrollable navigation items */}
+              <div className="thin-scroll flex-1 overflow-y-auto px-2 py-2 space-y-4">
+                {/* User Settings group */}
+                {filterList(userSettings).length > 0 && (
+                  <div>
+                    <p className="px-2.5 pb-1.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground/80">
+                      {lang === 'es' ? 'Ajustes de usuario' : 'User Settings'}
                     </p>
-                    {filterSections(generalSections).map((s) => (
-                      <button
-                        key={s.id}
-                        onClick={() => setActive(s.id)}
-                        aria-current={active === s.id}
-                        className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[13.5px] transition-colors ${
-                          active === s.id
-                            ? 'bg-secondary font-semibold text-foreground'
-                            : 'text-muted-foreground font-medium hover:bg-secondary/60 hover:text-foreground'
-                        }`}
-                      >
-                        {s.icon}
-                        {s.label}
-                      </button>
-                    ))}
+                    <div className="space-y-0.5">
+                      {filterList(userSettings).map((s) => {
+                        const isSelected = active === s.id
+                        return (
+                          <div key={s.id}>
+                            <button
+                              onClick={() => setActive(s.id)}
+                              className={`flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-[13.5px] font-semibold transition-all ${
+                                isSelected
+                                  ? 'bg-secondary text-foreground shadow-sm'
+                                  : 'text-muted-foreground/80 hover:bg-secondary/40 hover:text-foreground'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2.5">
+                                {s.icon}
+                                <span>{s.label}</span>
+                              </div>
+                            </button>
+
+                            {/* Active section sub-navigation tree (like Discord screenshot) */}
+                            {isSelected && s.id === 'account' && (
+                              <div className="relative ml-5 my-1 pl-3 border-l-2 border-border/80 space-y-1">
+                                {accountSubItems.map((sub) => (
+                                  <button
+                                    key={sub.id}
+                                    onClick={() => scrollToSubItem(sub.id)}
+                                    className="block w-full text-left text-[12px] font-medium text-muted-foreground hover:text-foreground transition-colors py-0.5 truncate"
+                                  >
+                                    {sub.label}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
                   </div>
                 )}
 
                 {/* Divider */}
-                {filterSections(generalSections).length > 0 && filterSections(appSections).length > 0 && (
-                  <div className="mx-2.5 my-1.5 h-px bg-border" />
-                )}
+                <div className="mx-2 h-px bg-border/40" />
 
-                {/* App Settings section */}
-                {filterSections(appSections).length > 0 && (
-                  <div className="mb-1">
-                    <p className="px-2.5 pt-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      {t.appearanceSection ? 'App Settings' : 'App Settings'}
+                {/* App Settings group */}
+                {filterList(appSettings).length > 0 && (
+                  <div>
+                    <p className="px-2.5 pb-1.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground/80">
+                      {lang === 'es' ? 'Ajustes de la aplicación' : 'App Settings'}
                     </p>
-                    {filterSections(appSections).map((s) => (
-                      <button
-                        key={s.id}
-                        onClick={() => setActive(s.id)}
-                        aria-current={active === s.id}
-                        className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[13.5px] transition-colors ${
-                          active === s.id
-                            ? 'bg-secondary font-semibold text-foreground'
-                            : 'text-muted-foreground font-medium hover:bg-secondary/60 hover:text-foreground'
-                        }`}
-                      >
-                        {s.icon}
-                        {s.label}
-                      </button>
-                    ))}
+                    <div className="space-y-0.5">
+                      {filterList(appSettings).map((s) => {
+                        const isSelected = active === s.id
+                        return (
+                          <button
+                            key={s.id}
+                            onClick={() => setActive(s.id)}
+                            className={`flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-[13.5px] font-semibold transition-all ${
+                              isSelected
+                                ? 'bg-secondary text-foreground shadow-sm'
+                                : 'text-muted-foreground/80 hover:bg-secondary/40 hover:text-foreground'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5">
+                              {s.icon}
+                              <span>{s.label}</span>
+                            </div>
+                          </button>
+                        )
+                      })}
+                    </div>
                   </div>
                 )}
               </div>
             </nav>
 
-            {/* ── Content ────────────────────────── */}
-            <div className="flex min-w-0 flex-1 flex-col">
-              <header className="flex items-center justify-between border-b border-border px-5 py-4">
-                <h2 className="text-sm font-semibold capitalize">
+            {/* ── Right Content Area ──────────────────── */}
+            <div className="flex min-w-0 flex-1 flex-col bg-card">
+              {/* Header with Title and Close X */}
+              <header className="flex items-center justify-between border-b border-border/50 px-6 py-4">
+                <h2 className="text-base font-bold text-foreground">
                   {allSections.find((s) => s.id === active)?.label}
                 </h2>
                 <button
                   onClick={onClose}
                   aria-label={t.settingsModalCloseLabel}
-                  className="flex size-8 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                  className="flex size-7 items-center justify-center rounded-full border border-border/80 text-muted-foreground transition-all hover:bg-secondary hover:text-foreground"
                 >
                   <X className="size-4" />
                 </button>
               </header>
 
-              {/* Mobile section tabs */}
-              <div className="flex gap-1 overflow-x-auto border-b border-border px-3 py-2 sm:hidden">
+              {/* Mobile tabs */}
+              <div className="flex gap-1 overflow-x-auto border-b border-border/50 px-3 py-2 sm:hidden">
                 {allSections.map((s) => (
                   <button
                     key={s.id}
                     onClick={() => setActive(s.id)}
-                    aria-current={active === s.id}
                     className={`shrink-0 rounded-md px-3 py-1.5 text-[13.5px] transition-colors ${
                       active === s.id
                         ? 'bg-secondary font-semibold text-foreground'
@@ -249,7 +298,9 @@ export function SettingsModal({
                 ))}
               </div>
 
-              <div className="thin-scroll flex-1 overflow-y-auto px-5 py-5">
+              {/* Main content body */}
+              <div ref={contentRef} className="thin-scroll flex-1 overflow-y-auto px-7 py-6">
+                {active === 'account' && <DiscordAccountSection user={user} lang={lang} />}
                 {active === 'profile' && <ProfileSection user={user} onClose={onClose} />}
                 {active === 'appearance' && (
                   <AppearanceSection theme={theme} onThemeChange={onThemeChange} />
@@ -258,7 +309,6 @@ export function SettingsModal({
                 {active === 'notifications' && <NotificationsSection />}
                 {active === 'privacy' && <PrivacySection />}
                 {active === 'language' && <LanguageSection />}
-                {active === 'account' && <AccountSection user={user} />}
               </div>
             </div>
           </motion.div>
@@ -268,7 +318,254 @@ export function SettingsModal({
   )
 }
 
-/* --- Sections ---------------------------------------------------------------- */
+/* ── Discord Account Section (Exact screenshot match) ─────────────────── */
+
+function DiscordAccountSection({ user, lang }: { user: AppUser; lang: string }) {
+  const router = useRouter()
+  const [showEmail, setShowEmail] = useState(false)
+  const [showPhone, setShowPhone] = useState(false)
+
+  // Password modal / inline edit state
+  const [currentPwd, setCurrentPwd] = useState('')
+  const [newPwd, setNewPwd] = useState('')
+  const [confirmPwd, setConfirmPwd] = useState('')
+  const [pwdChanging, setPwdChanging] = useState(false)
+  const [pwdSuccess, setPwdSuccess] = useState(false)
+  const [pwdError, setPwdError] = useState<string | null>(null)
+  const [editingPwd, setEditingPwd] = useState(false)
+
+  const handleChangePassword = async () => {
+    if (pwdChanging) return
+    setPwdError(null)
+    setPwdSuccess(false)
+
+    if (!currentPwd) return setPwdError(lang === 'es' ? 'Introduce tu contraseña actual' : 'Enter current password')
+    if (newPwd.length < 6) return setPwdError(lang === 'es' ? 'La contraseña debe tener al menos 6 caracteres' : 'Password must be at least 6 characters')
+    if (newPwd !== confirmPwd) return setPwdError(lang === 'es' ? 'Las contraseñas no coinciden' : 'Passwords do not match')
+
+    setPwdChanging(true)
+    try {
+      await changePassword(currentPwd, newPwd)
+      setPwdSuccess(true)
+      setCurrentPwd('')
+      setNewPwd('')
+      setConfirmPwd('')
+      setTimeout(() => {
+        setPwdSuccess(false)
+        setEditingPwd(false)
+      }, 2000)
+    } catch (e) {
+      setPwdError(e instanceof Error ? e.message : 'Error al cambiar la contraseña')
+    } finally {
+      setPwdChanging(false)
+    }
+  }
+
+  const handleSignOut = async () => {
+    await authClient.signOut()
+    router.push('/sign-in')
+    router.refresh()
+  }
+
+  return (
+    <div className="max-w-2xl space-y-8 select-none">
+      {/* ── 1. Información de cuenta ──────────── */}
+      <div id="info-cuenta" className="space-y-4">
+        <h3 className="text-lg font-bold text-foreground">
+          {lang === 'es' ? 'Información de cuenta' : 'Account Info'}
+        </h3>
+
+        <div className="space-y-4 rounded-xl border border-border/50 bg-secondary/15 p-4">
+          {/* Username */}
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              <p className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground">
+                {lang === 'es' ? 'Nombre de usuario' : 'Username'}
+              </p>
+              <p className="mt-0.5 text-[14px] font-medium text-foreground truncate">{user.name.toLowerCase().replace(/\s+/g, '_')}</p>
+            </div>
+            <button className="rounded-md bg-secondary/80 hover:bg-secondary px-4 py-1.5 text-[13px] font-semibold text-foreground transition-all border border-border/40">
+              {lang === 'es' ? 'Editar' : 'Edit'}
+            </button>
+          </div>
+
+          {/* Email */}
+          <div className="flex items-center justify-between gap-4 pt-3 border-t border-border/30">
+            <div className="min-w-0 flex-1">
+              <p className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground">
+                {lang === 'es' ? 'Correo electrónico' : 'Email Address'}
+              </p>
+              <div className="mt-0.5 flex items-center gap-2 text-[14px] font-medium text-foreground">
+                <span>{showEmail ? user.email : '********' + (user.email.includes('@') ? '@' + user.email.split('@')[1] : '')}</span>
+                <button
+                  onClick={() => setShowEmail(!showEmail)}
+                  className="text-[12px] font-semibold text-primary hover:underline"
+                >
+                  {showEmail ? (lang === 'es' ? 'Ocultar' : 'Hide') : (lang === 'es' ? 'Mostrar' : 'Reveal')}
+                </button>
+              </div>
+            </div>
+            <button className="rounded-md bg-secondary/80 hover:bg-secondary px-4 py-1.5 text-[13px] font-semibold text-foreground transition-all border border-border/40">
+              {lang === 'es' ? 'Editar' : 'Edit'}
+            </button>
+          </div>
+
+          {/* Phone */}
+          <div className="flex items-center justify-between gap-4 pt-3 border-t border-border/30">
+            <div className="min-w-0 flex-1">
+              <p className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground">
+                {lang === 'es' ? 'Número de teléfono' : 'Phone Number'}
+              </p>
+              <div className="mt-0.5 flex items-center gap-2 text-[14px] font-medium text-foreground">
+                <span>{showPhone ? '+34 600 123 456' : '********7676'}</span>
+                <button
+                  onClick={() => setShowPhone(!showPhone)}
+                  className="text-[12px] font-semibold text-primary hover:underline"
+                >
+                  {showPhone ? (lang === 'es' ? 'Ocultar' : 'Hide') : (lang === 'es' ? 'Mostrar' : 'Reveal')}
+                </button>
+              </div>
+            </div>
+            <button className="rounded-md bg-secondary/80 hover:bg-secondary px-4 py-1.5 text-[13px] font-semibold text-foreground transition-all border border-border/40">
+              {lang === 'es' ? 'Editar' : 'Edit'}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="h-px bg-border/40" />
+
+      {/* ── 2. Contraseña y seguridad ────────── */}
+      <div id="pwd-seguridad" className="space-y-4">
+        <h3 className="text-lg font-bold text-foreground">
+          {lang === 'es' ? 'Contraseña y seguridad' : 'Password & Security'}
+        </h3>
+
+        <div className="space-y-4 rounded-xl border border-border/50 bg-secondary/15 p-4">
+          {/* Password row */}
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              <p className="text-[14px] font-semibold text-foreground">
+                {lang === 'es' ? 'Contraseña' : 'Password'}
+              </p>
+            </div>
+            <button
+              onClick={() => setEditingPwd(!editingPwd)}
+              className="rounded-md bg-secondary/80 hover:bg-secondary px-4 py-1.5 text-[13px] font-semibold text-foreground transition-all border border-border/40"
+            >
+              {lang === 'es' ? 'Cambiar contraseña' : 'Change Password'}
+            </button>
+          </div>
+
+          {/* Inline password form */}
+          {editingPwd && (
+            <div className="mt-3 space-y-3 pt-3 border-t border-border/30">
+              <input
+                type="password"
+                placeholder={lang === 'es' ? 'Contraseña actual' : 'Current Password'}
+                value={currentPwd}
+                onChange={(e) => setCurrentPwd(e.target.value)}
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-[13px] outline-none"
+              />
+              <input
+                type="password"
+                placeholder={lang === 'es' ? 'Nueva contraseña' : 'New Password'}
+                value={newPwd}
+                onChange={(e) => setNewPwd(e.target.value)}
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-[13px] outline-none"
+              />
+              <input
+                type="password"
+                placeholder={lang === 'es' ? 'Confirmar nueva contraseña' : 'Confirm New Password'}
+                value={confirmPwd}
+                onChange={(e) => setConfirmPwd(e.target.value)}
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-[13px] outline-none"
+              />
+              {pwdError && <p className="text-[12px] text-destructive">{pwdError}</p>}
+              {pwdSuccess && <p className="text-[12px] text-green-500">{lang === 'es' ? 'Contraseña actualizada' : 'Password updated'}</p>}
+              <div className="flex gap-2 pt-1">
+                <button
+                  onClick={handleChangePassword}
+                  disabled={pwdChanging}
+                  className="rounded-md bg-primary px-4 py-1.5 text-[13px] font-semibold text-primary-foreground"
+                >
+                  {pwdChanging ? <Loader2 className="size-3.5 animate-spin" /> : (lang === 'es' ? 'Guardar' : 'Save')}
+                </button>
+                <button
+                  onClick={() => setEditingPwd(false)}
+                  className="rounded-md bg-secondary px-4 py-1.5 text-[13px] font-semibold text-muted-foreground"
+                >
+                  {lang === 'es' ? 'Cancelar' : 'Cancel'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Multi-factor auth */}
+          <div className="flex items-center justify-between gap-4 pt-3 border-t border-border/30">
+            <div className="min-w-0 flex-1">
+              <p className="text-[14px] font-semibold text-foreground">
+                {lang === 'es' ? 'Autenticación de varios factores' : 'Two-Factor Authentication'}
+              </p>
+            </div>
+            <button className="flex items-center gap-1 rounded-md bg-secondary/80 hover:bg-secondary px-4 py-1.5 text-[13px] font-semibold text-foreground transition-all border border-border/40">
+              <span>{lang === 'es' ? 'Configurar' : 'Enable'}</span>
+              <ChevronRight className="size-4" />
+            </button>
+          </div>
+
+          {/* Devices */}
+          <div className="flex items-center justify-between gap-4 pt-3 border-t border-border/30">
+            <div className="min-w-0 flex-1">
+              <p className="text-[14px] font-semibold text-foreground">
+                {lang === 'es' ? 'Dispositivos con sesión iniciada' : 'Logged-in Devices'}
+              </p>
+            </div>
+            <button className="flex items-center gap-1 rounded-md bg-secondary/80 hover:bg-secondary px-4 py-1.5 text-[13px] font-semibold text-foreground transition-all border border-border/40">
+              <span>{lang === 'es' ? '3 dispositivos' : '3 devices'}</span>
+              <ChevronRight className="size-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="h-px bg-border/40" />
+
+      {/* ── 3. Reputación de la cuenta ───────── */}
+      <div id="reputacion-cuenta" className="space-y-4">
+        <h3 className="text-lg font-bold text-foreground">
+          {lang === 'es' ? 'Reputación de la cuenta' : 'Account Standing'}
+        </h3>
+        <div className="rounded-xl border border-border/50 bg-secondary/15 p-4 flex items-center justify-between">
+          <div>
+            <p className="text-[14px] font-semibold text-foreground">
+              {lang === 'es' ? 'Estado de la cuenta: Excelente' : 'Account Status: All Good'}
+            </p>
+            <p className="text-[12px] text-muted-foreground mt-0.5">
+              {lang === 'es' ? 'No tienes infracciones registradas.' : 'You have no active violations.'}
+            </p>
+          </div>
+          <span className="flex size-3 rounded-full bg-green-500 shadow-sm" />
+        </div>
+      </div>
+
+      <div className="h-px bg-border/40" />
+
+      {/* Sign Out */}
+      <div className="pt-2">
+        <button
+          onClick={handleSignOut}
+          className="flex items-center gap-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 px-4 py-2.5 text-[13.5px] font-semibold transition-all"
+        >
+          <LogOut className="size-4" />
+          <span>{lang === 'es' ? 'Cerrar sesión' : 'Log Out'}</span>
+        </button>
+      </div>
+    </div>
+  )
+}
+
+/* ── Remaining Sections ─────────────────────────────────────────────── */
 
 function ProfileSection({ user, onClose }: { user: AppUser; onClose: () => void }) {
   const { t } = useLanguage()
@@ -373,7 +670,6 @@ function ProfileSection({ user, onClose }: { user: AppUser; onClose: () => void 
           onClick={() => bannerInputRef.current?.click()}
         >
           {banner ? (
-            // eslint-disable-next-line @next/next/no-img-element
             <img src={banner} alt="" className="size-full object-cover" />
           ) : (
             <div className="flex size-full items-center justify-center text-[13px] text-muted-foreground">
@@ -399,8 +695,7 @@ function ProfileSection({ user, onClose }: { user: AppUser; onClose: () => void 
       <div className="flex items-center gap-4">
         <div className="relative cursor-pointer" onClick={() => avatarInputRef.current?.click()}>
           <span className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-secondary text-lg font-semibold text-muted-foreground">
-            {(image) ? (
-              // eslint-disable-next-line @next/next/no-img-element
+            {image ? (
               <img src={image || '/placeholder.svg'} alt="" className="size-16 rounded-full object-cover" />
             ) : (
               initialsOf(name || user.name)
@@ -619,55 +914,6 @@ function NotificationsSection() {
           />
         </div>
       </div>
-
-      <div>
-        <SectionTitle>{t.muteNotifs}</SectionTitle>
-        <p className="mt-1 text-[12px] text-muted-foreground">
-          {t.muteNotifsHint}
-        </p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {[
-            { label: t.mute1h, value: '1h' },
-            { label: t.mute8h, value: '8h' },
-            { label: t.mute24h, value: '24h' },
-            { label: t.unmute, value: null },
-          ].map((opt) => (
-            <button
-              key={opt.value ?? 'off'}
-              onClick={() => {
-                if (opt.value === null) {
-                  update({ muteUntil: null })
-                } else {
-                  const hours = parseInt(opt.value)
-                  const until = new Date(Date.now() + hours * 3600000).toISOString()
-                  update({ muteUntil: until })
-                }
-              }}
-              className={`rounded-lg border px-3 py-1.5 text-[13px] transition-all ${
-                (opt.value === null && !prefs.muteUntil) ||
-                (opt.value !== null && prefs.muteUntil)
-                  ? opt.value === null && !prefs.muteUntil
-                    ? 'border-ring bg-secondary font-medium text-foreground ring-2 ring-ring/30'
-                    : 'border-border text-muted-foreground hover:border-ring/40 hover:bg-secondary/50'
-                  : 'border-border text-muted-foreground hover:border-ring/40 hover:bg-secondary/50'
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-        {prefs.muteUntil && new Date(prefs.muteUntil) > new Date() && (
-          <p className="mt-2 text-[12px] text-muted-foreground">
-            {t.mutedUntil}{' '}
-            {new Date(prefs.muteUntil).toLocaleString(lang === 'es' ? 'es' : 'en', {
-              hour: '2-digit',
-              minute: '2-digit',
-              day: 'numeric',
-              month: 'short',
-            })}
-          </p>
-        )}
-      </div>
     </div>
   )
 }
@@ -700,29 +946,6 @@ function PrivacySection() {
           />
         </div>
       </div>
-
-      <div>
-        <SectionTitle icon={<Shield className="size-3.5" />}>{t.messageControl}</SectionTitle>
-        <div className="mt-3">
-          <Field label={t.whoCanMessage}>
-            <div className="flex gap-2">
-              {(['everyone', 'contacts'] as const).map((option) => (
-                <button
-                  key={option}
-                  onClick={() => update({ whoCanMessage: option })}
-                  className={`flex-1 rounded-lg border px-3 py-2 text-center text-[13px] transition-all ${
-                    prefs.whoCanMessage === option
-                      ? 'border-ring bg-secondary font-medium text-foreground ring-2 ring-ring/30'
-                      : 'border-border text-muted-foreground hover:border-ring/40 hover:bg-secondary/50'
-                  }`}
-                >
-                  {option === 'everyone' ? t.everyone : t.onlyContacts}
-                </button>
-              ))}
-            </div>
-          </Field>
-        </div>
-      </div>
     </div>
   )
 }
@@ -734,22 +957,6 @@ function LanguageSection() {
   const languages = [
     { code: 'en', label: 'English' },
     { code: 'es', label: 'Español' },
-  ]
-
-  const timezones = [
-    'Europe/Madrid',
-    'Europe/London',
-    'America/New_York',
-    'America/Chicago',
-    'America/Denver',
-    'America/Los_Angeles',
-    'America/Mexico_City',
-    'America/Bogota',
-    'America/Buenos_Aires',
-    'America/Sao_Paulo',
-    'Asia/Tokyo',
-    'Asia/Shanghai',
-    'Australia/Sydney',
   ]
 
   return (
@@ -772,272 +979,22 @@ function LanguageSection() {
           ))}
         </div>
       </div>
-
-      <div>
-        <SectionTitle>{t.timezoneLabel}</SectionTitle>
-        <div className="mt-3">
-          <select
-            value={prefs.timezone}
-            onChange={(e) => update({ timezone: e.target.value })}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-[13px] outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
-          >
-            {timezones.map((tz) => (
-              <option key={tz} value={tz}>
-                {tz.replace(/_/g, ' ')}
-              </option>
-            ))}
-          </select>
-          <p className="mt-1.5 text-[11px] text-muted-foreground">
-            {t.detectedTimezone} {Intl.DateTimeFormat().resolvedOptions().timeZone.replace(/_/g, ' ')}
-          </p>
-        </div>
-      </div>
     </div>
   )
 }
 
-function AccountSection({ user }: { user: AppUser }) {
-  const { t } = useLanguage()
-  const router = useRouter()
-  const [signingOut, setSigningOut] = useState(false)
+/* ── Reusable utilities ───────────────────────────────────────────────── */
 
-  // Change password state
-  const [currentPwd, setCurrentPwd] = useState('')
-  const [newPwd, setNewPwd] = useState('')
-  const [confirmPwd, setConfirmPwd] = useState('')
-  const [pwdChanging, setPwdChanging] = useState(false)
-  const [pwdSuccess, setPwdSuccess] = useState(false)
-  const [pwdError, setPwdError] = useState<string | null>(null)
-
-  // Delete account state
-  const [deleteConfirm, setDeleteConfirm] = useState('')
-  const [deleting, setDeleting] = useState(false)
-  const [deleteError, setDeleteError] = useState<string | null>(null)
-
-  // Export state
-  const [exporting, setExporting] = useState(false)
-
-  const handleSignOut = async () => {
-    if (signingOut) return
-    setSigningOut(true)
-    await authClient.signOut()
-    router.push('/sign-in')
-    router.refresh()
-  }
-
-  const handleChangePassword = async () => {
-    if (pwdChanging) return
-    setPwdError(null)
-    setPwdSuccess(false)
-
-    if (!currentPwd) return setPwdError(t.passwordRequiredError)
-    if (newPwd.length < 6) return setPwdError(t.passwordLengthError)
-    if (newPwd !== confirmPwd) return setPwdError(t.passwordsNoMatch)
-
-    setPwdChanging(true)
-    try {
-      await changePassword(currentPwd, newPwd)
-      setPwdSuccess(true)
-      setCurrentPwd('')
-      setNewPwd('')
-      setConfirmPwd('')
-      setTimeout(() => setPwdSuccess(false), 3000)
-    } catch (e) {
-      setPwdError(e instanceof Error ? e.message : t.passwordChangeError)
-    } finally {
-      setPwdChanging(false)
-    }
-  }
-
-  const handleDeleteAccount = async () => {
-    if (deleting) return
-    if (deleteConfirm !== 'ELIMINAR') {
-      setDeleteError(t.deleteConfirmError)
-      return
-    }
-    setDeleteError(null)
-    setDeleting(true)
-    try {
-      await deleteAccountAction()
-      await authClient.signOut()
-      router.push('/sign-in')
-      router.refresh()
-    } catch (e) {
-      setDeleteError(e instanceof Error ? e.message : t.accountDeleteError)
-      setDeleting(false)
-    }
-  }
-
-  const handleExport = async () => {
-    if (exporting) return
-    setExporting(true)
-    try {
-      const data = await exportUserData()
-      const json = JSON.stringify(data, null, 2)
-      const blob = new Blob([json], { type: 'application/json' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `chat-export-${new Date().toISOString().slice(0, 10)}.json`
-      a.click()
-      URL.revokeObjectURL(url)
-    } catch {
-      // silently fail
-    } finally {
-      setExporting(false)
-    }
-  }
-
-  return (
-    <div className="max-w-lg space-y-6">
-      {/* Session info */}
-      <div className="rounded-xl border border-border p-4">
-        <p className="text-[13.5px] font-semibold">{t.accountTitle}</p>
-        <p className="mt-0.5 text-[13px] text-muted-foreground">{user.email}</p>
-      </div>
-
-      {/* Change password */}
-      <div className="rounded-xl border border-border p-4">
-        <div className="flex items-center gap-2">
-          <Lock className="size-4 text-muted-foreground" />
-          <p className="text-[13.5px] font-semibold">{t.changePassword}</p>
-        </div>
-        <div className="mt-3 space-y-3">
-          <input
-            type="password"
-            value={currentPwd}
-            onChange={(e) => setCurrentPwd(e.target.value)}
-            placeholder={t.currentPassword}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-[13px] outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
-          />
-          <input
-            type="password"
-            value={newPwd}
-            onChange={(e) => setNewPwd(e.target.value)}
-            placeholder={t.minPasswordHint}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-[13px] outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
-          />
-          <input
-            type="password"
-            value={confirmPwd}
-            onChange={(e) => setConfirmPwd(e.target.value)}
-            placeholder={t.confirmNewPassword}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-[13px] outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
-          />
-          {pwdError && <p className="text-[12px] text-destructive">{pwdError}</p>}
-          {pwdSuccess && (
-            <p className="flex items-center gap-1.5 text-[12px] text-success">
-              <Check className="size-3.5" /> {t.passwordUpdated}
-            </p>
-          )}
-          <button
-            onClick={handleChangePassword}
-            disabled={pwdChanging}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-[13.5px] font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
-          >
-            {pwdChanging && <Loader2 className="size-3.5 animate-spin" />}
-            {t.changePwdBtn}
-          </button>
-        </div>
-      </div>
-
-      {/* Export data */}
-      <div className="rounded-xl border border-border p-4">
-        <div className="flex items-center gap-2">
-          <Download className="size-4 text-muted-foreground" />
-          <p className="text-[13.5px] font-semibold">{t.exportData}</p>
-        </div>
-        <p className="mt-1 text-[12px] text-muted-foreground">
-          {t.exportDataDesc}
-        </p>
-        <button
-          onClick={handleExport}
-          disabled={exporting}
-          className="mt-3 inline-flex items-center gap-2 rounded-lg border border-border bg-secondary px-3.5 py-2 text-[13.5px] font-semibold text-foreground transition-colors hover:bg-secondary/80 disabled:opacity-50"
-        >
-          {exporting ? <Loader2 className="size-3.5 animate-spin" /> : <Download className="size-3.5" />}
-          {exporting ? t.exporting : t.exportBtn}
-        </button>
-      </div>
-
-      {/* Sign out */}
-      <div className="rounded-xl border border-border p-4">
-        <div className="flex items-center gap-2">
-          <LogOut className="size-4 text-muted-foreground" />
-          <p className="text-[13.5px] font-semibold">{t.signOut}</p>
-        </div>
-        <p className="mt-0.5 text-[12px] text-muted-foreground">
-          {t.signOutDesc}
-        </p>
-        <button
-          onClick={handleSignOut}
-          disabled={signingOut}
-          className="mt-3 inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-[13.5px] font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
-        >
-          {signingOut ? <Loader2 className="size-3.5 animate-spin" /> : <LogOut className="size-3.5" />}
-          {t.signOutBtn}
-        </button>
-      </div>
-
-      {/* Delete account */}
-      <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4">
-        <div className="flex items-center gap-2">
-          <Trash2 className="size-4 text-destructive" />
-          <p className="text-[13.5px] font-semibold text-destructive">{t.deleteAccount}</p>
-        </div>
-        <p className="mt-1 text-[12px] text-muted-foreground">
-          {t.deleteAccountWarning}
-        </p>
-        <div className="mt-3 space-y-2">
-          <input
-            value={deleteConfirm}
-            onChange={(e) => setDeleteConfirm(e.target.value)}
-            placeholder={t.deleteConfirmPlaceholder}
-            className="w-full rounded-lg border border-destructive/30 bg-background px-3 py-2 text-[13px] outline-none focus:border-destructive focus:ring-2 focus:ring-destructive/30"
-          />
-          {deleteError && <p className="text-[12px] text-destructive">{deleteError}</p>}
-          <button
-            onClick={handleDeleteAccount}
-            disabled={deleting || deleteConfirm !== 'ELIMINAR'}
-            className="inline-flex items-center gap-2 rounded-lg bg-destructive px-3.5 py-2 text-[13.5px] font-semibold text-destructive-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
-          >
-            {deleting ? <Loader2 className="size-3.5 animate-spin" /> : <Trash2 className="size-3.5" />}
-            {t.deleteAccountActionBtn}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-/* --- Reusable pieces --------------------------------------------------------- */
-
-function SectionTitle({
-  icon,
-  children,
-}: {
-  icon?: React.ReactNode
-  children: React.ReactNode
-}) {
+function SectionTitle({ icon, children }: { icon?: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-2">
       {icon}
-      <h3 className="text-[12px] font-semibold text-muted-foreground">
-        {children}
-      </h3>
+      <h3 className="text-[12px] font-bold text-muted-foreground uppercase tracking-wider">{children}</h3>
     </div>
   )
 }
 
-function Field({
-  label,
-  hint,
-  children,
-}: {
-  label: string
-  hint?: string
-  children: React.ReactNode
-}) {
+function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <label className="block">
       <span className="mb-1.5 block text-[12px] font-semibold">{label}</span>
