@@ -148,18 +148,73 @@ ipcMain.handle('get:git-commits', async () => {
   })
 })
 
+async function callDeepSeekApi(apiKey, messages) {
+  const https = require('https')
+  const modelsToTry = ['deepseek-v4-pro', 'deepseek-v4-flash', 'deepseek-chat']
+  let lastError = null
+
+  for (const model of modelsToTry) {
+    try {
+      const payload = JSON.stringify({
+        model,
+        messages,
+        temperature: 0.7,
+      })
+
+      const reply = await new Promise((resolve, reject) => {
+        const req = https.request('https://api.deepseek.com/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Length': Buffer.byteLength(payload),
+          },
+        }, (res) => {
+          let data = ''
+          res.on('data', (chunk) => { data += chunk })
+          res.on('end', () => {
+            try {
+              if (res.statusCode !== 200) {
+                const errJson = JSON.parse(data)
+                const errMsg = errJson.error?.message || `API Error HTTP ${res.statusCode}`
+                return reject(new Error(errMsg))
+              }
+              const parsed = JSON.parse(data)
+              const reply = parsed.choices?.[0]?.message?.content || ''
+              resolve(reply.trim())
+            } catch {
+              reject(new Error('Error al procesar respuesta de DeepSeek API'))
+            }
+          })
+        })
+
+        req.on('error', (err) => reject(new Error('Error de conexión a DeepSeek: ' + err.message)))
+        req.write(payload)
+        req.end()
+      })
+
+      return reply
+    } catch (err) {
+      lastError = err
+      if (err.message && err.message.includes('supported API model names')) {
+        continue
+      }
+      throw err
+    }
+  }
+
+  throw lastError || new Error('No se pudo conectar con los modelos de DeepSeek.')
+}
+
 ipcMain.handle('generate:ai-notes', async (_event, userPrompt) => {
   const cfg = loadConfig()
   const apiKey = cfg.deepseekKey || process.env.DEEPSEEK_API_KEY
   if (!apiKey) throw new Error('No hay API Key de DeepSeek configurada. Agrégala en la barra lateral.')
 
-  const https = require('https')
-  const payload = JSON.stringify({
-    model: 'deepseek-chat',
-    messages: [
-      {
-        role: 'system',
-        content: `Eres un asistente experto en software y notas de lanzamiento (Release Notes). Tu misión es transformar la información de cambios provista por el usuario en un documento Markdown profesional, estructurado, detallado y visualmente atractivo para la aplicación CatChat.
+  const messages = [
+    {
+      role: 'system',
+      content: `Eres un asistente experto en software y notas de lanzamiento (Release Notes). Tu misión es transformar la información de cambios provista por el usuario en un documento Markdown profesional, estructurado, detallado y visualmente atractivo para la aplicación CatChat.
 
 Instrucciones de formato:
 1. Usa títulos de sección con emojis:
@@ -170,45 +225,14 @@ Instrucciones de formato:
 2. Para cada cambio, escribe una viñeta (- ) con una explicación detallada, destacando beneficios clave para el usuario en **negrita**.
 3. Mantén un tono entusiasta, profesional y claro.
 4. Responde ÚNICAMENTE con el contenido en Markdown, sin comentarios ni introducciones.`
-      },
-      {
-        role: 'user',
-        content: `Lista de cambios / commits para este release:\n${userPrompt}`
-      }
-    ],
-    temperature: 0.7
-  })
+    },
+    {
+      role: 'user',
+      content: `Lista de cambios / commits para este release:\n${userPrompt}`
+    }
+  ]
 
-  return new Promise((resolve, reject) => {
-    const req = https.request('https://api.deepseek.com/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Length': Buffer.byteLength(payload)
-      }
-    }, (res) => {
-      let data = ''
-      res.on('data', (chunk) => { data += chunk })
-      res.on('end', () => {
-        try {
-          if (res.statusCode !== 200) {
-            const errJson = JSON.parse(data)
-            return reject(new Error(errJson.error?.message || `API Error HTTP ${res.statusCode}`))
-          }
-          const parsed = JSON.parse(data)
-          const reply = parsed.choices?.[0]?.message?.content || ''
-          resolve(reply.trim())
-        } catch {
-          reject(new Error('Error al procesar respuesta de DeepSeek API'))
-        }
-      })
-    })
-
-    req.on('error', (err) => reject(new Error('Error de conexión a DeepSeek: ' + err.message)))
-    req.write(payload)
-    req.end()
-  })
+  return callDeepSeekApi(apiKey, messages)
 })
 
 ipcMain.handle('chat:ai-notes', async (_event, chatMessages) => {
@@ -216,7 +240,6 @@ ipcMain.handle('chat:ai-notes', async (_event, chatMessages) => {
   const apiKey = cfg.deepseekKey || process.env.DEEPSEEK_API_KEY
   if (!apiKey) throw new Error('No hay API Key de DeepSeek configurada. Agrégala en la barra lateral.')
 
-  const https = require('https')
   const systemMessage = {
     role: 'system',
     content: `Eres un asistente de IA conversacional especializado en crear y pulir Release Notes (Notas de lanzamiento) en Markdown para CatChat.
@@ -233,42 +256,8 @@ Instrucciones:
 5. Ofrece siempre el resultado final en Markdown listo para aplicar.`
   }
 
-  const payload = JSON.stringify({
-    model: 'deepseek-chat',
-    messages: [systemMessage, ...(chatMessages || [])],
-    temperature: 0.7
-  })
-
-  return new Promise((resolve, reject) => {
-    const req = https.request('https://api.deepseek.com/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Length': Buffer.byteLength(payload)
-      }
-    }, (res) => {
-      let data = ''
-      res.on('data', (chunk) => { data += chunk })
-      res.on('end', () => {
-        try {
-          if (res.statusCode !== 200) {
-            const errJson = JSON.parse(data)
-            return reject(new Error(errJson.error?.message || `API Error HTTP ${res.statusCode}`))
-          }
-          const parsed = JSON.parse(data)
-          const reply = parsed.choices?.[0]?.message?.content || ''
-          resolve(reply.trim())
-        } catch {
-          reject(new Error('Error al procesar respuesta de DeepSeek API'))
-        }
-      })
-    })
-
-    req.on('error', (err) => reject(new Error('Error de conexión a DeepSeek: ' + err.message)))
-    req.write(payload)
-    req.end()
-  })
+  const messages = [systemMessage, ...(chatMessages || [])]
+  return callDeepSeekApi(apiKey, messages)
 })
 
 ipcMain.handle('release', async (_event, version, notes, showModal) => {
