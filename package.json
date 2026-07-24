@@ -1,6 +1,6 @@
 {
   "name": "catchat",
-  "version": "0.3.6",
+  "version": "0.3.7",
   "private": true,
   "author": "CatChat <dev@catchat.app>",
   "description": "Team collaboration messenger with threads, channels and lightning-fast command search",
