@@ -108,7 +108,7 @@ function LocalScreenPreview() {
   )
 }
 
-const ScreenShareView = React.memo(function ScreenShareView() {
+const ScreenShareView = React.memo(function ScreenShareView({ onHangUp }: { onHangUp?: () => void }) {
   const allTracks = useTracks([{ source: Track.Source.ScreenShare, withPlaceholder: false }], { onlySubscribed: false })
   const remoteTrack = allTracks.find((t) => !t.participant.isLocal && t.publication)
   const track = remoteTrack?.publication?.videoTrack
@@ -117,6 +117,8 @@ const ScreenShareView = React.memo(function ScreenShareView() {
   const containerRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [showControls, setShowControls] = useState(true)
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     const el = videoRef.current
@@ -130,12 +132,33 @@ const ScreenShareView = React.memo(function ScreenShareView() {
     }
   }, [trackId])
 
+  const handleMouseMove = useCallback(() => {
+    setShowControls(true)
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current)
+    }
+    if (isFullscreen) {
+      hideTimerRef.current = setTimeout(() => {
+        setShowControls(false)
+      }, 2500)
+    }
+  }, [isFullscreen])
+
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setIsFullscreen(Boolean(document.fullscreenElement))
+      const isFs = Boolean(document.fullscreenElement)
+      setIsFullscreen(isFs)
+      setShowControls(true)
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
+      if (isFs) {
+        hideTimerRef.current = setTimeout(() => setShowControls(false), 2500)
+      }
     }
     document.addEventListener('fullscreenchange', handleFullscreenChange)
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange)
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
+    }
   }, [])
 
   const toggleFullscreen = useCallback(async () => {
@@ -157,27 +180,36 @@ const ScreenShareView = React.memo(function ScreenShareView() {
 
   if (!remoteTrack) return null
   return (
-    <div ref={containerRef} className="group relative inset-0 flex h-full w-full items-center justify-center bg-black">
+    <div
+      ref={containerRef}
+      onMouseMove={handleMouseMove}
+      className={`group relative inset-0 flex h-full w-full items-center justify-center bg-black ${
+        isFullscreen && !showControls ? 'cursor-none' : 'cursor-default'
+      }`}
+    >
       <video ref={videoRef} autoPlay playsInline className="h-full w-full object-contain" />
 
-      {/* Top-right Fullscreen Toggle Button */}
+      {/* Top-right Fullscreen Toggle Button (Discord style: icon only) */}
       <button
         onClick={toggleFullscreen}
         title={isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}
-        className="absolute top-4 right-4 z-30 flex items-center gap-1.5 rounded-xl bg-black/60 px-3 py-2 text-xs font-medium text-white/90 shadow-lg backdrop-blur-md transition-all hover:bg-black/80 hover:text-white hover:scale-105 active:scale-95"
+        className={`absolute top-4 right-4 z-40 flex size-10 items-center justify-center rounded-xl bg-black/60 text-white/90 shadow-lg backdrop-blur-md transition-all duration-300 hover:bg-white/20 hover:text-white hover:scale-105 active:scale-95 ${
+          isFullscreen && !showControls ? 'opacity-0 pointer-events-none' : 'opacity-100'
+        }`}
       >
-        {isFullscreen ? (
-          <>
-            <Minimize2 className="size-4" />
-            <span>Salir</span>
-          </>
-        ) : (
-          <>
-            <Maximize2 className="size-4" />
-            <span>Pantalla completa</span>
-          </>
-        )}
+        {isFullscreen ? <Minimize2 className="size-5" /> : <Maximize2 className="size-5" />}
       </button>
+
+      {/* Call controls overlay when in Fullscreen */}
+      {isFullscreen && onHangUp && (
+        <div
+          className={`absolute bottom-8 left-1/2 -translate-x-1/2 z-40 transition-all duration-300 ${
+            !showControls ? 'opacity-0 pointer-events-none translate-y-4' : 'opacity-100 translate-y-0'
+          }`}
+        >
+          <CallControls onHangUp={onHangUp} />
+        </div>
+      )}
     </div>
   )
 })
@@ -227,7 +259,7 @@ function InCallStage({
 
       {hasVideoContent ? (
         <>
-          {hasRemoteScreenShare && <ScreenShareView />}
+          {hasRemoteScreenShare && <ScreenShareView onHangUp={onHangUp} />}
           <div
             className={
               hasRemoteScreenShare
