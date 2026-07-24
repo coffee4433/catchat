@@ -4,13 +4,13 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Sparkles, X, Check, Flame, Wrench, Zap, Palette, Rocket, Info, AlertTriangle } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
-type LatestYmlData = {
+export type LatestYmlData = {
   version: string
   releaseNotes?: string
   showReleaseModal?: boolean | string
 }
 
-type ThemeConfig = {
+export type ThemeConfig = {
   preset?: 'discord' | 'cyberpunk' | 'emerald' | 'sunset' | 'midnight'
   headerGradient?: string
   accentColor?: string
@@ -19,7 +19,7 @@ type ThemeConfig = {
   badgeText?: string
 }
 
-function parseTheme(text: string): { theme: ThemeConfig; cleanNotes: string } {
+export function parseTheme(text: string): { theme: ThemeConfig; cleanNotes: string } {
   const match = text.match(/<!--\s*theme:\s*(\{[\s\S]*?\})\s*-->/)
   if (!match) return { theme: { preset: 'discord' }, cleanNotes: text }
   try {
@@ -31,7 +31,7 @@ function parseTheme(text: string): { theme: ThemeConfig; cleanNotes: string } {
   }
 }
 
-function parseYml(text: string): LatestYmlData {
+export function parseYml(text: string): LatestYmlData {
   const result: LatestYmlData = { version: '' }
   const versionMatch = text.match(/^version:\s*['"]?([^'"\n\r]+)['"]?/m)
   if (versionMatch) result.version = versionMatch[1].trim()
@@ -51,6 +51,12 @@ function parseYml(text: string): LatestYmlData {
   }
 
   return result
+}
+
+export function triggerReleaseNotesModal(data?: LatestYmlData) {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('open-release-notes-modal', { detail: { data } }))
+  }
 }
 
 function BulletIcon({ line }: { line: string }) {
@@ -90,7 +96,7 @@ function renderFormattedBadgesAndText(text: string) {
   })
 }
 
-function FormattedMarkdownLine({ line, theme }: { line: string; theme: ThemeConfig }) {
+export function FormattedMarkdownLine({ line, theme }: { line: string; theme: ThemeConfig }) {
   const trimmed = line.trim()
   if (!trimmed) return null
 
@@ -189,8 +195,25 @@ export function ReleaseNotesModal() {
     }
 
     checkReleaseNotes()
+
+    const openHandler = (e: CustomEvent) => {
+      if (e.detail?.data) {
+        setData(e.detail.data)
+      } else if (!data) {
+        checkReleaseNotes()
+      }
+      setOpen(true)
+    }
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('open-release-notes-modal' as any, openHandler as any)
+    }
+
     return () => {
       active = false
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('open-release-notes-modal' as any, openHandler as any)
+      }
     }
   }, [])
 

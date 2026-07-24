@@ -17,6 +17,7 @@ import {
   Pencil,
   Search,
   Shield,
+  Sparkles,
   Sun,
   Trash2,
   User as UserIcon,
@@ -35,10 +36,17 @@ import { authClient } from '@/lib/auth-client'
 import { themes } from '@/lib/themes'
 import { useLanguage } from '@/lib/i18n'
 import { usePrefs } from '@/hooks/use-prefs'
+import {
+  parseYml,
+  parseTheme,
+  FormattedMarkdownLine,
+  triggerReleaseNotesModal,
+  type LatestYmlData,
+} from '@/components/release-notes-modal'
 
 type AppUser = { id: string; name: string; email: string; image?: string | null; banner?: string | null }
 
-type Section = 'account' | 'profile' | 'privacy' | 'notifications' | 'appearance' | 'chat' | 'language'
+type Section = 'account' | 'profile' | 'privacy' | 'notifications' | 'appearance' | 'chat' | 'language' | 'releasenotes'
 
 function initialsOf(name: string) {
   return name
@@ -93,6 +101,7 @@ export function SettingsModal({
     { id: 'appearance', label: lang === 'es' ? 'Apariencia' : 'Appearance', icon: <Palette className="size-4" /> },
     { id: 'chat', label: lang === 'es' ? 'Chat y texto' : 'Text & Images', icon: <MessageCircle className="size-4" /> },
     { id: 'language', label: lang === 'es' ? 'Idioma' : 'Language', icon: <Globe className="size-4" /> },
+    { id: 'releasenotes', label: lang === 'es' ? 'Novedades de la versión' : 'Release Notes', icon: <Sparkles className="size-4 text-[#7983f5]" /> },
   ]
 
   const allSections = [...userSettings, ...appSettings]
@@ -309,6 +318,7 @@ export function SettingsModal({
                 {active === 'notifications' && <NotificationsSection />}
                 {active === 'privacy' && <PrivacySection />}
                 {active === 'language' && <LanguageSection />}
+                {active === 'releasenotes' && <ReleaseNotesSettingsSection onClose={onClose} />}
               </div>
             </div>
           </motion.div>
@@ -1076,5 +1086,93 @@ function ThemeTile({
         {selected && <Check className="size-3.5 text-foreground" />}
       </span>
     </button>
+  )
+}
+
+function ReleaseNotesSettingsSection({ onClose }: { onClose: () => void }) {
+  const { lang } = useLanguage()
+  const [data, setData] = useState<LatestYmlData | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function loadNotes() {
+      try {
+        const res = await fetch('/updates/latest.yml?t=' + Date.now(), { cache: 'no-store' })
+        if (res.ok) {
+          const text = await res.text()
+          const parsed = parseYml(text)
+          setData(parsed)
+        }
+      } catch {
+        // Silently catch
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadNotes()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12 text-muted-foreground">
+        <Loader2 className="size-5 animate-spin mr-2" />
+        <span>{lang === 'es' ? 'Cargando Novedades...' : 'Loading Release Notes...'}</span>
+      </div>
+    )
+  }
+
+  const { theme: customTheme, cleanNotes } = parseTheme(data?.releaseNotes || '')
+  const lines = cleanNotes.split('\n').filter((l) => l.trim().length > 0)
+
+  return (
+    <div className="max-w-2xl space-y-6 select-none">
+      {/* Header Info */}
+      <div className="flex items-center justify-between gap-4 rounded-2xl border border-primary/20 bg-primary/5 p-4 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <Sparkles className="size-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-base font-bold text-foreground">
+                {lang === 'es' ? 'Novedades de CatChat' : 'CatChat Release Notes'}
+              </h3>
+              {data?.version && (
+                <span className="rounded-full bg-primary/20 px-2.5 py-0.5 text-[11px] font-bold text-primary">
+                  v{data.version}
+                </span>
+              )}
+            </div>
+            <p className="text-[12.5px] text-muted-foreground mt-0.5">
+              {lang === 'es' ? 'Descubre los últimos cambios, funciones y mejoras agregadas.' : 'Discover the latest changes, features and improvements added.'}
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={() => {
+            onClose()
+            triggerReleaseNotesModal(data || undefined)
+          }}
+          className="shrink-0 flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-2 text-[12.5px] font-bold text-primary-foreground shadow-md transition-all hover:opacity-90 active:scale-95"
+        >
+          <Sparkles className="size-3.5" />
+          <span>{lang === 'es' ? 'Ver modal flotante' : 'Open modal'}</span>
+        </button>
+      </div>
+
+      {/* Release Notes Body */}
+      {lines.length > 0 ? (
+        <div className="space-y-3 rounded-2xl border border-border/60 bg-secondary/15 p-5 max-h-[50vh] overflow-y-auto">
+          {lines.map((line, idx) => (
+            <FormattedMarkdownLine key={idx} line={line} theme={customTheme} />
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-xl border border-border/50 bg-secondary/10 p-8 text-center text-muted-foreground text-[13px]">
+          {lang === 'es' ? 'No hay notas de versión disponibles por el momento.' : 'No release notes available at the moment.'}
+        </div>
+      )}
+    </div>
   )
 }
