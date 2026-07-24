@@ -224,13 +224,13 @@ function createWindow() {
     mainWindow = null
   })
 
-  // Carga la URL del servidor local de desarrollo o la URL de producción
-  const startUrl = process.env.ELECTRON_START_URL || process.env.BETTER_AUTH_URL || 'http://127.0.0.1:3000'
+  // Carga la URL del servidor local de desarrollo o la URL de producción de Vercel
+  const startUrl = process.env.ELECTRON_START_URL || 'https://catchat-three.vercel.app'
   mainWindow.loadURL(startUrl)
 }
 
 async function startNextServer() {
-  if (process.env.ELECTRON_START_URL) {
+  if (process.env.ELECTRON_START_URL || !process.env.USE_LOCAL_NEXT_SERVER) {
     return
   }
 
@@ -259,7 +259,9 @@ app.on('ready', async () => {
   createSplashWindow()
   try {
     setupAutoUpdater()
-    await startNextServer()
+    if (process.env.USE_LOCAL_NEXT_SERVER) {
+      await startNextServer()
+    }
     createWindow()
     function checkUpdate() {
       try {
