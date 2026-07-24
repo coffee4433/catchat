@@ -57,24 +57,65 @@ async function ghReq(endpoint, opts = {}) {
   return text ? JSON.parse(text) : null
 }
 
-async function uploadAsset(uploadUrl, filePath, fileName) {
-  const content = fs.readFileSync(filePath)
-  const url = uploadUrl.replace('{?name,label}', '') + '?name=' + encodeURIComponent(fileName)
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 600_000)
-  console.log(`  Uploading ${fileName} (${(content.length / 1024 / 1024).toFixed(1)} MB)...`)
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { Authorization: auth, 'Content-Type': 'application/octet-stream', 'Content-Length': String(content.length) },
-    body: content,
-    signal: controller.signal,
+function uploadAssetNative(uploadUrlStr, filePath, fileName) {
+  const https = require('https')
+  const { parse } = require('url')
+  const stat = fs.statSync(filePath)
+  const rawUrl = uploadUrlStr.replace('{?name,label}', '') + '?name=' + encodeURIComponent(fileName)
+  const parsed = parse(rawUrl)
+
+  return new Promise((resolve, reject) => {
+    console.log(`  Uploading ${fileName} (${(stat.size / 1024 / 1024).toFixed(1)} MB)...`)
+
+    const req = https.request({
+      protocol: parsed.protocol,
+      hostname: parsed.hostname,
+      path: parsed.path,
+      method: 'POST',
+      headers: {
+        'Authorization': auth,
+        'User-Agent': 'release-tool',
+        'Content-Type': 'application/octet-stream',
+        'Content-Length': stat.size,
+        'Accept': 'application/vnd.github+json'
+      },
+      timeout: 15 * 60 * 1000
+    }, (res) => {
+      let data = ''
+      res.on('data', (chunk) => { data += chunk })
+      res.on('end', () => {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          console.log(`  ✓ ${fileName} uploaded successfully`)
+          resolve()
+        } else {
+          reject(new Error(`Upload ${fileName} failed (${res.statusCode}): ${data}`))
+        }
+      })
+    })
+
+    req.on('error', (err) => reject(new Error(`Network error uploading ${fileName}: ${err.message}`)))
+    req.on('timeout', () => {
+      req.destroy()
+      reject(new Error(`Upload ${fileName} timed out after 15 minutes`))
+    })
+
+    const stream = fs.createReadStream(filePath)
+    stream.pipe(req)
   })
-  clearTimeout(timeout)
-  if (!res.ok) {
-    const err = await res.text()
-    throw new Error(`Upload ${fileName} failed: ${res.status} ${err}`)
+}
+
+async function uploadAsset(uploadUrl, filePath, fileName, maxRetries = 3) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      await uploadAssetNative(uploadUrl, filePath, fileName)
+      return
+    } catch (err) {
+      console.warn(`  ⚠️ Attempt ${attempt}/${maxRetries} failed: ${err.message}`)
+      if (attempt === maxRetries) throw err
+      console.log(`  Retrying in 5 seconds...`)
+      await new Promise((r) => setTimeout(r, 5000))
+    }
   }
-  console.log(`  ✓ ${fileName} uploaded`)
 }
 
 async function publish() {
