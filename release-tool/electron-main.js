@@ -82,7 +82,7 @@ function detectSteps(chunk) {
     events.push({ step: 'publish', state: 'done' })
     events.push({ step: 'git', state: 'active' })
   }
-  if (lower.includes('pushed to git') || lower.includes('pushed')) {
+  if (lower.includes('pushed to git') || lower.includes('pushed') || lower.includes('skipping git')) {
     events.push({ step: 'publish', state: 'done' })
     events.push({ step: 'git', state: 'done' })
   }

@@ -46,8 +46,12 @@ async function ghReq(endpoint, opts = {}) {
     body: opts.body || undefined,
   })
   const text = await res.text()
-  if (!res.ok && res.status !== 404) {
+  const ignoreStatuses = opts.ignoreStatuses || []
+  if (!res.ok && res.status !== 404 && !ignoreStatuses.includes(res.status)) {
     console.error(`GitHub API ${res.status} ${endpoint}: ${text}`)
+    throw new Error(`GitHub API ${res.status}`)
+  }
+  if (!res.ok) {
     throw new Error(`GitHub API ${res.status}`)
   }
   return text ? JSON.parse(text) : null
@@ -87,15 +91,15 @@ async function publish() {
 
   // 1. Delete existing release if any (also delete tag ref)
   try {
-    const existing = await ghReq(`/releases/tags/${tag}`)
+    const existing = await ghReq(`/releases/tags/${tag}`, { ignoreStatuses: [404] })
     if (existing && existing.id) {
       console.log(`Deleting existing release ${tag}...`)
-      await ghReq(`/releases/${existing.id}`, { method: 'DELETE' })
+      await ghReq(`/releases/${existing.id}`, { method: 'DELETE', ignoreStatuses: [404] })
     }
   } catch { /* doesn't exist, fine */ }
   try {
     console.log(`Deleting tag ref ${tag} if exists...`)
-    await ghReq(`/git/refs/tags/${tag}`, { method: 'DELETE' })
+    await ghReq(`/git/refs/tags/${tag}`, { method: 'DELETE', ignoreStatuses: [404, 422] })
   } catch { /* fine */ }
 
   // Create release
@@ -157,11 +161,15 @@ async function publish() {
   try {
     const { execSync } = require('child_process')
     const root = path.join(__dirname, '..')
-    console.log(`Committing and pushing...`)
-    execSync('git add -A', { cwd: root, stdio: 'pipe' })
-    execSync(`git commit -m "Release ${tag}" --allow-empty`, { cwd: root, stdio: 'pipe' })
-    execSync('git push', { cwd: root, stdio: 'pipe' })
-    console.log('Pushed to Git\n')
+    if (!fs.existsSync(path.join(root, '.git'))) {
+      console.log('Skipping git commit & push (not a git repository)\n')
+    } else {
+      console.log(`Committing and pushing...`)
+      execSync('git add -A', { cwd: root, stdio: 'pipe' })
+      execSync(`git commit -m "Release ${tag}" --allow-empty`, { cwd: root, stdio: 'pipe' })
+      execSync('git push', { cwd: root, stdio: 'pipe' })
+      console.log('Pushed to Git\n')
+    }
   } catch (e) {
     console.log(`Git: ${e.stderr?.toString() || e.message}`)
   }

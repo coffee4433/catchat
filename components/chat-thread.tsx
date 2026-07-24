@@ -58,6 +58,7 @@ import { reportTypingSupabase, stopTypingSupabase } from '@/app/actions/typing-s
 import { supabase } from '@/lib/supabase/client'
 import { AddMembersModal } from '@/components/add-members-modal'
 import { useCallContext } from '@/components/calls/call-provider'
+import { CallPanel } from '@/components/calls/call-panel'
 import { UserPopover, type PopoverUser } from '@/components/user-popover'
 import { UserProfileModal } from '@/components/user-profile-modal'
 import type { Conversation } from '@/components/chat-app'
@@ -1410,6 +1411,9 @@ export function ChatThread({
           </div>
         </div>
       </header>
+
+      {/* Panel de llamada estilo Discord — se ancla arriba y empuja el chat hacia abajo */}
+      <CallPanel currentUser={user} />
 
       {/* Contenedor principal del cuerpo (flex horizontal para soporte de panel de búsqueda) */}
       <div className="flex flex-1 min-h-0 relative overflow-hidden">

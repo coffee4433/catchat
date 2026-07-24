@@ -1,53 +1,13 @@
-# v0 sandbox internal files
+# v0 runtime files
 __v0_runtime_loader.js
 __v0_devtools.tsx
 __v0_jsx-dev-runtime.ts
-.snowflake/
-.v0-trash/
-.vercel/
-
-# Environment variables
-.env
-.env.local
-.env*.local
-.env.development
-.env.production
-# (si quieres compartir un ejemplo con el equipo, crea .env.example SIN valores reales y NO lo ignores)
 
 # Common ignores
 node_modules
 .next/
-out/
-.DS_Store
-spawn-env.json
-stdout.log
-stderr.log
-
-# Electron / electron-builder (instaladores y binarios generados)
 dist/
-dist-electron/
-release/
-*.msi
-*.exe
-*.dmg
-*.AppImage
-
-# Logs
-npm-debug.log*
-pnpm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-*.log
-
-# TypeScript
-*.tsbuildinfo
-next-env.d.ts
-
-# Editor / OS
-.vscode/
-.idea/
-Thumbs.db
-
-# Caches de build
-.turbo/
-.cache/
+release-tool/dist/
+android/.gradle/
+.env*.local
+.DS_Store

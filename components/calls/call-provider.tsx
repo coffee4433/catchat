@@ -1,18 +1,30 @@
 'use client'
 
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
+import type { Room } from 'livekit-client'
 import { subscribeIncomingCalls, createCallChannel, broadcastCallInvite, subscribeAndWait, sendCallSignal } from '@/lib/calls/signaling'
 import type { ActiveCall, CallType, CallInvitePayload } from '@/lib/calls/types'
 import type { AppUser } from '@/components/chat-app'
-import { IncomingCallModal } from './incoming-call-modal'
-import { CallRoom } from './call-room'
-import { OutgoingCallOverlay } from './outgoing-call-overlay'
+
+export interface IncomingCall {
+  callId: string
+  conversationId: number
+  callType: CallType
+  callerId: string
+  callerName: string
+  callerImage: string | null
+}
 
 interface CallContextValue {
   activeCall: ActiveCall | null
+  incoming: IncomingCall | null
   startOutgoingCall: (convId: number, type: CallType, calleeId: string, calleeName: string, calleeImage?: string | null) => void
   cancelOutgoingCall: () => void
+  acceptIncomingCall: () => void
+  rejectIncomingCall: () => void
   endCall: () => void
+  room: Room | null
+  setRoom: (room: Room | null) => void
 }
 
 const CallContext = createContext<CallContextValue | null>(null)
@@ -31,24 +43,17 @@ export function CallProvider({
   children: React.ReactNode
 }) {
   const [activeCall, setActiveCall] = useState<ActiveCall | null>(null)
-  const [incoming, setIncoming] = useState<{
-    callId: string
-    conversationId: number
-    callType: CallType
-    callerId: string
-    callerName: string
-    callerImage: string | null
-  } | null>(null)
-  const [callerNameCache, setCallerNameCache] = useState<Record<string, string>>({})
+  const [incoming, setIncoming] = useState<IncomingCall | null>(null)
+  const [room, setRoom] = useState<Room | null>(null)
   const [channel, setChannel] = useState<ReturnType<typeof createCallChannel> | null>(null)
   const ringTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const incomingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     const unsub = subscribeIncomingCalls(user.id, (payload: CallInvitePayload) => {
       if (activeCall) {
         return
       }
-      setCallerNameCache((prev) => ({ ...prev, [payload.from]: payload.fromName }))
       setIncoming({
         callId: payload.callId,
         conversationId: payload.conversationId,
@@ -61,6 +66,22 @@ export function CallProvider({
 
     return () => unsub()
   }, [user.id, activeCall])
+
+  // Auto-dismiss incoming call after 30s
+  useEffect(() => {
+    if (incomingTimeoutRef.current) {
+      clearTimeout(incomingTimeoutRef.current)
+      incomingTimeoutRef.current = null
+    }
+    if (incoming) {
+      incomingTimeoutRef.current = setTimeout(() => {
+        setIncoming(null)
+      }, 30000)
+    }
+    return () => {
+      if (incomingTimeoutRef.current) clearTimeout(incomingTimeoutRef.current)
+    }
+  }, [incoming])
 
   const startOutgoingCall = useCallback(
     async (convId: number, type: CallType, calleeId: string, calleeName: string, calleeImage?: string | null) => {
@@ -95,7 +116,7 @@ export function CallProvider({
             clearTimeout(ringTimeoutRef.current)
             ringTimeoutRef.current = null
           }
-          await fetchTokenAndJoin(callId, convId, type, calleeName)
+          await fetchTokenAndJoin(callId, convId, type, calleeName, calleeImage ?? null)
         })
         .on('broadcast', { event: 'call:decline' }, () => {
           if (ringTimeoutRef.current) {
@@ -128,7 +149,7 @@ export function CallProvider({
   )
 
   const fetchTokenAndJoin = useCallback(
-    async (callId: string, convId: number, type: CallType, peerName: string) => {
+    async (callId: string, convId: number, type: CallType, peerName: string, peerImage: string | null) => {
       try {
         const res = await fetch('/api/livekit/token', {
           method: 'POST',
@@ -143,6 +164,7 @@ export function CallProvider({
           callType: type,
           state: 'in-call',
           peerName,
+          peerImage,
           token,
           livekitUrl: url,
         })
@@ -154,7 +176,7 @@ export function CallProvider({
     [],
   )
 
-  const handleAcceptIncoming = useCallback(async () => {
+  const acceptIncomingCall = useCallback(async () => {
     if (!incoming) return
 
     const chan = createCallChannel(incoming.conversationId)
@@ -171,11 +193,12 @@ export function CallProvider({
       incoming.conversationId,
       incoming.callType,
       incoming.callerName,
+      incoming.callerImage,
     )
     setIncoming(null)
   }, [incoming, user.id, fetchTokenAndJoin])
 
-  const handleRejectIncoming = useCallback(async () => {
+  const rejectIncomingCall = useCallback(async () => {
     if (!incoming) return
     const chan = createCallChannel(incoming.conversationId)
     await subscribeAndWait(chan)
@@ -201,45 +224,24 @@ export function CallProvider({
   const endCall = useCallback(() => {
     setActiveCall(null)
     setChannel(null)
+    setRoom(null)
   }, [])
 
   return (
     <CallContext.Provider
       value={{
         activeCall,
+        incoming,
         startOutgoingCall,
         cancelOutgoingCall,
+        acceptIncomingCall,
+        rejectIncomingCall,
         endCall,
+        room,
+        setRoom,
       }}
     >
       {children}
-      {incoming && (
-        <IncomingCallModal
-          callerName={incoming.callerName}
-          callerImage={incoming.callerImage}
-          callType={incoming.callType}
-          onAccept={handleAcceptIncoming}
-          onReject={handleRejectIncoming}
-          onTimeout={() => setIncoming(null)}
-        />
-      )}
-      {(activeCall?.state === 'outgoing-ringing' || activeCall?.state === 'no-answer') && (
-        <OutgoingCallOverlay
-          peerName={activeCall.peerName}
-          peerImage={activeCall.peerImage}
-          callType={activeCall.callType}
-          onCancel={cancelOutgoingCall}
-        />
-      )}
-      {activeCall?.state === 'in-call' && activeCall.token && activeCall.livekitUrl && (
-        <CallRoom
-          token={activeCall.token}
-          serverUrl={activeCall.livekitUrl}
-          callType={activeCall.callType}
-          peerName={activeCall.peerName}
-          onDisconnected={endCall}
-        />
-      )}
     </CallContext.Provider>
   )
 }
