@@ -10,6 +10,27 @@ type LatestYmlData = {
   showReleaseModal?: boolean | string
 }
 
+type ThemeConfig = {
+  preset?: 'discord' | 'cyberpunk' | 'emerald' | 'sunset' | 'midnight'
+  headerGradient?: string
+  accentColor?: string
+  btnBg?: string
+  badgeBg?: string
+  badgeText?: string
+}
+
+function parseTheme(text: string): { theme: ThemeConfig; cleanNotes: string } {
+  const match = text.match(/<!--\s*theme:\s*(\{[\s\S]*?\})\s*-->/)
+  if (!match) return { theme: { preset: 'discord' }, cleanNotes: text }
+  try {
+    const theme = JSON.parse(match[1]) as ThemeConfig
+    const cleanNotes = text.replace(match[0], '').trim()
+    return { theme, cleanNotes }
+  } catch {
+    return { theme: { preset: 'discord' }, cleanNotes: text }
+  }
+}
+
 function parseYml(text: string): LatestYmlData {
   const result: LatestYmlData = { version: '' }
   const versionMatch = text.match(/^version:\s*['"]?([^'"\n\r]+)['"]?/m)
@@ -69,7 +90,7 @@ function renderFormattedBadgesAndText(text: string) {
   })
 }
 
-function FormattedMarkdownLine({ line }: { line: string }) {
+function FormattedMarkdownLine({ line, theme }: { line: string; theme: ThemeConfig }) {
   const trimmed = line.trim()
   if (!trimmed) return null
 
@@ -100,7 +121,6 @@ function FormattedMarkdownLine({ line }: { line: string }) {
         </div>
       )
     }
-    // Default callout / note
     return (
       <div className="flex items-start gap-3 rounded-r-xl border-l-4 border-[#5865F2] bg-[#5865F2]/10 p-3.5 text-[13px] text-blue-200">
         <Info className="size-4 text-[#7983f5] shrink-0 mt-0.5" />
@@ -112,8 +132,9 @@ function FormattedMarkdownLine({ line }: { line: string }) {
   // Section Headers (## Heading)
   if (trimmed.startsWith('#')) {
     const cleanHeader = trimmed.replace(/^#+\s*/, '')
+    const headerBorder = theme.preset === 'cyberpunk' ? 'border-fuchsia-500/30' : theme.preset === 'emerald' ? 'border-emerald-500/30' : 'border-[#5865F2]/30'
     return (
-      <div className="mt-4 mb-2 first:mt-0 flex items-center gap-2.5 rounded-xl bg-gradient-to-r from-[#5865F2]/20 via-[#7983f5]/10 to-transparent p-3 border border-[#5865F2]/30 text-[14.5px] font-bold text-white shadow-sm">
+      <div className={`mt-4 mb-2 first:mt-0 flex items-center gap-2.5 rounded-xl bg-gradient-to-r ${theme.headerGradient || 'from-[#5865F2]/20 via-[#7983f5]/10 to-transparent'} p-3 border ${headerBorder} text-[14.5px] font-bold text-white shadow-sm`}>
         <Sparkles className="size-4 text-[#7983f5]" />
         <span>{renderFormattedBadgesAndText(cleanHeader)}</span>
       </div>
@@ -131,7 +152,6 @@ function FormattedMarkdownLine({ line }: { line: string }) {
     )
   }
 
-  // Normal text paragraph
   return (
     <p className="text-[13px] leading-relaxed text-white/85 px-1 py-0.5">
       {renderFormattedBadgesAndText(trimmed)}
@@ -183,9 +203,33 @@ export function ReleaseNotesModal() {
 
   if (!open || !data) return null
 
-  const lines = (data.releaseNotes || '')
-    .split('\n')
-    .filter((l) => l.trim().length > 0)
+  const { theme: customTheme, cleanNotes } = parseTheme(data.releaseNotes || '')
+
+  const headerGradient = customTheme.headerGradient || (
+    customTheme.preset === 'cyberpunk'
+      ? 'from-fuchsia-600/35 via-pink-500/20 to-cyan-500/15'
+      : customTheme.preset === 'emerald'
+      ? 'from-emerald-600/35 via-teal-500/20 to-cyan-500/15'
+      : customTheme.preset === 'sunset'
+      ? 'from-amber-600/35 via-orange-500/20 to-purple-600/15'
+      : customTheme.preset === 'midnight'
+      ? 'from-purple-900/40 via-indigo-900/25 to-blue-900/15'
+      : 'from-[#5865F2]/25 via-[#3b82f6]/10 to-transparent'
+  )
+
+  const btnStyle = customTheme.btnBg || (
+    customTheme.preset === 'cyberpunk'
+      ? 'bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-500 hover:to-pink-500 shadow-fuchsia-500/30'
+      : customTheme.preset === 'emerald'
+      ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-emerald-500/30'
+      : customTheme.preset === 'sunset'
+      ? 'bg-gradient-to-r from-amber-500 to-purple-600 hover:from-amber-400 hover:to-purple-500 shadow-amber-500/30'
+      : customTheme.preset === 'midnight'
+      ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-purple-500/30'
+      : 'bg-[#5865F2] hover:bg-[#4752c4] shadow-[#5865F2]/25'
+  )
+
+  const lines = cleanNotes.split('\n').filter((l) => l.trim().length > 0)
 
   return (
     <AnimatePresence>
@@ -199,7 +243,7 @@ export function ReleaseNotesModal() {
             className="relative w-full max-w-xl overflow-hidden rounded-3xl border border-white/10 bg-[#1e1f22] text-white shadow-2xl"
           >
             {/* Header section with gradient background */}
-            <div className="relative border-b border-white/10 bg-gradient-to-br from-[#5865F2]/25 via-[#3b82f6]/10 to-transparent p-6">
+            <div className={`relative border-b border-white/10 bg-gradient-to-br ${headerGradient} p-6`}>
               <button
                 onClick={handleDismiss}
                 className="absolute top-4 right-4 flex size-8 items-center justify-center rounded-full bg-white/10 text-white/70 transition-colors hover:bg-white/20 hover:text-white"
@@ -213,7 +257,7 @@ export function ReleaseNotesModal() {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1 rounded-full bg-[#5865F2] px-2.5 py-0.5 text-[11px] font-bold text-white shadow-sm">
+                    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold text-white shadow-sm ${btnStyle.split(' ')[0]}`}>
                       <Sparkles className="size-3" /> Novedades
                     </span>
                     <span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-semibold text-white/80">
@@ -230,7 +274,7 @@ export function ReleaseNotesModal() {
             {/* Release notes body */}
             <div className="max-h-[60vh] overflow-y-auto p-6 space-y-3">
               {lines.map((line, idx) => (
-                <FormattedMarkdownLine key={idx} line={line} />
+                <FormattedMarkdownLine key={idx} line={line} theme={customTheme} />
               ))}
             </div>
 
@@ -238,7 +282,7 @@ export function ReleaseNotesModal() {
             <div className="border-t border-white/10 bg-[#111214] p-4">
               <button
                 onClick={handleDismiss}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#5865F2] py-3 text-[14px] font-bold text-white shadow-lg shadow-[#5865F2]/25 transition-all hover:bg-[#4752c4] active:scale-[0.98]"
+                className={`flex w-full items-center justify-center gap-2 rounded-xl py-3 text-[14px] font-bold text-white shadow-lg transition-all active:scale-[0.98] ${btnStyle}`}
               >
                 <Check className="size-4" /> ¡Entendido!
               </button>

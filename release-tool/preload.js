@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld('releaseTool', {
   getGitCommits: () => ipcRenderer.invoke('get:git-commits'),
   generateAiNotes: (prompt) => ipcRenderer.invoke('generate:ai-notes', prompt),
   chatAiNotes: (messages) => ipcRenderer.invoke('chat:ai-notes', messages),
+  editReleaseNotesComponent: (code) => ipcRenderer.invoke('edit:release-notes-component', code),
   release: (version, notes, showModal) => ipcRenderer.invoke('release', version, notes, showModal),
   onOutput: (cb) => {
     const fn = (_e, chunk) => cb(chunk)

@@ -1174,15 +1174,20 @@
     <div class="ai-error" id="aiError" style="display:none;margin:0 16px 8px 16px"></div>
 
     <div class="ai-chat-input-bar">
-      <div class="ai-chat-actions">
+      <div class="ai-chat-actions" style="display:flex;align-items:center;gap:6px;overflow-x:auto;padding-bottom:2px">
         <button type="button" class="btn-secondary" onclick="fetchGitCommits()" title="Extraer últimos commits de Git">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/></svg>
           Auto-detectar Git
         </button>
+        <span style="font-size:11px;color:var(--muted);margin:0 2px">Estilos:</span>
+        <button type="button" class="btn-secondary" onclick="applyThemePreset('cyberpunk')">🔮 Cyberpunk</button>
+        <button type="button" class="btn-secondary" onclick="applyThemePreset('emerald')">🌲 Esmeralda</button>
+        <button type="button" class="btn-secondary" onclick="applyThemePreset('sunset')">🌅 Sunset</button>
+        <button type="button" class="btn-secondary" onclick="applyThemePreset('midnight')">🌌 Midnight</button>
       </div>
 
       <div class="ai-input-row">
-        <input type="text" id="aiPromptInput" placeholder="Escribe los cambios o dile a la IA qué ajustar..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAiChatMessage()}">
+        <input type="text" id="aiPromptInput" placeholder="Escribe los cambios o dile a la IA el estilo visual que quieres..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAiChatMessage()}">
         <button type="button" class="btn-publish" id="aiSubmitBtn" onclick="sendAiChatMessage()" style="height:38px;padding:0 16px">
           <span>Enviar</span>
         </button>
@@ -1523,6 +1528,11 @@ async function sendAiChatMessage() {
   } finally {
     submitBtn.disabled = false
   }
+}
+
+function applyThemePreset(preset) {
+  $('aiPromptInput').value = `Aplica el estilo visual ${preset} a las notas de lanzamiento con colores y diseño acorde.`
+  sendAiChatMessage()
 }
 
 function showProject(dir) {

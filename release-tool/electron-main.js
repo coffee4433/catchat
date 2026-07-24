@@ -247,23 +247,44 @@ ipcMain.handle('chat:ai-notes', async (_event, chatMessages) => {
 
   const systemMessage = {
     role: 'system',
-    content: `Eres un asistente de IA conversacional especializado en crear y pulir Release Notes (Notas de lanzamiento) en Markdown para CatChat.
+    content: `Eres un asistente de IA conversacional experto en diseño visual y notas de lanzamiento (Release Notes) para CatChat.
 
-Instrucciones:
-1. Ayuda al usuario a redactar, refinar y personalizar las Release Notes en un Markdown visualmente impresionante a través de la conversación.
-2. Formato rico recomendado:
-   - ## ✨ Novedades Destacadas
-   - ## 🐛 Correcciones y Ajustes
-   - ## ⚡ Rendimiento y Optimización
-   - ## 🎨 UI & Experiencia de Usuario
-   - Cajas destacadas: > [!NOTE] o > [!TIP] o > [!IMPORTANT]
-   - Badges al inicio de viñetas: [NUEVO], [MEJORA], [FIX], [DISEÑO]
-3. Usa viñetas (- ) con explicaciones claras, destacando puntos clave en **negrita** o \`código\`.
-4. Ofrece siempre el resultado final en Markdown formateado y listo para aplicar con el botón.`
+Tu objetivo es redactar Release Notes y adaptarlas AL GUSTO DEL USUARIO en cuanto a ESTILOS VISUALES, colores, temas y estética.
+
+Instrucciones de temas y estilos personalizados:
+Si el usuario pide un estilo visual específico (ej: cyberpunk, neón, esmeralda, sunset, morado, dorado, elegante, etc.), incluye un tag de tema al inicio de la primera línea del Markdown:
+- Para Cyberpunk / Neón: <!-- theme: {"preset": "cyberpunk"} -->
+- Para Esmeralda / Naturaleza / Verde: <!-- theme: {"preset": "emerald"} -->
+- Para Sunset / Atardecer / Naranja-Morado: <!-- theme: {"preset": "sunset"} -->
+- Para Midnight / Oscuro Morado Elegante: <!-- theme: {"preset": "midnight"} -->
+- Para Discord Clásico: <!-- theme: {"preset": "discord"} -->
+
+También puedes crear gradientes y colores personalizados en el tag:
+<!-- theme: {"headerGradient": "from-fuchsia-600/35 via-pink-500/20 to-cyan-500/15", "btnBg": "bg-gradient-to-r from-fuchsia-600 to-pink-600"} -->
+
+Estructura del contenido:
+- ## ✨ Novedades Destacadas
+- ## 🐛 Correcciones y Ajustes
+- ## ⚡ Rendimiento y Optimización
+- ## 🎨 UI & Experiencia de Usuario
+- Cajas destacadas: > [!NOTE] o > [!TIP] o > [!IMPORTANT] o > [!WARNING]
+- Badges al inicio de viñetas: [NUEVO], [MEJORA], [FIX], [DISEÑO]
+- Texto destacado en **negrita** o \`código\`.
+
+Responde siempre con el documento Markdown final que incluye las notas y el tema ajustado al gusto del usuario.`
   }
 
   const messages = [systemMessage, ...(chatMessages || [])]
   return callDeepSeekApi(apiKey, messages)
+})
+
+ipcMain.handle('edit:release-notes-component', async (_event, customCode) => {
+  const cfg = loadConfig()
+  if (!cfg.projectPath) throw new Error('No hay proyecto seleccionado')
+  const targetFile = path.join(cfg.projectPath, 'components', 'release-notes-modal.tsx')
+  const fs = require('fs')
+  fs.writeFileSync(targetFile, customCode, 'utf8')
+  return true
 })
 
 ipcMain.handle('release', async (_event, version, notes, showModal) => {
