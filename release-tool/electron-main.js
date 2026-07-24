@@ -296,6 +296,8 @@ Si el usuario pide un estilo visual específico (ej: cyberpunk, neón, esmeralda
 También puedes crear gradientes y colores personalizados en el tag:
 <!-- theme: {"headerGradient": "from-fuchsia-600/35 via-pink-500/20 to-cyan-500/15", "btnBg": "bg-gradient-to-r from-fuchsia-600 to-pink-600"} -->
 
+CRITICAL RULE: Redacta ÚNICAMENTE las novedades y cambios de la versión ACTUAL según los datos provistos. NO incluyas ni acumules cambios históricos de versiones pasadas.
+
 Estructura del contenido:
 - ## ✨ Novedades Destacadas
 - ## 🐛 Correcciones y Ajustes
@@ -305,7 +307,7 @@ Estructura del contenido:
 - Badges al inicio de viñetas: [NUEVO], [MEJORA], [FIX], [DISEÑO]
 - Texto destacado en **negrita** o \`código\`.
 
-Responde siempre con el documento Markdown final que incluye las notas y el tema ajustado al gusto del usuario.`
+Responde siempre con el documento Markdown final exclusivo de esta versión.`
   }
 
   const messages = [systemMessage, ...(chatMessages || [])]
