@@ -1,19 +1,23 @@
-version: 0.3.17
+version: 0.3.18
 files:
-  - url: https://github.com/coffee4433/catchat/releases/download/v0.3.17/CatChat-Setup-0.3.17.exe
-    sha512: WJIMzXomgL9oj8abgA7oorZlSDKz8OSX9zHfKBtp1MI8zIczjR9zxLgZRwr5B/pbdiRyda4/sSGsYP7jFBh/lg==
-    size: 240629566
-path: CatChat-Setup-0.3.17.exe
-sha512: WJIMzXomgL9oj8abgA7oorZlSDKz8OSX9zHfKBtp1MI8zIczjR9zxLgZRwr5B/pbdiRyda4/sSGsYP7jFBh/lg==
-releaseDate: '2026-07-24T23:05:32.685Z'
+  - url: https://github.com/coffee4433/catchat/releases/download/v0.3.18/CatChat-Setup-0.3.18.exe
+    sha512: 86f6734tJy5E/gFToitBhtgnZAlaEljzzEgmJ0QuG/I9AQF7r7p7qIL/cOrSBc8hj0Bb7ZVs6H1RlRIu3plAsA==
+    size: 240835873
+path: CatChat-Setup-0.3.18.exe
+sha512: 86f6734tJy5E/gFToitBhtgnZAlaEljzzEgmJ0QuG/I9AQF7r7p7qIL/cOrSBc8hj0Bb7ZVs6H1RlRIu3plAsA==
+releaseDate: '2026-07-24T23:38:20.510Z'
 showReleaseModal: true
 releaseNotes: |
-  <!-- theme: {"headerGradient": "from-teal-400/25 via-blue-500/20 to-indigo-500/15", "btnBg": "bg-gradient-to-r from-teal-500 to-blue-600"} -->
+  ## ✨ Novedades Destacadas
   
-  ## ✨ Novedades de la Versión
+  - [NUEVO] **Reinicio automático de la sesión de IA** al publicar una nueva versión de CatChat. La conversación se limpia para que empieces con un contexto fresco.  
+  - [NUEVO] Se añadió un **botón manual “Nueva Sesión”** para que puedas reiniciar la charla cuando quieras, sin esperar a una actualización.
   
-  - **[NUEVO]** **Asistente interactivo de IA DeepSeek** con detección inteligente de Git y sesión limpia por release.  
-  - **[NUEVO]** **Sección de Novedades en Ajustes** para consultar los últimos cambios con formato enriquecido.  
-  - **[DISEÑO]** **Personalización de estilos y temas visuales** (Cyberpunk, Esmeralda, Sunset, Midnight) integrados dinámicamente.  
-  - **[DISEÑO]** **Esquinas ultra-redondeadas de 24px** y renderizado de callouts y badges.  
-  - **[MEJORA]** **Widget de voz en dock con animaciones de entrada y salida fluidas**.  
+  ## 🐛 Correcciones y Ajustes
+  
+  - [FIX] Las **notas de la versión** ahora muestran **exclusivamente los cambios de la versión actual**. Se han corregido la extracción de commits y la limpieza automática de notas antiguas, evitando que se acumule información de lanzamientos previos.  
+  - [FIX] Eliminado el botón redundante “Open modal” del encabezado de Ajustes > Notas de la versión, dejando una interfaz más limpia.
+  
+  ## 🎨 UI & Experiencia de Usuario
+  
+  - [DISEÑO] Encabezado de notas de la versión en Ajustes simplificado al retirar el botón modal que no se usaba.
