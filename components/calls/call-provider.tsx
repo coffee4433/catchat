@@ -3,6 +3,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import type { Room } from 'livekit-client'
 import { subscribeIncomingCalls, createCallChannel, broadcastCallInvite, subscribeAndWait, sendCallSignal } from '@/lib/calls/signaling'
+import { supabase } from '@/lib/supabase/client'
 import type { ActiveCall, CallType, CallInvitePayload } from '@/lib/calls/types'
 import type { AppUser } from '@/components/chat-app'
 
@@ -123,6 +124,7 @@ export function CallProvider({
             clearTimeout(ringTimeoutRef.current)
             ringTimeoutRef.current = null
           }
+          try { supabase.removeChannel(chan) } catch {}
           setActiveCall(null)
           setChannel(null)
         })
@@ -131,6 +133,7 @@ export function CallProvider({
             clearTimeout(ringTimeoutRef.current)
             ringTimeoutRef.current = null
           }
+          try { supabase.removeChannel(chan) } catch {}
           setActiveCall(null)
           setChannel(null)
         })
@@ -138,6 +141,7 @@ export function CallProvider({
       ringTimeoutRef.current = setTimeout(() => {
         setActiveCall((prev) => prev?.state === 'outgoing-ringing' ? { ...prev, state: 'no-answer' } : null)
         setTimeout(() => {
+          try { supabase.removeChannel(chan) } catch {}
           setActiveCall(null)
           setChannel(null)
         }, 2500)
@@ -206,12 +210,14 @@ export function CallProvider({
       from: user.id,
       callId: incoming.callId,
     })
+    try { supabase.removeChannel(chan) } catch {}
     setIncoming(null)
   }, [incoming, user.id])
 
   const cancelOutgoingCall = useCallback(() => {
     if (channel) {
       sendCallSignal(channel, 'call:cancel', { from: user.id }).catch(() => {})
+      try { supabase.removeChannel(channel) } catch {}
     }
     if (ringTimeoutRef.current) {
       clearTimeout(ringTimeoutRef.current)
@@ -222,10 +228,16 @@ export function CallProvider({
   }, [channel, user.id])
 
   const endCall = useCallback(() => {
+    if (room) {
+      try { room.disconnect() } catch {}
+    }
+    if (channel) {
+      try { supabase.removeChannel(channel) } catch {}
+    }
     setActiveCall(null)
     setChannel(null)
     setRoom(null)
-  }, [])
+  }, [room, channel])
 
   return (
     <CallContext.Provider

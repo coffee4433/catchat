@@ -12,7 +12,7 @@ import {
 } from '@livekit/components-react'
 import { Track } from 'livekit-client'
 import { Phone, Video, X } from 'lucide-react'
-import { useEffect, useRef } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { useCallContext } from './call-provider'
 import { CallControls } from './call-controls'
 import { ScreenPicker } from './screen-picker'
@@ -87,33 +87,33 @@ function LocalScreenPreview() {
   )
 }
 
-function ScreenShareView() {
+const ScreenShareView = React.memo(function ScreenShareView() {
   const allTracks = useTracks([{ source: Track.Source.ScreenShare, withPlaceholder: false }], { onlySubscribed: false })
-  const remote = allTracks.filter((t) => !t.participant.isLocal && t.publication)
+  const remoteTrack = allTracks.find((t) => !t.participant.isLocal && t.publication)
+  const track = remoteTrack?.publication?.videoTrack
+  const trackId = track?.mediaStreamTrack?.id || remoteTrack?.publication?.trackSid
+
   const videoRef = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {
     const el = videoRef.current
-    if (!el || remote.length === 0) return
-    const pub = remote[0].publication
-    if (!pub) return
-    const track = pub.videoTrack
-    if (!track) return
+    if (!el || !track) return
     const mediaStream = new MediaStream([track.mediaStreamTrack])
     el.srcObject = mediaStream
     el.play().catch(() => {})
+
     return () => {
       el.srcObject = null
     }
-  }, [remote])
+  }, [trackId])
 
-  if (remote.length === 0) return null
+  if (!remoteTrack) return null
   return (
     <div className="absolute inset-0 flex items-center justify-center bg-black">
       <video ref={videoRef} autoPlay playsInline className="h-full w-full object-contain" />
     </div>
   )
-}
+})
 
 function InCallStage({
   peerName,

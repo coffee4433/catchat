@@ -75,13 +75,10 @@
   }
 
   .titlebar-brand .logo {
-    width: 22px; height: 22px;
-    border-radius: 7px;
-    background: var(--accent-soft);
-    border: 1px solid rgba(59, 130, 246, 0.3);
+    width: 24px; height: 24px;
     display: flex; align-items: center; justify-content: center;
   }
-  .titlebar-brand .logo svg { width: 12px; height: 12px; color: var(--accent); }
+  .titlebar-brand .logo img { width: 24px; height: 24px; object-fit: contain; }
   .titlebar-brand .divider { color: var(--faint); opacity: 0.5; }
   .titlebar-brand .page { color: var(--fg); }
 
@@ -706,10 +703,7 @@
   <header class="titlebar">
     <div class="titlebar-brand">
       <div class="logo">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/>
-          <path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/>
-        </svg>
+        <img src="./icon.png" alt="CatChat Logo">
       </div>
       CatChat <span class="divider">/</span> <span class="page">Release Studio</span>
     </div>

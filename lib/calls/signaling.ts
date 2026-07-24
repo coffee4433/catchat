@@ -25,8 +25,14 @@ export function createCallChannel(conversationId: number) {
 
 export async function subscribeAndWait(channel: ReturnType<typeof supabase.channel>): Promise<void> {
   return new Promise<void>((resolve) => {
+    if (channel.state === 'joined') {
+      resolve()
+      return
+    }
+    const timer = setTimeout(() => resolve(), 3000)
     channel.subscribe((status) => {
       if (status === 'SUBSCRIBED') {
+        clearTimeout(timer)
         resolve()
       }
     })

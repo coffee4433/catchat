@@ -18,7 +18,7 @@
       "output": "dist"
     },
     "win": {
-      "icon": "../build/icon.png",
+      "icon": "icon.png",
       "target": [
         {
           "target": "nsis",
@@ -38,6 +38,7 @@
       "electron-main.js",
       "preload.js",
       "index.html",
+      "icon.png",
       "../scripts/release.cjs",
       "../scripts/publish-release.cjs",
       "../package.json"
