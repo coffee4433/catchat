@@ -8,6 +8,7 @@ import { authClient } from '@/lib/auth-client'
 import { useLanguage } from '@/lib/i18n'
 import { ElectricBorder } from '@/components/electric-border'
 import { useCallContext } from '@/components/calls/call-provider'
+import type { ActiveCall } from '@/lib/calls/types'
 
 function initialsOf(name: string) {
   return name
@@ -58,10 +59,16 @@ function getUpdater() {
   } | null
 }
 
-function DiscordVoiceDockWidget() {
-  const { activeCall, endCall, cancelOutgoingCall, room } = useCallContext()
+function DiscordVoiceDockWidget({ call }: { call: ActiveCall | null }) {
+  const { endCall, cancelOutgoingCall, room } = useCallContext()
   const [, forceRender] = useState(0)
 
+  const lastCallRef = useRef(call)
+  if (call) {
+    lastCallRef.current = call
+  }
+
+  const currentCall = call || lastCallRef.current
   const localParticipant = room?.localParticipant
 
   const micEnabled = localParticipant?.isMicrophoneEnabled ?? false
@@ -99,10 +106,10 @@ function DiscordVoiceDockWidget() {
     refresh()
   }, [localParticipant, screenEnabled, refresh])
 
-  if (!activeCall) return null
+  if (!currentCall) return null
 
-  const peerName = activeCall.peerName || 'Llamada'
-  const isRinging = activeCall.state === 'outgoing-ringing'
+  const peerName = currentCall.peerName || 'Llamada'
+  const isRinging = currentCall.state === 'outgoing-ringing'
 
   return (
     <div className="w-64 border-b border-border/50 bg-[#1e1f22] p-2.5 space-y-2">
@@ -397,7 +404,7 @@ export function UserDock({
                 transition={{ duration: 0.3, ease: 'easeOut' }}
                 className="overflow-hidden"
               >
-                <DiscordVoiceDockWidget />
+                <DiscordVoiceDockWidget call={activeCall} />
               </motion.div>
             )}
           </AnimatePresence>
