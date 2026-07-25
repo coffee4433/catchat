@@ -24,13 +24,13 @@ export function IconRail({
       <button
         aria-label={t.catChatWorkspaceLabel}
         onClick={() => onSelectView?.('chat')}
-        className={`flex size-10 items-center justify-center rounded-xl overflow-hidden shadow-md transition-all ${
+        className={`flex size-10 items-center justify-center rounded-2xl overflow-hidden shadow-md transition-all ${
           !activeView || activeView === 'chat'
-            ? 'scale-105 ring-2 ring-primary'
+            ? 'scale-105 ring-2 ring-primary ring-offset-1 ring-offset-background'
             : 'opacity-80 hover:opacity-100 hover:scale-105'
         }`}
       >
-        <img src="/catchat.png" alt="CatChat Logo" className="w-full h-full object-cover rounded-xl" />
+        <img src="/catchat.png" alt="CatChat Logo" className="w-full h-full object-cover rounded-2xl" />
       </button>
 
       <div className="w-6 h-[1px] bg-border/40 my-1" />
