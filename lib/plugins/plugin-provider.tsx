@@ -25,6 +25,16 @@ const PluginContext = createContext<PluginContextType | null>(null)
 const STORAGE_KEY_ENABLED = 'cz-enabled-plugins'
 const STORAGE_KEY_INSTALLED = 'cz-installed-plugins'
 
+export function isElectronEnv(): boolean {
+  if (typeof window === 'undefined') return false
+  return Boolean(
+    (window as any).electronAPI ||
+      (window as any).ipcRenderer ||
+      (window as any).releaseTool ||
+      navigator.userAgent.toLowerCase().includes('electron')
+  )
+}
+
 export function PluginProvider({ children, user }: { children: React.ReactNode; user?: any }) {
   // Installed plugins (default empty array - plugins must be installed from Plugin Hub)
   const [installedPluginIds, setInstalledPluginIds] = useState<string[]>(() => {
@@ -74,6 +84,7 @@ export function PluginProvider({ children, user }: { children: React.ReactNode; 
   const isPluginEnabled = (id: string) => isPluginInstalled(id) && enabledPluginIds.includes(id)
 
   const installPlugin = async (id: string) => {
+    if (!isElectronEnv()) return
     if (installingPluginId === id || isPluginInstalled(id)) return
     setInstallingPluginId(id)
     setInstallProgressMap((prev) => ({ ...prev, [id]: 10 }))

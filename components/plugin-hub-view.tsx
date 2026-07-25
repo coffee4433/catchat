@@ -8,13 +8,14 @@ import {
   ExternalLink,
   Globe,
   Code2,
+  Laptop,
   Radio,
   Search,
   Sparkles,
   Trash2,
   Zap,
 } from 'lucide-react'
-import { usePlugins } from '@/lib/plugins/plugin-provider'
+import { isElectronEnv, usePlugins } from '@/lib/plugins/plugin-provider'
 
 export type StorePluginItem = {
   id: string
@@ -70,8 +71,23 @@ export function PluginHubView({ onClose }: { onClose?: () => void }) {
     return matchesSearch && matchesCategory
   })
 
+  const isElectron = isElectronEnv()
+
   return (
     <div className="flex h-full w-full flex-col overflow-y-auto bg-background/60 p-6 text-foreground space-y-6">
+      {/* Web mode restriction notice */}
+      {!isElectron && (
+        <div className="flex items-center gap-3.5 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-amber-200 text-xs shadow-md">
+          <Laptop className="size-5 shrink-0 text-amber-400" />
+          <div>
+            <p className="font-extrabold text-amber-300">Instalación de plugins exclusiva para la App de Escritorio</p>
+            <p className="opacity-80 mt-0.5">
+              La instalación y ejecución de plugins personalizados requiere la aplicación de escritorio CatChat (Electron). En la versión web puedes explorar el catálogo.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Hero Store Header */}
       <div className="relative overflow-hidden rounded-3xl border border-border/40 bg-gradient-to-r from-emerald-500/20 via-teal-500/10 to-indigo-500/20 p-6 shadow-xl backdrop-blur-xl">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -243,9 +259,13 @@ export function PluginHubView({ onClose }: { onClose?: () => void }) {
                 <div className="flex items-center gap-2">
                   {!isInstalled ? (
                     <button
-                      onClick={() => installPlugin(plugin.id)}
-                      disabled={isInstalling}
-                      className="flex items-center gap-2 rounded-2xl bg-emerald-500 px-4 py-2 text-xs font-extrabold text-slate-950 shadow-lg shadow-emerald-500/25 transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
+                      onClick={() => isElectron && installPlugin(plugin.id)}
+                      disabled={!isElectron || isInstalling}
+                      className={`flex items-center gap-2 rounded-2xl px-4 py-2 text-xs font-extrabold transition-all ${
+                        !isElectron
+                          ? 'bg-secondary/60 text-muted-foreground border border-border/60 cursor-not-allowed opacity-80'
+                          : 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/25 hover:scale-105 active:scale-95 disabled:opacity-50'
+                      }`}
                     >
                       {isInstalling ? (
                         <>
@@ -255,7 +275,7 @@ export function PluginHubView({ onClose }: { onClose?: () => void }) {
                       ) : (
                         <>
                           <Download className="size-4" />
-                          <span>Instalar Plugin</span>
+                          <span>{isElectron ? 'Instalar Plugin' : 'Exclusivo App Escritorio'}</span>
                         </>
                       )}
                     </button>
