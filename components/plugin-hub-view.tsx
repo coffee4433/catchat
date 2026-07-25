@@ -175,7 +175,7 @@ export function PluginHubView({ onClose }: { onClose?: () => void }) {
             </p>
           </section>
         ) : (
-          <section className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <section className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {filteredPlugins.map((plugin) => {
               const isInstalled = isPluginInstalled(plugin.id)
               const isEnabled = isPluginEnabled(plugin.id)
@@ -189,6 +189,13 @@ export function PluginHubView({ onClose }: { onClose?: () => void }) {
                   : `v${plugin.version}`
                 : 'v1.0.0'
 
+              const displayDescription =
+                plugin.id === 'cat-music'
+                  ? lang === 'es'
+                    ? 'Reproductor infinito de música en alta calidad basado en YouTube Music. Incluye listas de reproducción, buscador global en vivo y descargas MP3.'
+                    : 'Infinite high-quality music player powered by YouTube Music. Includes playlists, live global search, and MP3 downloads.'
+                  : plugin.description
+
               return (
                 <article
                   key={plugin.id}
@@ -197,7 +204,7 @@ export function PluginHubView({ onClose }: { onClose?: () => void }) {
                   {/* Top theme accent bar */}
                   <div className="h-1 w-full bg-primary/60" />
 
-                  <div className="p-3.5">
+                  <div className="p-4">
                     {/* Header */}
                     <div className="flex items-start justify-between gap-2.5">
                       <div className="flex items-center gap-2.5 min-w-0">
@@ -214,7 +221,7 @@ export function PluginHubView({ onClose }: { onClose?: () => void }) {
                                 <Cloud className="size-3 shrink-0 text-muted-foreground/80" />
                               </span>
                             ) : (
-                              <span title={lang === 'es' ? 'Instalando en el dispositivo' : 'Installed on device'}>
+                              <span title={lang === 'es' ? 'Instalado en el dispositivo' : 'Installed on device'}>
                                 <HardDrive className="size-3 shrink-0 text-emerald-400" />
                               </span>
                             )}
@@ -229,7 +236,7 @@ export function PluginHubView({ onClose }: { onClose?: () => void }) {
 
                     {/* Description */}
                     <p className="mt-2.5 line-clamp-2 text-[11.5px] leading-relaxed text-muted-foreground">
-                      {plugin.description}
+                      {displayDescription}
                     </p>
 
                     {/* Install progress */}
