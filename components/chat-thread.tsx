@@ -1027,15 +1027,28 @@ export function ChatThread({
           payload: optimisticMsg,
         }).catch(e => console.warn('Supabase broadcast failed:', e))
 
-        await sendMessage(conversationId, content, prevReplyingTo?.id ?? undefined)
-        mutateMessages()
+        // Enviar mensaje al servidor y recibir la respuesta guardada
+        const savedMsg = await sendMessage(conversationId, content, prevReplyingTo?.id ?? undefined)
+        const fullMsg: MessageWithSender = {
+          ...savedMsg,
+          senderName: user.name,
+          senderImage: user.image || null,
+        }
+
+        // Actualizar la caché de SWR instantáneamente con el mensaje guardado sin parpadeos ni desapariciones
+        mutateMessages((prev) => {
+          if (!prev) return [fullMsg]
+          const exists = prev.some((m) => m.id === fullMsg.id)
+          return exists ? prev : [...prev, fullMsg]
+        }, false)
+
         onConversationInfoChange?.(conversationId)
       } catch {
-        // Rollback
+        // Rollback en caso de error
         setDraft(content)
         setReplyingTo(prevReplyingTo)
       } finally {
-        // Remover de la lista de pendientes al terminar (el re-fetch de mutateMessages traerá el definitivo)
+        // Remover de la lista de pendientes sólo después de que la caché SWR tiene el mensaje
         setPendingMessages((prev) => prev.filter((m) => m.id !== tempId))
       }
     }
