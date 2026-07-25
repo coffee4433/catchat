@@ -621,13 +621,16 @@ export function ChatThread({
     setContextMenu(null)
   }
 
-  // Smart auto-scroll: instantly scroll to bottom for new messages or typing indicators
+  // Smart auto-scroll: strictly scroll to bottom when new messages arrive
+  const prevMessagesLength = useRef(0)
   useEffect(() => {
     const el = scrollRef.current
     if (!el) return
-    if (wasAtBottom.current) {
+    const isNewMessageAdded = allMessages.length > prevMessagesLength.current
+    if (wasAtBottom.current && (isNewMessageAdded || typingUsers.length > 0)) {
       el.scrollTop = el.scrollHeight
     }
+    prevMessagesLength.current = allMessages.length
   }, [allMessages.length, typingUsers.length, conversation?.id])
 
   // Adjust scroll position instantly when reply or edit panel opens
@@ -1218,13 +1221,13 @@ export function ChatThread({
                     {formatTime(msg.createdAt)}
                   </span>
                 )}
-                {/* Read receipt indicators - Circle check style */}
+                {/* Read receipt indicators - Stable fixed 16px container */}
                 {msg.userId === user.id && (() => {
                   // Mensaje pendiente (optimista, aún no guardado)
                   if (msg.id < 0) {
                     return (
-                      <span className="inline-flex items-center gap-0.5 text-muted-foreground/50 ml-1" title="Enviando...">
-                        <Check className="size-3.5" strokeWidth={3} />
+                      <span className="inline-flex size-4 shrink-0 items-center justify-center text-muted-foreground/50 ml-1" title="Enviando...">
+                        <Check className="size-3.5 shrink-0" strokeWidth={3} />
                       </span>
                     )
                   }
@@ -1242,25 +1245,25 @@ export function ChatThread({
                   // Filter out the sender from the readBy list
                   const othersWhoRead = readByList.filter(id => id !== user.id)
                   
-                  // Estado 3: Leído (círculo con check azul)
+                  // Estado 3: Leído (check azul)
                   if (othersWhoRead.length > 0) {
                     return (
                       <span 
-                        className="inline-flex items-center gap-0.5 text-[#53bdeb] ml-1" 
+                        className="inline-flex size-4 shrink-0 items-center justify-center text-[#53bdeb] ml-1" 
                         title={`Leído por ${othersWhoRead.length} ${othersWhoRead.length === 1 ? 'persona' : 'personas'}`}
                       >
-                        <IoCheckmarkCircleOutline className="size-4" />
+                        <IoCheckmarkCircleOutline className="size-4 shrink-0" />
                       </span>
                     )
                   }
                   
-                  // Estado 2: Entregado pero no leído (círculo con check gris)
+                  // Estado 2: Entregado (check gris)
                   return (
                     <span 
-                      className="inline-flex items-center gap-0.5 text-muted-foreground/60 ml-1" 
+                      className="inline-flex size-4 shrink-0 items-center justify-center text-muted-foreground/60 ml-1" 
                       title="Entregado"
                     >
-                      <IoCheckmarkCircleOutline className="size-4" />
+                      <IoCheckmarkCircleOutline className="size-4 shrink-0" />
                     </span>
                   )
                 })()}
