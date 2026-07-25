@@ -100,12 +100,7 @@ export function Sidebar({
   return (
     <aside className="flex h-full w-60 shrink-0 flex-col rounded-2xl border border-border bg-card shadow-sm">
       <div className="flex items-center justify-between px-3 py-3">
-        <div className="flex items-center gap-2">
-          <div className="flex size-7 shrink-0 items-center justify-center rounded-lg overflow-hidden shadow-sm">
-            <img src="/catchat.png" alt="CatChat Logo" className="w-full h-full object-cover rounded-lg" />
-          </div>
-          <span className="text-sm font-semibold">CatChat</span>
-        </div>
+        <span className="text-sm font-semibold">CatChat</span>
         <button
           aria-label={t.searchPlaceholder}
           onClick={onOpenSearch}
