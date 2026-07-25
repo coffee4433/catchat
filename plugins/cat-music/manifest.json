@@ -3,9 +3,9 @@
   "name": "CatMusic",
   "version": "v1.0.0",
   "author": "coffee4433",
-  "description": "Reproductor infinito de música en alta calidad basado en YouTube Music. Incluye listas de reproducción, buscador global en vivo y descargas MP3.",
+  "description": "Plugin oficial CatMusic para CatChat con listas de reproducción y reproducción en vivo.",
   "category": "media",
   "iconName": "Radio",
-  "updatedAt": "2026-07-25T09:21:00.000Z",
+  "updatedAt": "2026-07-25T07:22:41.725Z",
   "githubUrl": "https://github.com/coffee4433/catchat/tree/main/plugins/cat-music"
 }
