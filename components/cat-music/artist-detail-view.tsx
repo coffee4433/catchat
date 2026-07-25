@@ -84,14 +84,17 @@ export function ArtistDetailView({
       .then((data) => {
         if (!isMounted) return
         if (data.results && Array.isArray(data.results) && data.results.length > 0) {
-          const mapped: Album[] = data.results.map((pl: any) => ({
-            id: pl.playlistId || pl.id,
-            title: pl.title,
-            artist: pl.artist || artistName,
-            year: 2024,
-            coverUrl: pl.coverUrl || '/placeholder.svg',
-            tracks: [],
-          }))
+          const mapped: Album[] = data.results.map((pl: any, idx: number) => {
+            const fallbackArt = artistTracks[idx % Math.max(1, artistTracks.length)]?.artworkUrl || initialTrack?.artworkUrl
+            return {
+              id: pl.playlistId || pl.id,
+              title: pl.title,
+              artist: pl.artist || artistName,
+              year: 2024,
+              coverUrl: pl.coverUrl && pl.coverUrl !== '/placeholder.svg' ? pl.coverUrl : fallbackArt || '/placeholder.svg',
+              tracks: [],
+            }
+          })
           setRealPlaylists(mapped)
         }
       })

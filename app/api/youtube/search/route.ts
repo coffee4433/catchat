@@ -1,5 +1,59 @@
 import { NextResponse } from 'next/server'
 
+// Recursive JSON parser to extract playlist objects from ytInitialData
+function parsePlaylistsFromYtData(obj: any, results: any[] = [], seen = new Set<string>()) {
+  if (!obj || typeof obj !== 'object') return results
+
+  const pl = obj.playlistRenderer || obj.gridPlaylistRenderer
+  if (pl && pl.playlistId && !seen.has(pl.playlistId)) {
+    const playlistId = pl.playlistId
+    seen.add(playlistId)
+
+    const title =
+      pl.title?.simpleText ||
+      pl.title?.runs?.[0]?.text ||
+      'Playlist Oficial'
+
+    const owner =
+      pl.shortBylineText?.runs?.[0]?.text ||
+      pl.longBylineText?.runs?.[0]?.text ||
+      ''
+
+    let thumbUrl = ''
+    const videoId = pl.navigationEndpoint?.watchEndpoint?.videoId || ''
+    if (videoId) {
+      thumbUrl = `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`
+    } else if (pl.thumbnails && pl.thumbnails.length > 0) {
+      const thumbs = pl.thumbnails[0]?.thumbnails || pl.thumbnails
+      thumbUrl = thumbs[thumbs.length - 1]?.url || thumbs[0]?.url || ''
+    }
+
+    results.push({
+      id: playlistId,
+      playlistId,
+      title,
+      artist: owner,
+      videoCount: pl.videoCount || pl.videoCountText?.runs?.[0]?.text || 'Vídeos',
+      coverUrl: thumbUrl || '/placeholder.svg',
+      tracks: [],
+    })
+  }
+
+  if (Array.isArray(obj)) {
+    for (const item of obj) {
+      parsePlaylistsFromYtData(item, results, seen)
+    }
+  } else {
+    for (const key of Object.keys(obj)) {
+      if (typeof obj[key] === 'object' && obj[key] !== null) {
+        parsePlaylistsFromYtData(obj[key], results, seen)
+      }
+    }
+  }
+
+  return results
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const query = searchParams.get('q')?.trim()
@@ -15,7 +69,7 @@ export async function GET(request: Request) {
     const channelUrls = [
       `https://www.youtube.com/@${cleanHandle}/playlists`,
       `https://www.youtube.com/c/${encodeURIComponent(query)}/playlists`,
-      `https://www.youtube.com/results?search_query=${encodeURIComponent(query + ' official playlist')}&sp=EgIQAw%253D%253D`,
+      `https://www.youtube.com/results?search_query=${encodeURIComponent(query + ' playlist')}&sp=EgIQAw%253D%253D`,
     ]
 
     for (const targetUrl of channelUrls) {
@@ -35,54 +89,12 @@ export async function GET(request: Request) {
             html.match(/window\["ytInitialData"\] = ({.*?});/)
 
           if (match && match[1]) {
-            const jsonStr = match[1]
-            const playlistMatches = jsonStr.match(/{"playlistRenderer":{.*?}}|{"gridPlaylistRenderer":{.*?}}/g)
+            const json = JSON.parse(match[1])
+            const foundPlaylists = parsePlaylistsFromYtData(json)
 
-            if (playlistMatches && playlistMatches.length > 0) {
-              const playlists: any[] = []
-              const seenIds = new Set<string>()
-
-              for (const pStr of playlistMatches) {
-                try {
-                  const pObj = JSON.parse(pStr)
-                  const pl = pObj.playlistRenderer || pObj.gridPlaylistRenderer
-                  if (!pl || !pl.playlistId || seenIds.has(pl.playlistId)) continue
-
-                  const playlistId = pl.playlistId
-                  seenIds.add(playlistId)
-
-                  const title = pl.title?.simpleText || pl.title?.runs?.[0]?.text || 'Playlist Oficial'
-                  const videoCount = pl.videoCount || pl.videoCountText?.runs?.[0]?.text || 'Vídeos'
-                  const owner =
-                    pl.shortBylineText?.runs?.[0]?.text ||
-                    pl.longBylineText?.runs?.[0]?.text ||
-                    query
-
-                  const videoId = pl.navigationEndpoint?.watchEndpoint?.videoId || ''
-                  const thumbUrl = videoId
-                    ? `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`
-                    : pl.sidebarPrimaryRenderer?.thumbnailRenderer?.playlistVideoThumbnailRenderer?.thumbnail?.thumbnails?.[0]?.url ||
-                      pl.thumbnails?.[0]?.thumbnails?.[0]?.url ||
-                      '/placeholder.svg'
-
-                  playlists.push({
-                    id: playlistId,
-                    playlistId,
-                    title,
-                    artist: owner,
-                    videoCount,
-                    coverUrl: thumbUrl,
-                    tracks: [],
-                  })
-                } catch {
-                  // Ignore parse snippet error
-                }
-              }
-
-              if (playlists.length > 0) {
-                // Return official channel playlists (deduplicated & precise)
-                return NextResponse.json({ results: playlists.slice(0, 10) })
-              }
+            if (foundPlaylists.length > 0) {
+              // Return top 5-6 official playlists
+              return NextResponse.json({ results: foundPlaylists.slice(0, 6) })
             }
           }
         }
@@ -108,7 +120,6 @@ export async function GET(request: Request) {
     if (response.ok) {
       const html = await response.text()
 
-      // Extract ytInitialData object from YouTube search page
       const match =
         html.match(/var ytInitialData = ({.*?});<\/script>/) ||
         html.match(/window\["ytInitialData"\] = ({.*?});/)
@@ -134,7 +145,6 @@ export async function GET(request: Request) {
               'Artista'
             const durationStr = video.lengthText?.simpleText || '3:30'
 
-            // Parse duration string into seconds
             const parts = durationStr.split(':').map(Number)
             let secs = 180
             if (parts.length === 2) secs = parts[0] * 60 + parts[1]
@@ -163,7 +173,7 @@ export async function GET(request: Request) {
     console.error('YouTube Search HTML parser error:', err)
   }
 
-  // 2. Secondary API proxy fallbacks
+  // 3. Secondary API proxy fallbacks
   const instances = [
     'https://invidious.nerdvpn.de',
     'https://inv.tux.pizza',
