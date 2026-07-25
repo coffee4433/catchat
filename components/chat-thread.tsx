@@ -466,8 +466,16 @@ export function ChatThread({
     const channel = supabase.channel(`conversation-${conversation.id}`)
 
     channel
-      .on('broadcast', { event: 'new_message' }, () => {
+      .on('broadcast', { event: 'new_message' }, ({ payload }) => {
         mutateMessages()
+        if (payload?.userId && payload.userId !== user.id && payload.id) {
+          // Si el receptor está viendo el chat activo, responde al instante con la confirmación de lectura en <10ms
+          channel.send({
+            type: 'broadcast',
+            event: 'read_receipt',
+            payload: { userId: user.id, messageIds: [payload.id] },
+          }).catch(() => {})
+        }
       })
       .on('broadcast', { event: 'read_receipt' }, ({ payload }) => {
         if (payload?.userId && Array.isArray(payload?.messageIds)) {
@@ -727,16 +735,15 @@ export function ChatThread({
       .map((msg) => msg.id)
 
     if (unreadMessageIds.length > 0) {
-      // Mark messages as read immediately and broadcast via Supabase Realtime WebSockets
-      markMessagesAsRead(unreadMessageIds)
-        .then(() => {
-          supabase.channel(`conversation-${conversation.id}`).send({
-            type: 'broadcast',
-            event: 'read_receipt',
-            payload: { userId: user.id, messageIds: unreadMessageIds },
-          }).catch(() => {})
-        })
-        .catch(() => {})
+      // 1. Emit read receipt over WebSockets INSTANTLY (0ms latency)
+      supabase.channel(`conversation-${conversation.id}`).send({
+        type: 'broadcast',
+        event: 'read_receipt',
+        payload: { userId: user.id, messageIds: unreadMessageIds },
+      }).catch(() => {})
+
+      // 2. Persist in database in background
+      markMessagesAsRead(unreadMessageIds).catch(() => {})
     }
   }, [conversation?.id, messages, user.id, mutateMessages])
 
