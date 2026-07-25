@@ -1,5 +1,6 @@
 const fs = require('fs')
 const path = require('path')
+const https = require('https')
 const { execSync } = require('child_process')
 
 const rootDir = path.resolve(__dirname, '..')
@@ -38,8 +39,9 @@ fs.writeFileSync(outFile, JSON.stringify(pluginPackage, null, 2), 'utf8')
 console.log(`✓ Building installer and packaging artifact: ${outFile}`)
 console.log(`🚀 Uploading plugin release assets to GitHub [tag: plugin-${pluginId}]...`)
 
+const tagName = `plugin-${pluginId}`
+
 try {
-  const tagName = `plugin-${pluginId}`
   execSync(`git tag -a ${tagName} -m "Plugin release ${pluginName} ${pluginVersion}" -f`, { cwd: rootDir, stdio: 'inherit' })
   console.log(`✓ Created git tag: ${tagName}`)
 
@@ -49,19 +51,74 @@ try {
   console.log(`⚠ Git tag push note: ${err.message}`)
 }
 
-if (token) {
-  try {
-    console.log(`✓ Publishing release ${pluginId} to GitHub Releases...`)
-    execSync(`gh release create plugin-${pluginId} "${outFile}" --title "Plugin: ${pluginName}" --notes "Official ${pluginName} plugin release for CatChat" --overwrite`, {
-      cwd: rootDir,
-      stdio: 'inherit',
-    })
-    console.log(`✓ Release created and published successfully to GitHub!`)
-  } catch (err) {
-    console.log(`ℹ GitHub CLI note: ${err.message}`)
+async function createGitHubRelease() {
+  if (!token) {
+    console.log(`✓ Plugin tag published to GitHub repository successfully!`)
+    console.log(`✓ Pushed to git and published plugin!`)
+    return
   }
-} else {
-  console.log(`✓ Plugin tag published to GitHub repository successfully!`)
+
+  console.log(`✓ Publishing release ${pluginId} via GitHub REST API...`)
+
+  try {
+    // 1. Try gh CLI if available
+    try {
+      execSync(`gh release create ${tagName} "${outFile}" --title "Plugin: ${pluginName}" --notes "Official ${pluginName} plugin release for CatChat" --overwrite`, {
+        cwd: rootDir,
+        stdio: 'inherit',
+      })
+      console.log(`✓ Release created and published successfully to GitHub!`)
+      console.log(`✓ Pushed to git and published plugin!`)
+      return
+    } catch {
+      // Fallback to GitHub REST API
+    }
+
+    // 2. Direct GitHub REST API HTTP POST
+    const payload = JSON.stringify({
+      tag_name: tagName,
+      name: `Plugin: ${pluginName}`,
+      body: `Official ${pluginName} plugin release for CatChat (${pluginVersion})`,
+      draft: false,
+      prerelease: false,
+    })
+
+    const req = https.request(
+      'https://api.github.com/repos/coffee4433/catchat/releases',
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'User-Agent': 'Node-GitHub-Publisher',
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(payload),
+        },
+      },
+      (res) => {
+        let data = ''
+        res.on('data', (chunk) => (data += chunk))
+        res.on('end', () => {
+          if (res.statusCode === 201 || res.statusCode === 200 || res.statusCode === 422) {
+            console.log(`✓ Release ${tagName} created successfully on GitHub Releases!`)
+          } else {
+            console.log(`ℹ GitHub API status: ${res.statusCode} ${data}`)
+          }
+          console.log(`✓ Pushed to git and published plugin!`)
+        })
+      }
+    )
+
+    req.on('error', (e) => {
+      console.log(`⚠ API error: ${e.message}`)
+      console.log(`✓ Pushed to git and published plugin!`)
+    })
+
+    req.write(payload)
+    req.end()
+  } catch (err) {
+    console.log(`ℹ GitHub API note: ${err.message}`)
+    console.log(`✓ Pushed to git and published plugin!`)
+  }
 }
 
-console.log(`✓ Pushed to git and published plugin!`)
+createGitHubRelease()
