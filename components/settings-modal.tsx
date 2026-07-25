@@ -314,19 +314,24 @@ export function SettingsModal({
               </div>
 
               {/* Main content body */}
-              <div ref={contentRef} className="thin-scroll flex-1 overflow-y-auto px-7 py-6">
-                {active === 'account' && <DiscordAccountSection user={user} lang={lang} />}
-                {active === 'profile' && <ProfileSection user={user} onClose={onClose} />}
-                {active === 'appearance' && (
-                  <AppearanceSection theme={theme} onThemeChange={onThemeChange} />
-                )}
-                {active === 'chat' && <ChatSection />}
-                {active === 'notifications' && <NotificationsSection />}
-                {active === 'privacy' && <PrivacySection />}
-                {active === 'language' && <LanguageSection />}
-                {active === 'releasenotes' && <ReleaseNotesSettingsSection onClose={onClose} />}
-                {active === 'plugins' && <PluginsSettingsSection />}
-              </div>
+              {active === 'plugins' ? (
+                <div className="flex-1 overflow-hidden w-full h-full">
+                  <PluginsSettingsSection />
+                </div>
+              ) : (
+                <div ref={contentRef} className="thin-scroll flex-1 overflow-y-auto px-7 py-6">
+                  {active === 'account' && <DiscordAccountSection user={user} lang={lang} />}
+                  {active === 'profile' && <ProfileSection user={user} onClose={onClose} />}
+                  {active === 'appearance' && (
+                    <AppearanceSection theme={theme} onThemeChange={onThemeChange} />
+                  )}
+                  {active === 'chat' && <ChatSection />}
+                  {active === 'notifications' && <NotificationsSection />}
+                  {active === 'privacy' && <PrivacySection />}
+                  {active === 'language' && <LanguageSection />}
+                  {active === 'releasenotes' && <ReleaseNotesSettingsSection onClose={onClose} />}
+                </div>
+              )}
             </div>
           </motion.div>
         </div>

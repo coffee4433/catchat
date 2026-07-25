@@ -98,7 +98,7 @@ export function PluginHubView({ onClose }: { onClose?: () => void }) {
         <div className="absolute -bottom-24 left-1/3 size-72 rounded-full bg-primary/10 blur-3xl" />
       </div>
 
-      <div className="relative flex h-full w-full flex-col overflow-y-auto p-6 md:p-8 space-y-8">
+      <div className="relative flex h-full w-full flex-col overflow-y-auto thin-scroll p-6 md:p-8 space-y-8">
         {/* ── Hero Header ───────────────────────────────────── */}
         <section className="pt-4 text-center">
           <div className="mx-auto mb-4 inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[11px] font-semibold text-primary">
