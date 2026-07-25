@@ -14,18 +14,21 @@ import { Sidebar } from '@/components/sidebar'
 import { UserDock } from '@/components/user-dock'
 import { ReleaseNotesModal } from '@/components/release-notes-modal'
 import { CallProvider } from '@/components/calls/call-provider'
+import { PluginProvider, usePlugins } from '@/lib/plugins/plugin-provider'
+import { CatMusicPlayerBar } from '@/components/cat-music/player-bar'
 import { themes } from '@/lib/themes'
 
 export type AppUser = { id: string; name: string; email: string; image?: string | null; banner?: string | null }
 export type Conversation = ConversationListItem
 
-export function ChatApp({
+function ChatAppInner({
   user,
   initialConversations,
 }: {
   user: AppUser
   initialConversations: ConversationListItem[]
 }) {
+  const [activeView, setActiveView] = useState<string>('chat')
   const [searchOpen, setSearchOpen] = useState(false)
   const [newChatOpen, setNewChatOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -40,6 +43,8 @@ export function ChatApp({
   const [activeConversationId, setActiveConversationId] = useState<number | null>(
     initialConversations[0]?.id ?? null,
   )
+
+  const { isPluginEnabled, getActiveRailTabs } = usePlugins()
 
   const { data: conversations = initialConversations, mutate: mutateConversations } = useSWR(
     'conversations',
@@ -83,46 +88,69 @@ export function ChatApp({
   const activeConversation =
     conversations.find((c) => c.id === activeConversationId) ?? null
 
+  const activePluginTab = getActiveRailTabs().find((t) => t.id === activeView)
+  const PluginViewComponent = activePluginTab?.component
+
   return (
     <CallProvider user={user}>
       <main className="relative flex h-dvh overflow-hidden bg-background p-3 pl-0">
-        <IconRail />
-        <div className="hidden h-full lg:block ml-3">
-          <Sidebar
-            onOpenSearch={() => setSearchOpen(true)}
-            onOpenNewChat={() => setNewChatOpen(true)}
-            conversations={conversations}
-            activeConversationId={activeConversationId}
-            onSelectConversation={setActiveConversationId}
-            onConversationsChange={() => mutateConversations()}
-            currentUserId={user.id}
-          />
-        </div>
-        <ChatThread
-          infoOpen={infoOpen}
-          onToggleInfo={() => setInfoOpen((v) => !v)}
-          user={user}
-          conversation={activeConversation}
-          onConversationChange={(id) => {
-            setActiveConversationId(id)
-            mutateConversations()
-          }}
-          onConversationInfoChange={mutateConversationInfo}
-        />
-        <AnimatePresence initial={false}>
-          {infoOpen && activeConversation && (
-            <motion.div
-              key="info-panel"
-              initial={{ width: 0, opacity: 0, x: 32, marginLeft: 0 }}
-              animate={{ width: 288, opacity: 1, x: 0, marginLeft: 12 }}
-              exit={{ width: 0, opacity: 0, x: 32, marginLeft: 0 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 34 }}
-              className="hidden h-full overflow-hidden rounded-3xl lg:block"
-            >
-              <InfoPanel conversation={activeConversation} currentUserId={user.id} />
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <IconRail activeView={activeView} onSelectView={setActiveView} />
+
+        {/* VIEW 1: Main CatChat Workspace */}
+        {activeView === 'chat' && (
+          <div className="flex flex-1 min-w-0 h-full overflow-hidden">
+            <div className="hidden h-full lg:block ml-3">
+              <Sidebar
+                onOpenSearch={() => setSearchOpen(true)}
+                onOpenNewChat={() => setNewChatOpen(true)}
+                conversations={conversations}
+                activeConversationId={activeConversationId}
+                onSelectConversation={setActiveConversationId}
+                onConversationsChange={() => mutateConversations()}
+                currentUserId={user.id}
+              />
+            </div>
+            <ChatThread
+              infoOpen={infoOpen}
+              onToggleInfo={() => setInfoOpen((v) => !v)}
+              user={user}
+              conversation={activeConversation}
+              onConversationChange={(id) => {
+                setActiveConversationId(id)
+                mutateConversations()
+              }}
+              onConversationInfoChange={mutateConversationInfo}
+            />
+            <AnimatePresence initial={false}>
+              {infoOpen && activeConversation && (
+                <motion.div
+                  key="info-panel"
+                  initial={{ width: 0, opacity: 0, x: 32, marginLeft: 0 }}
+                  animate={{ width: 288, opacity: 1, x: 0, marginLeft: 12 }}
+                  exit={{ width: 0, opacity: 0, x: 32, marginLeft: 0 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 34 }}
+                  className="hidden h-full overflow-hidden rounded-3xl lg:block"
+                >
+                  <InfoPanel conversation={activeConversation} currentUserId={user.id} />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
+
+        {/* VIEW 2: Active Plugin View (e.g. CatMusic) */}
+        {activeView !== 'chat' && PluginViewComponent && (
+          <div className="flex-1 min-w-0 h-full overflow-hidden rounded-3xl border border-border/40 ml-3 bg-card/40 backdrop-blur-xl">
+            <PluginViewComponent user={user} />
+          </div>
+        )}
+
+        {/* Global Persistent YouTube Player Bar for CatMusic */}
+        {isPluginEnabled('cat-music') && <CatMusicPlayerBar />}
+
+        {/* Hidden Container for YouTube IFrame Player */}
+        <div id="cat-music-yt-iframe" className="pointer-events-none fixed -left-[9999px] -top-[9999px] size-1 opacity-0" />
+
         <SearchModal
           open={searchOpen}
           onClose={closeSearch}
@@ -155,5 +183,13 @@ export function ChatApp({
         <UserDock onOpenSettings={() => setSettingsOpen(true)} user={user} />
       </main>
     </CallProvider>
+  )
+}
+
+export function ChatApp(props: { user: AppUser; initialConversations: ConversationListItem[] }) {
+  return (
+    <PluginProvider user={props.user}>
+      <ChatAppInner {...props} />
+    </PluginProvider>
   )
 }

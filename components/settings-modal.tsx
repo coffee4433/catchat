@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   Bell,
+  Boxes,
   Check,
   ChevronRight,
   Download,
@@ -25,6 +26,7 @@ import {
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
+import { usePlugins } from '@/lib/plugins/plugin-provider'
 import {
   changePassword,
   deleteAccount as deleteAccountAction,
@@ -46,7 +48,7 @@ import {
 
 type AppUser = { id: string; name: string; email: string; image?: string | null; banner?: string | null }
 
-type Section = 'account' | 'profile' | 'privacy' | 'notifications' | 'appearance' | 'chat' | 'language' | 'releasenotes'
+type Section = 'account' | 'profile' | 'privacy' | 'notifications' | 'appearance' | 'chat' | 'language' | 'releasenotes' | 'plugins'
 
 function initialsOf(name: string) {
   return name
@@ -102,6 +104,7 @@ export function SettingsModal({
     { id: 'chat', label: lang === 'es' ? 'Chat y texto' : 'Text & Images', icon: <MessageCircle className="size-4" /> },
     { id: 'language', label: lang === 'es' ? 'Idioma' : 'Language', icon: <Globe className="size-4" /> },
     { id: 'releasenotes', label: lang === 'es' ? 'Novedades de la versión' : 'Release Notes', icon: <Sparkles className="size-4 text-[#7983f5]" /> },
+    { id: 'plugins', label: lang === 'es' ? 'Plugins y Extensiones' : 'Plugins & Extensions', icon: <Boxes className="size-4 text-emerald-400" /> },
   ]
 
   const allSections = [...userSettings, ...appSettings]
@@ -319,6 +322,7 @@ export function SettingsModal({
                 {active === 'privacy' && <PrivacySection />}
                 {active === 'language' && <LanguageSection />}
                 {active === 'releasenotes' && <ReleaseNotesSettingsSection onClose={onClose} />}
+                {active === 'plugins' && <PluginsSettingsSection />}
               </div>
             </div>
           </motion.div>
@@ -1162,6 +1166,89 @@ function ReleaseNotesSettingsSection({ onClose }: { onClose: () => void }) {
           {lang === 'es' ? 'No hay notas de versión disponibles por el momento.' : 'No release notes available at the moment.'}
         </div>
       )}
+    </div>
+  )
+}
+
+function PluginsSettingsSection() {
+  const { lang } = useLanguage()
+  const { registeredPlugins, isPluginEnabled, togglePlugin } = usePlugins()
+
+  return (
+    <div className="max-w-2xl space-y-6 select-none">
+      {/* Header Banner */}
+      <div className="flex items-center justify-between gap-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400">
+            <Boxes className="size-5" />
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-foreground">
+              {lang === 'es' ? 'Gestor de Plugins y Extensiones' : 'Plugins & Extensions Manager'}
+            </h3>
+            <p className="text-[12.5px] text-muted-foreground mt-0.5">
+              {lang === 'es'
+                ? 'Activa o desactiva extensiones integradas para personalizar CatChat.'
+                : 'Enable or disable built-in extensions to customize CatChat.'}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Plugins List */}
+      <div className="space-y-4">
+        {registeredPlugins.map((plugin) => {
+          const enabled = isPluginEnabled(plugin.metadata.id)
+          return (
+            <div
+              key={plugin.metadata.id}
+              className={`flex items-start justify-between gap-4 rounded-2xl border p-4 transition-all ${
+                enabled
+                  ? 'border-emerald-500/30 bg-emerald-500/5 shadow-sm'
+                  : 'border-border/60 bg-secondary/10'
+              }`}
+            >
+              <div className="flex items-start gap-3.5">
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-secondary text-primary font-bold text-lg">
+                  📻
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-sm font-bold text-foreground">{plugin.metadata.name}</h4>
+                    <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                      v{plugin.metadata.version}
+                    </span>
+                    <span className="rounded-full bg-primary/20 px-2 py-0.5 text-[10px] font-bold text-primary">
+                      {plugin.metadata.category}
+                    </span>
+                  </div>
+                  <p className="text-[12.5px] text-muted-foreground leading-relaxed">
+                    {plugin.metadata.description}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground/70 font-mono">
+                    Autor: {plugin.metadata.author}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                role="switch"
+                aria-checked={enabled}
+                onClick={() => togglePlugin(plugin.metadata.id)}
+                className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+                  enabled ? 'bg-emerald-500' : 'bg-secondary'
+                }`}
+              >
+                <span
+                  className={`absolute left-0.5 top-0.5 size-5 rounded-full bg-card shadow-sm transition-transform ${
+                    enabled ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }

@@ -1,20 +1,56 @@
 'use client'
 
 import { useLanguage } from '@/lib/i18n'
+import { usePlugins } from '@/lib/plugins/plugin-provider'
 
-export function IconRail() {
+export function IconRail({
+  activeView,
+  onSelectView,
+}: {
+  activeView?: string
+  onSelectView?: (viewId: string) => void
+}) {
   const { t } = useLanguage()
+  const { getActiveRailTabs } = usePlugins()
+
+  const pluginTabs = getActiveRailTabs()
+
   return (
     <aside
       aria-label={t.workspacesLabel}
-      className="flex h-full w-14 shrink-0 flex-col items-center gap-3 py-4"
+      className="flex h-full w-14 shrink-0 flex-col items-center gap-3 py-4 border-r border-border/20 select-none"
     >
+      {/* Main CatChat Workspace Icon */}
       <button
         aria-label={t.catChatWorkspaceLabel}
-        className="flex size-9 items-center justify-center rounded-xl bg-foreground text-background text-lg font-bold shadow-sm transition-transform hover:scale-105 active:scale-95"
+        onClick={() => onSelectView?.('chat')}
+        className={`flex size-9 items-center justify-center rounded-xl font-bold transition-all ${
+          !activeView || activeView === 'chat'
+            ? 'bg-foreground text-background shadow-md scale-105 ring-2 ring-primary/40'
+            : 'bg-secondary text-foreground/70 hover:scale-105 hover:text-foreground'
+        }`}
       >
         C
       </button>
+
+      <div className="w-6 h-[1px] bg-border/40 my-1" />
+
+      {/* Dynamic Plugin Rail Tabs */}
+      {pluginTabs.map((tab) => (
+        <button
+          key={tab.id}
+          onClick={() => onSelectView?.(tab.id)}
+          title={tab.label}
+          aria-label={tab.label}
+          className={`flex size-9 items-center justify-center rounded-xl transition-all ${
+            activeView === tab.id
+              ? 'bg-primary text-primary-foreground shadow-lg scale-105 ring-2 ring-primary/40'
+              : 'bg-secondary/80 text-foreground/70 hover:scale-105 hover:bg-secondary hover:text-foreground'
+          }`}
+        >
+          {tab.icon}
+        </button>
+      ))}
     </aside>
   )
 }
