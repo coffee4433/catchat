@@ -3025,7 +3025,10 @@ export function ChatThread({
       {/* User popover */}
       {popoverUser && popoverAnchor && (
         <UserPopover
-          user={popoverUser}
+          user={{
+            ...popoverUser,
+            isOnline: popoverUser.id === user.id ? true : onlineUserIds.has(popoverUser.id),
+          }}
           currentUserId={user.id}
           anchorRect={popoverAnchor}
           onClose={() => { setPopoverUser(null); setPopoverAnchor(null) }}

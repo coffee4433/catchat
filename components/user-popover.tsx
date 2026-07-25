@@ -13,6 +13,7 @@ export interface PopoverUser {
   banner?: string | null
   email?: string
   createdAt?: string | null
+  isOnline?: boolean
 }
 
 interface Props {
@@ -148,22 +149,35 @@ export function UserPopover({
 
         {/* Avatar (overlapping banner) */}
         <div className="relative px-4">
-          <button
-            onClick={onOpenFullProfile}
-            className="-mt-10 flex size-[76px] items-center justify-center overflow-hidden rounded-full border-[4px] border-popover bg-secondary transition-transform hover:scale-105"
-            title="View full profile"
-          >
-            {user.image ? (
-              <img src={user.image} alt={user.name} className="size-full object-cover" />
-            ) : (
-              <span className="text-2xl font-bold text-muted-foreground">
-                {initialsOf(user.name)}
-              </span>
-            )}
-          </button>
+          <div className="relative inline-block -mt-11">
+            <button
+              onClick={onOpenFullProfile}
+              className="flex size-[80px] items-center justify-center overflow-hidden rounded-full border-[6px] border-popover bg-secondary transition-transform hover:scale-105 shadow-md"
+              title="View full profile"
+            >
+              {user.image ? (
+                <img src={user.image} alt={user.name} className="size-full object-cover" />
+              ) : (
+                <span className="text-2xl font-bold text-muted-foreground">
+                  {initialsOf(user.name)}
+                </span>
+              )}
+            </button>
 
-          {/* Presence dot */}
-          <div className="absolute bottom-0 left-[66px] size-4 rounded-full border-[3px] border-popover bg-green-500" />
+            {/* Presence indicator badge matching screenshot */}
+            <div
+              className="absolute bottom-0 right-0 flex size-6 items-center justify-center rounded-full border-[4px] border-popover bg-popover shadow-sm"
+              title={user.isOnline ? 'Conectado' : 'Desconectado'}
+            >
+              {user.isOnline ? (
+                <span className="size-3.5 rounded-full bg-[#23a55a]" />
+              ) : (
+                <span className="flex size-3.5 items-center justify-center rounded-full bg-[#80848e]">
+                  <span className="size-1.5 rounded-full bg-popover" />
+                </span>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Name + username */}
