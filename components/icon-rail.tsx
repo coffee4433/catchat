@@ -18,7 +18,7 @@ export function IconRail({
   return (
     <aside
       aria-label={t.workspacesLabel}
-      className="flex h-full w-14 shrink-0 flex-col items-center gap-3 py-4 border-r border-border/20 select-none"
+      className="flex h-full w-14 shrink-0 flex-col items-center gap-3 py-4 select-none"
     >
       {/* Main CatChat Workspace Icon */}
       <button
