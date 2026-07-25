@@ -1,9 +1,9 @@
-'use client'
-
+import { useEffect, useState } from 'react'
 import { MessageSquare, Plus, Search, Trash2 } from 'lucide-react'
 import type { ConversationListItem } from '@/app/actions/chat'
 import { deleteConversation } from '@/app/actions/chat'
 import { useLanguage } from '@/lib/i18n'
+import { supabase } from '@/lib/supabase/client'
 import { FriendRequestsPanel } from '@/components/friend-requests-panel'
 
 function initialsOf(name: string) {
@@ -18,11 +18,13 @@ function initialsOf(name: string) {
 function ConversationRow({
   conversation,
   active,
+  isOnline,
   onClick,
   onDelete,
 }: {
   conversation: ConversationListItem
   active?: boolean
+  isOnline?: boolean
   onClick?: () => void
   onDelete?: () => void
 }) {
@@ -37,7 +39,7 @@ function ConversationRow({
     >
       <button onClick={onClick} className="flex min-w-0 flex-1 items-center gap-2 text-left">
         {conversation.isDirect && conversation.otherUser ? (
-          <span className="flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-secondary text-[9px] font-semibold text-muted-foreground">
+          <span className="relative flex size-6 shrink-0 items-center justify-center rounded-full bg-secondary text-[9px] font-semibold text-muted-foreground">
             {conversation.otherUser.image ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -48,6 +50,11 @@ function ConversationRow({
             ) : (
               initialsOf(conversation.otherUser.name)
             )}
+            <span
+              className={`absolute -bottom-0.5 -right-0.5 size-2 rounded-full border border-card transition-colors ${
+                isOnline ? 'bg-emerald-500' : 'bg-muted-foreground/40'
+              }`}
+            />
           </span>
         ) : (
           <span className="shrink-0 text-muted-foreground">
@@ -87,6 +94,43 @@ export function Sidebar({
   currentUserId: string
 }) {
   const { t } = useLanguage()
+
+  // Track online users in real-time via Supabase Presence
+  const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    if (!currentUserId) return
+
+    const channel = supabase.channel('online-presence', {
+      config: {
+        presence: {
+          key: currentUserId,
+        },
+      },
+    })
+
+    channel
+      .on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState()
+        const keys = new Set<string>()
+        Object.keys(state).forEach((key) => keys.add(key))
+        setOnlineUserIds(keys)
+      })
+      .on('presence', { event: 'join' }, ({ key }) => {
+        setOnlineUserIds((prev) => new Set([...prev, key]))
+      })
+      .on('presence', { event: 'leave' }, ({ key }) => {
+        setOnlineUserIds((prev) => {
+          const next = new Set(prev)
+          next.delete(key)
+          return next
+        })
+      })
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [currentUserId])
 
   const handleDelete = async (id: number) => {
     await deleteConversation(id)
@@ -134,6 +178,7 @@ export function Sidebar({
               key={c.id}
               conversation={c}
               active={c.id === activeConversationId}
+              isOnline={c.otherUser?.id ? onlineUserIds.has(c.otherUser.id) : false}
               onClick={() => onSelectConversation(c.id)}
               onDelete={() => handleDelete(c.id)}
             />
