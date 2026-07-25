@@ -18,7 +18,7 @@ export function CatMusicDockWidget({ onOpenCatMusic }: { onOpenCatMusic?: () => 
   const progressPct = Math.min(100, Math.max(0, (pos / dur) * 100))
 
   return (
-    <div className="w-64 max-w-64 border-b border-border/40 bg-secondary/30 px-2.5 py-2 select-none">
+    <div className="w-full border-b border-border/40 bg-secondary/30 px-2 py-1.5 select-none">
       <div className="flex items-center justify-between gap-1.5 min-w-0">
         {/* Track Artwork + Animated Pulsing Indicator */}
         <div
@@ -45,8 +45,8 @@ export function CatMusicDockWidget({ onOpenCatMusic }: { onOpenCatMusic?: () => 
           )}
         </div>
 
-        {/* Track Meta */}
-        <div onClick={onOpenCatMusic} className="min-w-0 max-w-[92px] flex-1 cursor-pointer">
+        {/* Track Meta (Strict max-w-28 text truncation) */}
+        <div onClick={onOpenCatMusic} className="min-w-0 max-w-28 flex-1 cursor-pointer">
           <div className="flex items-center gap-1">
             <Music className="size-3 text-primary shrink-0" />
             <p className="truncate text-[11.5px] font-bold text-foreground leading-tight">{currentTrack.title}</p>
@@ -93,7 +93,7 @@ export function CatMusicDockWidget({ onOpenCatMusic }: { onOpenCatMusic?: () => 
       </div>
 
       {/* Progress Bar Line */}
-      <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-secondary/80">
+      <div className="mt-1 h-0.5 w-full overflow-hidden rounded-full bg-secondary/80">
         <div className="h-full rounded-full bg-primary transition-all duration-300" style={{ width: `${progressPct}%` }} />
       </div>
     </div>
