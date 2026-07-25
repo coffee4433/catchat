@@ -9,6 +9,8 @@ import { useLanguage } from '@/lib/i18n'
 import { ElectricBorder } from '@/components/electric-border'
 import { useCallContext } from '@/components/calls/call-provider'
 import type { ActiveCall } from '@/lib/calls/types'
+import { usePlugins } from '@/lib/plugins/plugin-provider'
+import { CatMusicDockWidget } from '@/components/cat-music/dock-widget'
 
 function initialsOf(name: string) {
   return name
@@ -198,11 +200,16 @@ function DiscordVoiceDockWidget({ call }: { call: ActiveCall | null }) {
 export function UserDock({
   onOpenSettings,
   user,
+  activeView,
+  onOpenCatMusic,
 }: {
   onOpenSettings: () => void
   user: { id: string; name: string; email: string; image?: string | null; banner?: string | null }
+  activeView?: string
+  onOpenCatMusic?: () => void
 }) {
   const { t } = useLanguage()
+  const { isPluginEnabled } = usePlugins()
   const router = useRouter()
   const [signingOut, setSigningOut] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
@@ -392,6 +399,11 @@ export function UserDock({
               </button>
             </div>
           </div>
+
+          {/* CatMusic Dock Mini Player (shown in Chat view) */}
+          {isPluginEnabled('cat-music') && activeView !== 'cat-music' && (
+            <CatMusicDockWidget onOpenCatMusic={onOpenCatMusic} />
+          )}
 
           {/* Discord Voice Call Dock Widget */}
           <AnimatePresence>

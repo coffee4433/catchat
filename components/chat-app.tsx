@@ -145,8 +145,8 @@ function ChatAppInner({
           </div>
         )}
 
-        {/* Global Persistent YouTube Player Bar for CatMusic */}
-        {isPluginEnabled('cat-music') && <CatMusicPlayerBar />}
+        {/* Persistent YouTube Player Bar for CatMusic (shown ONLY in CatMusic view) */}
+        {isPluginEnabled('cat-music') && activeView === 'cat-music' && <CatMusicPlayerBar />}
 
         {/* Hidden Container for YouTube IFrame Player */}
         <div id="cat-music-yt-iframe" className="pointer-events-none fixed -left-[9999px] -top-[9999px] size-1 opacity-0" />
@@ -180,7 +180,12 @@ function ChatAppInner({
           user={user}
         />
         <ReleaseNotesModal />
-        <UserDock onOpenSettings={() => setSettingsOpen(true)} user={user} />
+        <UserDock
+          onOpenSettings={() => setSettingsOpen(true)}
+          user={user}
+          activeView={activeView}
+          onOpenCatMusic={() => setActiveView('cat-music')}
+        />
       </main>
     </CallProvider>
   )
