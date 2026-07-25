@@ -148,9 +148,6 @@ function ChatAppInner({
         {/* Persistent YouTube Player Bar for CatMusic (shown ONLY in CatMusic view) */}
         {isPluginEnabled('cat-music') && activeView === 'cat-music' && <CatMusicPlayerBar />}
 
-        {/* Hidden Container for YouTube IFrame Player */}
-        <div id="cat-music-yt-iframe" className="pointer-events-none fixed -left-[9999px] -top-[9999px] size-1 opacity-0" />
-
         <SearchModal
           open={searchOpen}
           onClose={closeSearch}

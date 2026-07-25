@@ -46,7 +46,7 @@ export function CatMusicPlayerProvider({ children }: { children: React.ReactNode
 
   const currentTrack = playerState.queue[playerState.index] || null
 
-  // Initialize YT Player once inside hidden container
+  // Initialize YT Player once inside isolated hidden container outside React VDOM
   useEffect(() => {
     let mounted = true
 
@@ -54,10 +54,26 @@ export function CatMusicPlayerProvider({ children }: { children: React.ReactNode
       if (!mounted) return
       if (ytPlayerRef.current) return
 
-      const playerDiv = document.getElementById('cat-music-yt-iframe')
-      if (!playerDiv) return
+      let container = document.getElementById('cat-music-yt-container')
+      if (!container) {
+        container = document.createElement('div')
+        container.id = 'cat-music-yt-container'
+        container.style.position = 'fixed'
+        container.style.top = '-9999px'
+        container.style.left = '-9999px'
+        container.style.width = '1px'
+        container.style.height = '1px'
+        container.style.opacity = '0'
+        container.style.pointerEvents = 'none'
+        container.style.zIndex = '-9999'
+        const iframeTarget = document.createElement('div')
+        iframeTarget.id = 'cat-music-yt-iframe'
+        container.appendChild(iframeTarget)
+        document.body.appendChild(container)
+      }
 
-      ytPlayerRef.current = new YT.Player('cat-music-yt-iframe', {
+      try {
+        ytPlayerRef.current = new YT.Player('cat-music-yt-iframe', {
         height: '200',
         width: '200',
         videoId: currentTrack ? currentTrack.id : SEED_TRACKS[0].id,
@@ -70,33 +86,36 @@ export function CatMusicPlayerProvider({ children }: { children: React.ReactNode
           rel: 0,
           origin: typeof window !== 'undefined' ? window.location.origin : '',
         },
-        events: {
-          onReady: () => {
-            if (ytPlayerRef.current?.setVolume) {
-              ytPlayerRef.current.setVolume(playerState.volume)
-            }
+          events: {
+            onReady: () => {
+              if (ytPlayerRef.current?.setVolume) {
+                ytPlayerRef.current.setVolume(playerState.volume)
+              }
+            },
+            onStateChange: (event: any) => {
+              // YT.PlayerState: ENDED = 0, PLAYING = 1, PAUSED = 2, BUFFERING = 3
+              if (event.data === 1) {
+                setPlayerState((s) => ({ ...s, isPlaying: true, isBuffering: false, error: null }))
+              } else if (event.data === 2) {
+                setPlayerState((s) => ({ ...s, isPlaying: false, isBuffering: false }))
+              } else if (event.data === 3) {
+                setPlayerState((s) => ({ ...s, isBuffering: true }))
+              } else if (event.data === 0) {
+                handleTrackEnded()
+              }
+            },
+            onError: () => {
+              setPlayerState((s) => ({
+                ...s,
+                error: 'Vídeo o audio no disponible. Saltando a la siguiente canción...',
+              }))
+              setTimeout(() => nextTrack(), 1500)
+            },
           },
-          onStateChange: (event: any) => {
-            // YT.PlayerState: ENDED = 0, PLAYING = 1, PAUSED = 2, BUFFERING = 3
-            if (event.data === 1) {
-              setPlayerState((s) => ({ ...s, isPlaying: true, isBuffering: false, error: null }))
-            } else if (event.data === 2) {
-              setPlayerState((s) => ({ ...s, isPlaying: false, isBuffering: false }))
-            } else if (event.data === 3) {
-              setPlayerState((s) => ({ ...s, isBuffering: true }))
-            } else if (event.data === 0) {
-              handleTrackEnded()
-            }
-          },
-          onError: () => {
-            setPlayerState((s) => ({
-              ...s,
-              error: 'Vídeo o audio no disponible. Saltando a la siguiente canción...',
-            }))
-            setTimeout(() => nextTrack(), 1500)
-          },
-        },
-      })
+        })
+      } catch {
+        // Suppress initial YT init errors
+      }
     })
 
     return () => {

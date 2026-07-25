@@ -39,11 +39,11 @@ export type ArtworkSize = 'maxres' | 'sd' | 'hq' | 'mq'
 /**
  * Generates deterministic YouTube thumbnail URLs based on size.
  */
-export function getArtworkUrl(youtubeId: string, size: ArtworkSize = 'hq'): string {
+export function getArtworkUrl(youtubeId: string, size: ArtworkSize = 'mq'): string {
   if (!youtubeId) return '/placeholder.svg'
   const qualityMap: Record<ArtworkSize, string> = {
-    maxres: 'maxresdefault',
-    sd: 'sddefault',
+    maxres: 'mqdefault', // mqdefault is 100% guaranteed on YouTube
+    sd: 'mqdefault',
     hq: 'hqdefault',
     mq: 'mqdefault',
   }
