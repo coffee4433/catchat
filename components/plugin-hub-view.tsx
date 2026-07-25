@@ -50,6 +50,7 @@ export const AVAILABLE_HUB_PLUGINS: StorePluginItem[] = [
 export function PluginHubView({ onClose }: { onClose?: () => void }) {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
+  const [hubPlugins, setHubPlugins] = useState<StorePluginItem[]>(AVAILABLE_HUB_PLUGINS)
 
   const {
     isPluginInstalled,
@@ -61,7 +62,19 @@ export function PluginHubView({ onClose }: { onClose?: () => void }) {
     installProgressMap,
   } = usePlugins()
 
-  const filteredPlugins = AVAILABLE_HUB_PLUGINS.filter((p) => {
+  // Fetch live published plugins from GitHub Releases API
+  React.useEffect(() => {
+    fetch('/api/plugins')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.plugins && Array.isArray(data.plugins) && data.plugins.length > 0) {
+          setHubPlugins(data.plugins)
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  const filteredPlugins = hubPlugins.filter((p) => {
     const matchesSearch =
       !searchQuery ||
       p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
