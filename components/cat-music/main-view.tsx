@@ -131,8 +131,8 @@ export function CatMusicMainView() {
       {/* Top Header Navigation */}
       <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-border/40">
         <div className="flex items-center gap-3">
-          <div className="flex size-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-teal-500 to-emerald-400 text-slate-950 font-extrabold shadow-lg shadow-teal-500/20">
-            <Radio className="size-5" />
+          <div className="flex size-10 items-center justify-center rounded-2xl bg-secondary/50 border border-border/40 shadow-sm">
+            <img src="/catmusic.png" alt="CatMusic" className="size-7 object-contain" />
           </div>
           <div>
             <h1 className="text-lg font-bold text-foreground flex items-center gap-2">
