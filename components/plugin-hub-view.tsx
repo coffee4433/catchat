@@ -113,39 +113,9 @@ export function PluginHubView({ onClose }: { onClose?: () => void }) {
         <div className="absolute -bottom-24 left-1/3 size-72 rounded-full bg-fuchsia-500/10 blur-3xl" />
       </div>
 
-      <div className="relative flex h-full flex-col overflow-y-auto">
-        {/* ── Top navigation bar ─────────────────────────────── */}
-        <header className="sticky top-0 z-20 border-b border-border/40 bg-background/70 backdrop-blur-2xl">
-          <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-6 py-4">
-            <div className="flex items-center gap-3">
-              <div className="relative flex size-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 shadow-lg shadow-violet-500/25">
-                <Boxes className="size-5 text-white" />
-                <span className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full bg-emerald-400 ring-2 ring-background" />
-              </div>
-              <div>
-                <h1 className="text-sm font-bold tracking-tight">Plugin Hub</h1>
-                <p className="text-[11px] text-muted-foreground">Marketplace de CatChat</p>
-              </div>
-            </div>
-
-            <a
-              href="https://github.com/coffee4433/catchat/releases"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group flex items-center gap-2 rounded-full border border-border/60 bg-secondary/30 py-1.5 pl-3 pr-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:border-border hover:text-foreground"
-            >
-              <Globe className="size-3.5" />
-              <span className="hidden sm:inline">GitHub Releases</span>
-              <span className="flex size-6 items-center justify-center rounded-full bg-secondary transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5">
-                <ArrowUpRight className="size-3" />
-              </span>
-            </a>
-          </div>
-        </header>
-
-        <div className="mx-auto w-full max-w-5xl space-y-10 px-6 pb-16">
-          {/* ── Hero ─────────────────────────────────────────── */}
-          <section className="pt-10 text-center">
+      <div className="relative flex h-full w-full flex-col overflow-y-auto p-6 md:p-8 space-y-8">
+        {/* ── Hero ─────────────────────────────────────────── */}
+        <section className="pt-4 text-center">
             <div className="mx-auto mb-4 inline-flex items-center gap-1.5 rounded-full border border-violet-500/30 bg-violet-500/10 px-3 py-1 text-[11px] font-semibold text-violet-400">
               <Sparkles className="size-3" />
               Extensión sin límites
@@ -372,7 +342,6 @@ export function PluginHubView({ onClose }: { onClose?: () => void }) {
               })}
             </section>
           )}
-        </div>
       </div>
     </div>
   )
