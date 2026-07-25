@@ -401,14 +401,14 @@ export function UserDock({
           </div>
 
           {/* CatMusic Dock Mini Player (shown in Chat view when profile menu is closed) */}
-          <AnimatePresence>
+          <AnimatePresence mode="wait">
             {isPluginEnabled('cat-music') && activeView !== 'cat-music' && !showMenu && (
               <motion.div
                 key="cat-music-dock-widget"
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: 'auto', opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
-                transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                 className="overflow-hidden"
               >
                 <CatMusicDockWidget onOpenCatMusic={onOpenCatMusic} />
@@ -424,7 +424,7 @@ export function UserDock({
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: 'auto', opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
-                transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                 className="overflow-hidden"
               >
                 <DiscordVoiceDockWidget call={activeCall} />
@@ -433,14 +433,14 @@ export function UserDock({
           </AnimatePresence>
 
           {/* Expanded panel */}
-          <AnimatePresence initial={false}>
+          <AnimatePresence mode="wait">
             {showMenu && (
               <motion.div
                 key="expanded"
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: 'auto', opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.3, ease: 'easeOut' }}
+                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                 className="overflow-hidden"
               >
                 {hasUpdate ? (
