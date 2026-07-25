@@ -101,7 +101,9 @@ export function Sidebar({
     <aside className="flex h-full w-60 shrink-0 flex-col rounded-2xl border border-border bg-card shadow-sm">
       <div className="flex items-center justify-between px-3 py-3">
         <div className="flex items-center gap-2">
-          <img src="/icon.png" alt="CatChat Logo" className="size-6 rounded-md object-contain" />
+          <div className="flex size-7 shrink-0 items-center justify-center rounded-lg overflow-hidden border border-border/40 shadow-sm">
+            <img src="/catchat.png" alt="CatChat Logo" className="w-full h-full object-cover scale-135" />
+          </div>
           <span className="text-sm font-semibold">CatChat</span>
         </div>
         <button
