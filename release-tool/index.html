@@ -1720,9 +1720,52 @@ function publish() {
   })
 }
 
-function openPluginModal() {
+let customPluginsFolderPath = null
+
+async function openPluginModal() {
   const el = $('pluginModalOverlay')
   if (el) el.style.display = 'flex'
+  await refreshPluginsList()
+}
+
+async function refreshPluginsList() {
+  const plugins = await api.getPlugins(customPluginsFolderPath)
+  const select = $('pluginSelect')
+  if (select) {
+    select.innerHTML = ''
+    if (plugins && plugins.length > 0) {
+      plugins.forEach((p) => {
+        const opt = document.createElement('option')
+        opt.value = p.id
+        opt.textContent = `${p.name} (${p.id})`
+        select.appendChild(opt)
+      })
+      select.value = plugins[0].id
+      onPluginSelectChange()
+    } else {
+      const opt = document.createElement('option')
+      opt.value = 'cat-music'
+      opt.textContent = 'CatMusic (cat-music)'
+      select.appendChild(opt)
+    }
+  }
+}
+
+async function pickPluginsFolder() {
+  const folder = await api.selectPluginsFolder()
+  if (folder) {
+    customPluginsFolderPath = folder
+    const label = $('pluginsFolderLabel')
+    if (label) label.textContent = folder
+    await refreshPluginsList()
+  }
+}
+
+function onPluginSelectChange() {
+  const select = $('pluginSelect')
+  const pId = select?.value || 'cat-music'
+  if ($('pluginIdInput')) $('pluginIdInput').value = pId
+  if ($('pluginNameInput')) $('pluginNameInput').value = pId === 'cat-music' ? 'CatMusic' : pId.charAt(0).toUpperCase() + pId.slice(1)
 }
 
 function closePluginModal() {
@@ -1732,17 +1775,28 @@ function closePluginModal() {
 
 function submitPublishPlugin() {
   const pId = $('pluginIdInput')?.value.trim() || 'cat-music'
+  const pName = $('pluginNameInput')?.value.trim() || 'CatMusic'
+  const pVer = $('pluginVersionInput')?.value.trim() || 'v1.0.0'
+
   attachListeners()
   closePluginModal()
+
   running = true
+  resetFeed()
+  lines = 0
+  lineCount.textContent = '0 lines'
+  resetSteps()
+  setStep('prepare', 'active')
+
+  resultBar.className = 'result-bar'
   pipeline.classList.add('visible')
   terminal.classList.remove('collapsed')
   termGlyph.className = 'term-glyph running'
-  termTitle.textContent = 'plugin release — running'
+  termTitle.textContent = 'plugin release pipeline — running'
   statusDot.className = 'status-dot running'
-  statusText.textContent = 'Publishing plugin [' + pId + '] to GitHub…'
+  statusText.textContent = 'Publishing plugin [' + pName + ' ' + pVer + '] to GitHub…'
 
-  api.publishPlugin(pId).then((res) => {
+  api.publishPlugin({ id: pId, name: pName, version: pVer }).then((res) => {
     running = false
     statusDot.className = res && res.success ? 'status-dot ok' : 'status-dot err'
     statusText.textContent = res && res.success ? '✓ Plugin published to GitHub Releases!' : '✕ Plugin release failed'
@@ -1779,7 +1833,7 @@ init()
 
 <!-- Plugin Publish Modal Overlay -->
 <div class="ai-modal-overlay" id="pluginModalOverlay" style="display:none">
-  <div class="ai-modal" style="height:auto;max-width:520px;padding:24px;gap:16px">
+  <div class="ai-modal" style="height:auto;max-width:540px;padding:24px;gap:16px">
     <div style="display:flex;align-items:center;justify-content:space-between">
       <div style="display:flex;align-items:center;gap:10px">
         <span class="ai-badge">🧩 GitHub Plugin Publisher</span>
@@ -1788,15 +1842,35 @@ init()
       <button class="win-btn" onclick="closePluginModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
     </div>
 
+    <!-- Folder selection bar -->
+    <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:10px 14px">
+      <div style="display:flex;flex-direction:column;gap:2px;overflow:hidden">
+        <span style="font-size:11px;font-weight:700;color:var(--muted)">Carpeta de Plugins:</span>
+        <span id="pluginsFolderLabel" style="font-size:11.5px;font-family:var(--mono);color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">lib/plugins (por defecto)</span>
+      </div>
+      <button type="button" class="btn-secondary" onclick="pickPluginsFolder()" style="height:32px;padding:0 10px;font-size:11px">
+        📂 Cambiar carpeta
+      </button>
+    </div>
+
     <div style="display:flex;flex-direction:column;gap:12px">
       <div>
-        <label style="font-size:12px;font-weight:600;color:var(--muted)">ID del Plugin:</label>
-        <input type="text" id="pluginIdInput" value="cat-music" style="width:100%;height:38px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:0 12px;color:var(--fg);font-size:13px;margin-top:4px">
+        <label style="font-size:12px;font-weight:600;color:var(--muted)">Seleccionar Plugin detectado:</label>
+        <select id="pluginSelect" onchange="onPluginSelectChange()" style="width:100%;height:38px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:0 12px;color:var(--fg);font-size:13px;margin-top:4px">
+          <option value="cat-music">CatMusic (cat-music)</option>
+        </select>
       </div>
 
-      <div>
-        <label style="font-size:12px;font-weight:600;color:var(--muted)">Nombre del Plugin:</label>
-        <input type="text" id="pluginNameInput" value="CatMusic" style="width:100%;height:38px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:0 12px;color:var(--fg);font-size:13px;margin-top:4px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <label style="font-size:12px;font-weight:600;color:var(--muted)">ID del Plugin:</label>
+          <input type="text" id="pluginIdInput" value="cat-music" style="width:100%;height:38px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:0 12px;color:var(--fg);font-size:13px;margin-top:4px">
+        </div>
+
+        <div>
+          <label style="font-size:12px;font-weight:600;color:var(--muted)">Nombre del Plugin:</label>
+          <input type="text" id="pluginNameInput" value="CatMusic" style="width:100%;height:38px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:0 12px;color:var(--fg);font-size:13px;margin-top:4px">
+        </div>
       </div>
 
       <div>

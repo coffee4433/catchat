@@ -378,31 +378,93 @@ ipcMain.handle('release', async (_event, version, notes, showModal) => {
   })
 })
 
-ipcMain.handle('publish:plugin', async (_event, pluginId) => {
+ipcMain.handle('get:plugins', async (_event, customDir) => {
+  const cfg = loadConfig()
+  const baseDir = customDir || (cfg.projectPath ? path.join(cfg.projectPath, 'lib', 'plugins') : null)
+  if (!baseDir || !fs.existsSync(baseDir)) return []
+
+  try {
+    const entries = fs.readdirSync(baseDir, { withFileTypes: true })
+    const plugins = []
+
+    for (const ent of entries) {
+      if (ent.isDirectory()) {
+        const id = ent.name
+        plugins.push({
+          id,
+          name: id === 'cat-music' ? 'CatMusic' : id.charAt(0).toUpperCase() + id.slice(1),
+          path: path.join(baseDir, id),
+        })
+      }
+    }
+    return plugins
+  } catch {
+    return []
+  }
+})
+
+ipcMain.handle('select:plugins-folder', async () => {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    title: 'Select Plugins Directory',
+    properties: ['openDirectory'],
+  })
+  if (result.canceled || !result.filePaths.length) return null
+  return result.filePaths[0]
+})
+
+ipcMain.handle('publish:plugin', async (_event, pluginData) => {
   const cfg = loadConfig()
   if (!cfg.projectPath) throw new Error('No project selected')
+
+  const pluginId = typeof pluginData === 'object' ? pluginData.id : pluginData
+  const pluginName = typeof pluginData === 'object' ? pluginData.name : 'CatMusic'
+  const pluginVersion = typeof pluginData === 'object' ? pluginData.version : 'v1.0.0'
 
   const publishScript = path.join(cfg.projectPath, 'scripts', 'publish-plugin.cjs')
 
   return new Promise((resolve, reject) => {
+    mainWindow?.webContents.send('release:step', { step: 'prepare', state: 'active' })
+
     const child = spawn('node', [publishScript], {
       cwd: cfg.projectPath,
       env: {
         ...process.env,
         PLUGIN_ID: pluginId || 'cat-music',
+        PLUGIN_NAME: pluginName || 'CatMusic',
+        PLUGIN_VERSION: pluginVersion || 'v1.0.0',
         GH_TOKEN: cfg.ghToken || process.env.GH_TOKEN || '',
       },
       shell: true,
     })
 
-    child.stdout.on('data', (d) => mainWindow?.webContents.send('release:output', d.toString()))
-    child.stderr.on('data', (d) => mainWindow?.webContents.send('release:output', d.toString()))
+    const handleChunk = (d) => {
+      const text = d.toString()
+      mainWindow?.webContents.send('release:output', text)
+      for (const ev of detectSteps(text)) {
+        mainWindow?.webContents.send('release:step', ev)
+      }
+    }
+
+    child.stdout.on('data', handleChunk)
+    child.stderr.on('data', handleChunk)
 
     child.on('close', (code) => {
-      resolve({ success: code === 0 })
+      const success = code === 0
+      if (success) {
+        for (const step of STEP_ORDER) {
+          mainWindow?.webContents.send('release:step', { step, state: 'done' })
+        }
+      }
+      mainWindow?.webContents.send('release:output', success ? '\n✓ Plugin release completed successfully\n' : '\n✕ Plugin release failed (exit code ' + code + ')\n')
+      mainWindow?.webContents.send('release:done', success)
+      resolve({ success })
     })
 
-    child.on('error', (err) => reject(err))
+    child.on('error', (err) => {
+      mainWindow?.webContents.send('release:output', '\n✕ Error: ' + err.message + '\n')
+      mainWindow?.webContents.send('release:done', false)
+      reject(err)
+    })
   })
 })
 
