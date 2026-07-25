@@ -30,22 +30,7 @@ export type StorePluginItem = {
   verified: boolean
 }
 
-export const AVAILABLE_HUB_PLUGINS: StorePluginItem[] = [
-  {
-    id: 'cat-music',
-    name: 'CatMusic',
-    description:
-      'Reproductor infinito de música en alta calidad basado en YouTube Music. Incluye listas de reproducción, buscador global en vivo y descargas MP3.',
-    version: 'v1.0.0',
-    author: 'coffee4433',
-    category: 'media',
-    downloads: '14.8k',
-    rating: 4.9,
-    githubUrl: 'https://github.com/coffee4433/catchat/releases/tag/plugin-cat-music',
-    iconName: 'Radio',
-    verified: true,
-  },
-]
+export const AVAILABLE_HUB_PLUGINS: StorePluginItem[] = []
 
 export function PluginHubView({ onClose }: { onClose?: () => void }) {
   const [searchQuery, setSearchQuery] = useState('')
@@ -158,8 +143,21 @@ export function PluginHubView({ onClose }: { onClose?: () => void }) {
       </div>
 
       {/* Plugins Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {filteredPlugins.map((plugin) => {
+      {filteredPlugins.length === 0 ? (
+        <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-border/60 bg-secondary/10 py-16 px-6 text-center space-y-3">
+          <div className="flex size-14 items-center justify-center rounded-2xl bg-secondary/80 text-muted-foreground">
+            <Boxes className="size-7" />
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-foreground">No hay plugins publicados en GitHub Releases</h3>
+            <p className="text-xs text-muted-foreground mt-1 max-w-md">
+              Publica plugins (como CatMusic) utilizando la ventana de <span className="font-semibold text-emerald-400">Release Tool</span> de CatChat y aparecerán automáticamente aquí para todos los usuarios.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {filteredPlugins.map((plugin) => {
           const isInstalled = isPluginInstalled(plugin.id)
           const isEnabled = isPluginEnabled(plugin.id)
           const isInstalling = installingPluginId === plugin.id
@@ -291,6 +289,7 @@ export function PluginHubView({ onClose }: { onClose?: () => void }) {
           )
         })}
       </div>
+      )}
     </div>
   )
 }
