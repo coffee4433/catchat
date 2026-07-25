@@ -338,9 +338,9 @@ export function UserDock({
       initial={{ opacity: 0, y: 24, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ type: 'spring', stiffness: 380, damping: 32, delay: 0.15 }}
-      className="fixed bottom-4 left-4 z-40"
+      className="fixed bottom-4 left-4 z-40 w-64"
     >
-      <ElectricBorder active={glowActive} roundedClass="rounded-2xl">
+      <ElectricBorder active={glowActive} roundedClass="rounded-2xl" className="w-64">
         <div
           ref={dockRef}
           className="relative z-10 flex w-64 flex-col-reverse rounded-2xl border border-border bg-card/95 shadow-lg backdrop-blur-sm overflow-hidden"
