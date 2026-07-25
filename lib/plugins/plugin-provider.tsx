@@ -95,6 +95,21 @@ export function PluginProvider({ children, user }: { children: React.ReactNode; 
   const uninstallPlugin = (id: string) => {
     disablePlugin(id)
     setInstalledPluginIds((prev) => prev.filter((pId) => pId !== id))
+
+    // Purge all persistent data associated with this plugin completely
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem(`cz-plugin-data-${id}`)
+        if (id === 'cat-music') {
+          localStorage.removeItem('cz-catmusic-store')
+          localStorage.removeItem('cz-catmusic-playlists')
+          localStorage.removeItem('cz-catmusic-favorites')
+          localStorage.removeItem('cz-catmusic-history')
+        }
+      } catch {
+        // Ignore storage purge errors
+      }
+    }
   }
 
   const enablePlugin = (id: string) => {
@@ -133,11 +148,11 @@ export function PluginProvider({ children, user }: { children: React.ReactNode; 
     return tabs
   }
 
-  // Nest root providers of all enabled plugins
+  // Nest root providers of ALL registered plugins STABLY so React component tree never unmounts
   let wrappedContent = <>{children}</>
 
   registered.forEach((plugin) => {
-    if (isPluginEnabled(plugin.metadata.id) && plugin.rootProvider) {
+    if (plugin.rootProvider) {
       const Provider = plugin.rootProvider
       wrappedContent = <Provider user={user}>{wrappedContent}</Provider>
     }
