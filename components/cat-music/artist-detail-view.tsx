@@ -31,42 +31,74 @@ export function ArtistDetailView({
   artistName,
   onBack,
   onSelectTrack,
+  initialTrack,
 }: {
   artistName: string
   onBack: () => void
   onSelectTrack: (track: Track) => void
+  initialTrack?: Track
 }) {
   const [activeTab, setActiveTab] = useState<'tracks' | 'albums'>('tracks')
   const [isFollowing, setIsFollowing] = useState(false)
   const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null)
 
+  const [artistTracks, setArtistTracks] = useState<Track[]>(() => {
+    const seedMatch = SEED_TRACKS.filter(
+      (t) => t.artist.toLowerCase().includes(artistName.toLowerCase()) || artistName.toLowerCase().includes(t.artist.toLowerCase())
+    )
+    if (initialTrack) return [initialTrack, ...seedMatch.filter((t) => t.id !== initialTrack.id)]
+    return seedMatch
+  })
+  const [isLoading, setIsLoading] = useState(true)
+
   const { playTrack } = useCatMusicPlayer()
 
-  // Filter artist tracks from seed catalog & search cache
-  const artistTracks = SEED_TRACKS.filter(
-    (t) => t.artist.toLowerCase().includes(artistName.toLowerCase()) || artistName.toLowerCase().includes(t.artist.toLowerCase())
-  )
+  // Fetch real tracks for this specific artist from YouTube Music
+  React.useEffect(() => {
+    let isMounted = true
+    setIsLoading(true)
 
-  const tracksToDisplay = artistTracks.length > 0 ? artistTracks : SEED_TRACKS.slice(0, 6)
-  const firstTrack = tracksToDisplay[0]
+    fetch(`/api/youtube/search?q=${encodeURIComponent(artistName + ' song audio')}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (!isMounted) return
+        if (data.results && Array.isArray(data.results) && data.results.length > 0) {
+          const fetched: Track[] = data.results
+          const merged = initialTrack
+            ? [initialTrack, ...fetched.filter((t) => t.id !== initialTrack.id)]
+            : fetched
+          setArtistTracks(merged)
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (isMounted) setIsLoading(false)
+      })
 
-  // Mock Albums for this Channel/Artist
+    return () => {
+      isMounted = false
+    }
+  }, [artistName, initialTrack])
+
+  const avatarUrl = initialTrack?.artworkUrl || artistTracks[0]?.artworkUrl || '/placeholder.svg'
+
+  // Dynamic Albums for this Channel/Artist
   const albums: Album[] = [
     {
       id: `alb-1-${artistName}`,
-      title: `${artistName} - Éxitos y Colección Principal`,
+      title: `${artistName} - Colección de Éxitos`,
       artist: artistName,
       year: 2024,
-      coverUrl: firstTrack?.artworkUrl || '/placeholder.svg',
-      tracks: tracksToDisplay,
+      coverUrl: avatarUrl,
+      tracks: artistTracks,
     },
     {
       id: `alb-2-${artistName}`,
-      title: `${artistName} - Deluxe & Remastered Sessions`,
+      title: `${artistName} - Live & Studio Sessions`,
       artist: artistName,
       year: 2023,
-      coverUrl: tracksToDisplay[1]?.artworkUrl || firstTrack?.artworkUrl || '/placeholder.svg',
-      tracks: tracksToDisplay.slice(1),
+      coverUrl: artistTracks[1]?.artworkUrl || avatarUrl,
+      tracks: artistTracks.slice(1),
     },
   ]
 
@@ -147,7 +179,7 @@ export function ArtistDetailView({
               <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
                 <div className="relative size-20 shrink-0 overflow-hidden rounded-full bg-secondary ring-4 ring-primary/30 shadow-lg">
                   <img
-                    src={firstTrack?.artworkUrl || '/placeholder.svg'}
+                    src={avatarUrl}
                     alt={artistName}
                     className="size-full object-cover"
                     onError={(e) => {
@@ -199,7 +231,7 @@ export function ArtistDetailView({
                     : 'bg-secondary/40 text-muted-foreground hover:bg-secondary hover:text-foreground'
                 }`}
               >
-                Canciones Populares ({tracksToDisplay.length})
+                Canciones Populares ({artistTracks.length})
               </button>
               <button
                 onClick={() => setActiveTab('albums')}
@@ -219,25 +251,38 @@ export function ArtistDetailView({
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-foreground">Canciones Populares del Canal</h3>
-                <button
-                  onClick={() => playTrack(tracksToDisplay[0], tracksToDisplay)}
-                  className="flex items-center gap-1.5 text-xs font-bold text-primary hover:underline"
-                >
-                  <Play className="size-3.5 fill-current" />
-                  <span>Reproducir Todas</span>
-                </button>
+                {artistTracks.length > 0 && (
+                  <button
+                    onClick={() => playTrack(artistTracks[0], artistTracks)}
+                    className="flex items-center gap-1.5 text-xs font-bold text-primary hover:underline"
+                  >
+                    <Play className="size-3.5 fill-current" />
+                    <span>Reproducir Todas</span>
+                  </button>
+                )}
               </div>
 
               <div className="space-y-1 rounded-2xl border border-border/40 bg-secondary/15 p-3">
-                {tracksToDisplay.map((t, idx) => (
-                  <TrackRow
-                    key={t.id}
-                    track={t}
-                    index={idx}
-                    queue={tracksToDisplay}
-                    onSelectTrack={onSelectTrack}
-                  />
-                ))}
+                {isLoading && artistTracks.length === 0 ? (
+                  <div className="py-12 flex items-center justify-center gap-2 text-muted-foreground text-xs">
+                    <span className="size-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                    <span>Cargando canciones del canal...</span>
+                  </div>
+                ) : artistTracks.length > 0 ? (
+                  artistTracks.map((t, idx) => (
+                    <TrackRow
+                      key={`${t.id}-${idx}`}
+                      track={t}
+                      index={idx}
+                      queue={artistTracks}
+                      onSelectTrack={onSelectTrack}
+                    />
+                  ))
+                ) : (
+                  <div className="py-12 text-center text-muted-foreground text-xs">
+                    No se encontraron canciones publicadas en este canal.
+                  </div>
+                )}
               </div>
             </div>
           )}

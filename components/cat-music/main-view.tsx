@@ -116,6 +116,7 @@ export function CatMusicMainView() {
     return (
       <ArtistDetailView
         artistName={selectedArtistName}
+        initialTrack={selectedTrackDetail || undefined}
         onBack={() => setSelectedArtistName(null)}
         onSelectTrack={(track) => {
           setSelectedArtistName(null)
