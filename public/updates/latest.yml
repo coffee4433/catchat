@@ -1,25 +1,50 @@
-version: 0.3.19
+version: 0.3.20
 files:
-  - url: https://github.com/coffee4433/catchat/releases/download/v0.3.19/CatChat-Setup-0.3.19.exe
-    sha512: MzDc2JnjLExKfoOcQctd4L8P22Q2KL8McsbTHxkaMJOClsRZ6dAkn4deE7jdFK30og0QORrnlZ1wmSpw5WPiTQ==
-    size: 241061467
-path: CatChat-Setup-0.3.19.exe
-sha512: MzDc2JnjLExKfoOcQctd4L8P22Q2KL8McsbTHxkaMJOClsRZ6dAkn4deE7jdFK30og0QORrnlZ1wmSpw5WPiTQ==
-releaseDate: '2026-07-24T23:58:09.810Z'
+  - url: https://github.com/coffee4433/catchat/releases/download/v0.3.20/CatChat-Setup-0.3.20.exe
+    sha512: DNhNIHgJssjd7xEdsRUTn9xgr2ylJ738GDbeTtTmkv9T9Kfh8yRU99g4mSEJu+uE499+oMRTGTlKKy8kXiK9/w==
+    size: 241247407
+path: CatChat-Setup-0.3.20.exe
+sha512: DNhNIHgJssjd7xEdsRUTn9xgr2ylJ738GDbeTtTmkv9T9Kfh8yRU99g4mSEJu+uE499+oMRTGTlKKy8kXiK9/w==
+releaseDate: '2026-07-25T07:40:20.060Z'
 showReleaseModal: true
 releaseNotes: |
   ## ✨ Novedades Destacadas
-  - [MEJORA] La carga de archivos de gran tamaño (hasta 230 MB) ahora utiliza streaming nativo y reintentos automáticos para una mayor estabilidad.
+  
+  - **[NUEVO] CatMusic Plugin v1.0.0**  
+    Tu nuevo reproductor de música integrado, potenciado por YouTube Music. Busca canciones, reproduce listas oficiales, explora artistas y gestiona tu sesión sin salir de CatChat.
+  
+  - **[NUEVO] Plugin Hub Marketplace**  
+    Descubre, instala y administra plugins directamente desde sus releases oficiales en GitHub. Incluye una herramienta de publicación (`Release Tool`) para creadores, conectada en vivo a la API de GitHub.
+  
+  - **[MEJORA] Búsqueda y exploración musical completas**  
+    Búsqueda de música en tiempo real con resultados instantáneos y carátulas en alta definición. Navega por canales de artistas con sus álbumes, playlists reales y avatar oficial.
+  
+  - **[MEJORA] Integración fiable con YouTube Music**  
+    La búsqueda ahora funciona al 100 % mediante un parser HTML del lado del servidor, eliminando bloqueos CORS y errores de red, y garantizando portadas `mqdefault` siempre definidas.
+  
+  > [!IMPORTANT]  
+  > **La instalación de plugins está limitada exclusivamente a la aplicación de escritorio (Electron).**  
+  > La versión web oculta la pestaña de configuración de plugins y no permite instalar nuevos.
   
   ## 🐛 Correcciones y Ajustes
-  - [FIX] **Carga de archivos grandes**: Solucionado un problema que impedía la subida de archivos binarios de gran tamaño (ej. 230 MB). Ahora se usa streaming nativo HTTPS con 3 reintentos automáticos en caso de fallo.
-  - [FIX] **Solicitudes de amistad en tiempo real**: Ahora, cuando aceptas una solicitud de amistad, el remitente ve la actualización instantáneamente sin necesidad de recargar la página.
   
-  > [!TIP]  
-  > Ahora puedes subir archivos adjuntos de gran tamaño con total confianza: el sistema reintentará la carga hasta 3 veces si hay problemas de red.
+  - [FIX] Resuelto el error de hidratación de React (#418) que causaba discrepancias en el renderizado inicial.
+  - [FIX] Eliminado el fallo `insertBefore` del contenedor de YouTube que rompía el DOM. El iframe ahora se aísla fuera del árbol virtual de React.
+  - [FIX] Ajustado el límite de playlists oficiales a 5–6 por canal, tal y como se muestra en YouTube.
+  - [FIX] Eliminada la activación por defecto de plugins mock; el Plugin Hub ahora muestra únicamente plugins reales publicados en GitHub.
+  - [FIX] El cambio entre espacios de trabajo y la vista de plugins se mantiene persistente tras reiniciar la aplicación (gracias a `localStorage`).
   
   ## ⚡ Rendimiento y Optimización
-  - La carga de archivos pesados utiliza streaming para reducir el consumo de memoria y mejorar la velocidad.
+  
+  - [MEJORA] Desacoplado el estado del reproductor CatMusic con un store externo, logrando animaciones fluidas a 60 fps.
+  - [MEJORA] Reemplazados los costosos filtros SVG de desenfoque en `ElectricBorder` y limitados los re-renderizados del ticker musical para un rendimiento general más suave.
+  - [MEJORA] Al instalar o desinstalar un plugin, ya no se cierra la página de configuración y se purga limpiamente el `localStorage` asociado.
+  - [MEJORA] Ajustadas las dimensiones de `UserDock` (w-64 fijo) y `ElectricBorder` para evitar cualquier cambio de ancho durante las animaciones del mini reproductor.
   
   ## 🎨 UI & Experiencia de Usuario
-  - La lista de amigos se actualiza en tiempo real al aceptar solicitudes, mejorando la fluidez de la interacción.
+  
+  - [DISEÑO] CatMusic se acopla como un mini reproductor dentro de la barra de perfil (`UserDock`) en la vista de Chat, sustituyendo la barra flotante inferior.
+  - [DISEÑO] Animación sincronizada del mini reproductor: se colapsa al expandir el panel de perfil y se expande al colapsarlo, con una curva de easing `cubic-bezier` suave.
+  - [DISEÑO] Pausa automática de la música al iniciar una llamada de voz/vídeo y reanudación automática al finalizar.
+  - [DISEÑO] Carátulas en HD garantizadas para todas las playlists oficiales y resolución `mqdefault` aplicada globalmente a las miniaturas de YouTube.
+  - [MEJORA] CatMusic arranca siempre con una cola vacía y la reproducción automática desactivada, evitando sorpresas al iniciar la aplicación.
