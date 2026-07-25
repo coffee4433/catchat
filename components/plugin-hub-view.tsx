@@ -99,23 +99,10 @@ export function PluginHubView({ onClose }: { onClose?: () => void }) {
       </div>
 
       <div className="relative flex h-full w-full flex-col overflow-y-auto thin-scroll p-6 md:p-8 space-y-8">
-        {/* ── Hero Header ───────────────────────────────────── */}
-        <section className="pt-4 text-center">
-          <div className="mx-auto mb-4 inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[11px] font-semibold text-primary">
-            <Sparkles className="size-3" />
-            <span>{lang === 'es' ? 'Extensión sin límites' : 'Limitless Extensions'}</span>
-          </div>
-          <h2 className="mx-auto max-w-xl bg-gradient-to-b from-foreground to-foreground/50 bg-clip-text text-4xl font-extrabold tracking-tight text-transparent sm:text-5xl">
-            {lang === 'es' ? 'Potencia tu experiencia' : 'Power Your Experience'}
-          </h2>
-          <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
-            {lang === 'es'
-              ? 'Instala plugins directamente desde GitHub Releases y transforma CatChat en tu centro de mando.'
-              : 'Install plugins directly from GitHub Releases and turn CatChat into your command center.'}
-          </p>
-
+        {/* ── Search section ───────────────────────────────── */}
+        <section className="pt-2">
           {/* Search bar */}
-          <div className="group relative mx-auto mt-7 max-w-md">
+          <div className="group relative mx-auto max-w-xl">
             <div className="absolute -inset-0.5 rounded-2xl bg-primary/30 opacity-0 blur transition-opacity duration-300 group-focus-within:opacity-100" />
             <div className="relative flex items-center rounded-2xl border border-border/60 bg-secondary/50 backdrop-blur-xl transition-colors focus-within:border-primary/50">
               <Search className="ml-4 size-4 shrink-0 text-muted-foreground" />
