@@ -400,10 +400,21 @@ export function UserDock({
             </div>
           </div>
 
-          {/* CatMusic Dock Mini Player (shown in Chat view) */}
-          {isPluginEnabled('cat-music') && activeView !== 'cat-music' && (
-            <CatMusicDockWidget onOpenCatMusic={onOpenCatMusic} />
-          )}
+          {/* CatMusic Dock Mini Player (shown in Chat view when profile menu is closed) */}
+          <AnimatePresence>
+            {isPluginEnabled('cat-music') && activeView !== 'cat-music' && !showMenu && (
+              <motion.div
+                key="cat-music-dock-widget"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+                className="overflow-hidden"
+              >
+                <CatMusicDockWidget onOpenCatMusic={onOpenCatMusic} />
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Discord Voice Call Dock Widget */}
           <AnimatePresence>
