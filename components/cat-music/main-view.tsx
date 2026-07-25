@@ -36,7 +36,7 @@ export function CatMusicMainView() {
   const { playTrack } = useCatMusicPlayer()
   const { favorites, playlists, history, createPlaylist, deletePlaylist, clearHistory, isFavorite } = useLibrary()
 
-  // Live API Search handler
+  // Live YouTube Music Search handler
   React.useEffect(() => {
     const query = searchQuery.trim()
     if (!query || query.length < 2) {
@@ -47,38 +47,54 @@ export function CatMusicMainView() {
 
     setIsSearching(true)
     const timer = setTimeout(async () => {
-      try {
-        const res = await fetch(
-          `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=30`
-        )
-        const data = await res.json()
-        if (data.results && Array.isArray(data.results)) {
-          const mapped: Track[] = data.results.map((item: any, idx: number) => {
-            const art = item.artworkUrl100
-              ? item.artworkUrl100.replace('100x100bb', '400x400bb')
-              : '/placeholder.svg'
-            const seedFallback = SEED_TRACKS[idx % SEED_TRACKS.length].id
+      const endpoints = [
+        `https://pipedapi.kavin.rocks/search?q=${encodeURIComponent(query)}&filter=music_songs`,
+        `https://api.piped.yt/search?q=${encodeURIComponent(query)}&filter=music_songs`,
+        `https://invidious.drgns.space/api/v1/search?q=${encodeURIComponent(query)}&type=video`,
+      ]
 
-            return {
-              id: seedFallback, // Uses valid YouTube video ID for seamless playback
-              title: item.trackName || 'Canción',
-              artist: item.artistName || 'Artista',
-              album: item.collectionName || 'Álbum',
-              durationSeconds: Math.round((item.trackTimeMillis || 180000) / 1000),
-              artworkUrl: art,
-              genre: item.primaryGenreName || 'Pop',
-              year: item.releaseDate ? new Date(item.releaseDate).getFullYear() : 2024,
-              source: 'youtube',
-            }
-          })
-          setLiveResults(mapped)
+      let found: Track[] = []
+
+      for (const endpoint of endpoints) {
+        try {
+          const res = await fetch(endpoint)
+          if (!res.ok) continue
+          const data = await res.json()
+          const items = Array.isArray(data) ? data : data.items || []
+
+          if (items.length > 0) {
+            found = items
+              .map((item: any) => {
+                const rawUrl = item.url || ''
+                const videoId = rawUrl.includes('v=')
+                  ? rawUrl.split('v=')[1]?.split('&')[0]
+                  : item.videoId || ''
+                if (!videoId) return null
+
+                return {
+                  id: videoId,
+                  title: item.title || 'YouTube Track',
+                  artist: item.uploaderName || item.author || 'YouTube Artist',
+                  album: 'YouTube Music',
+                  durationSeconds: item.duration || 180,
+                  artworkUrl: `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`,
+                  genre: 'YouTube Music',
+                  year: 2024,
+                  source: 'youtube' as const,
+                }
+              })
+              .filter(Boolean) as Track[]
+
+            if (found.length > 0) break
+          }
+        } catch {
+          // Try next YouTube Music endpoint
         }
-      } catch {
-        setLiveResults([])
-      } finally {
-        setIsSearching(false)
       }
-    }, 300)
+
+      setLiveResults(found)
+      setIsSearching(false)
+    }, 350)
 
     return () => clearTimeout(timer)
   }, [searchQuery])
