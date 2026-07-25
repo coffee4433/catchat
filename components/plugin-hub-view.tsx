@@ -187,7 +187,7 @@ export function PluginHubView({ onClose }: { onClose?: () => void }) {
               </p>
             </section>
           ) : (
-            <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <section className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {filteredPlugins.map((plugin) => {
                 const isInstalled = isPluginInstalled(plugin.id)
                 const isEnabled = isPluginEnabled(plugin.id)
@@ -198,54 +198,54 @@ export function PluginHubView({ onClose }: { onClose?: () => void }) {
                 return (
                   <article
                     key={plugin.id}
-                    className="group relative overflow-hidden rounded-3xl border border-border/50 bg-secondary/20 backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:border-border hover:bg-secondary/30 hover:shadow-2xl hover:shadow-black/20"
+                    className="group relative overflow-hidden rounded-2xl border border-border/50 bg-secondary/20 backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:border-border hover:bg-secondary/30 hover:shadow-xl"
                   >
                     {/* Gradient top accent */}
                     <div className={`h-1 w-full bg-gradient-to-r ${gradient} opacity-60`} />
 
-                    <div className="p-5">
+                    <div className="p-3.5">
                       {/* Header */}
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-center gap-3.5">
+                      <div className="flex items-start justify-between gap-2.5">
+                        <div className="flex items-center gap-2.5 min-w-0">
                           <div
-                            className={`flex size-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${gradient} text-white shadow-lg transition-transform duration-300 group-hover:scale-105 group-hover:rotate-3`}
+                            className={`flex size-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${gradient} text-white shadow-md transition-transform duration-300 group-hover:scale-105 group-hover:rotate-3`}
                           >
-                            <PluginIcon id={plugin.id} className="size-6" />
+                            <PluginIcon id={plugin.id} className="size-4.5" />
                           </div>
                           <div className="min-w-0">
-                            <div className="flex items-center gap-2">
-                              <h3 className="truncate text-[15px] font-bold tracking-tight">
+                            <div className="flex items-center gap-1.5">
+                              <h3 className="truncate text-xs font-bold tracking-tight">
                                 {plugin.name}
                               </h3>
                               {plugin.verified && (
-                                <CheckCircle2 className="size-3.5 shrink-0 text-sky-400" />
+                                <CheckCircle2 className="size-3 shrink-0 text-sky-400" />
                               )}
                             </div>
-                            <p className="mt-0.5 text-[11.5px] text-muted-foreground">
+                            <p className="mt-0.5 truncate text-[10.5px] text-muted-foreground">
                               @{plugin.author}
-                              <span className="mx-1.5 text-border">•</span>
-                              {plugin.downloads} descargas
+                              <span className="mx-1 text-border">•</span>
+                              {plugin.downloads}
                             </p>
                           </div>
                         </div>
 
-                        <span className="shrink-0 rounded-md border border-border/50 bg-secondary/60 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+                        <span className="shrink-0 rounded-md border border-border/50 bg-secondary/60 px-1.5 py-0.5 font-mono text-[9px] text-muted-foreground">
                           v{plugin.version}
                         </span>
                       </div>
 
                       {/* Description */}
-                      <p className="mt-4 line-clamp-2 min-h-9 text-[12.5px] leading-relaxed text-muted-foreground">
+                      <p className="mt-2.5 line-clamp-2 text-[11.5px] leading-relaxed text-muted-foreground">
                         {plugin.description}
                       </p>
 
                       {/* Install progress */}
                       {isInstalling && (
-                        <div className="mt-4 space-y-2 rounded-2xl border border-border/40 bg-background/40 p-3">
-                          <div className="flex items-center justify-between text-[11px] font-semibold">
-                            <span className="flex items-center gap-1.5 text-muted-foreground">
-                              <span className="size-3 animate-spin rounded-full border-2 border-violet-400 border-t-transparent" />
-                              Descargando desde GitHub…
+                        <div className="mt-3 space-y-1.5 rounded-xl border border-border/40 bg-background/40 p-2">
+                          <div className="flex items-center justify-between text-[10px] font-semibold">
+                            <span className="flex items-center gap-1 text-muted-foreground">
+                              <span className="size-2.5 animate-spin rounded-full border-2 border-violet-400 border-t-transparent" />
+                              Descargando…
                             </span>
                             <span className="tabular-nums text-foreground">{progress}%</span>
                           </div>
@@ -259,19 +259,19 @@ export function PluginHubView({ onClose }: { onClose?: () => void }) {
                       )}
 
                       {/* Footer */}
-                      <div className="mt-5 flex items-center justify-between gap-3 border-t border-border/30 pt-4">
+                      <div className="mt-3 flex items-center justify-between gap-2 border-t border-border/30 pt-2.5">
                         <a
                           href={plugin.githubUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-1.5 text-[11.5px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+                          className="flex items-center gap-1 text-[10.5px] font-medium text-muted-foreground transition-colors hover:text-foreground"
                         >
-                          <Code2 className="size-3.5" />
-                          Código fuente
-                          <ArrowUpRight className="size-3 opacity-0 transition-opacity group-hover:opacity-100" />
+                          <Code2 className="size-3" />
+                          <span>Código</span>
+                          <ArrowUpRight className="size-2.5 opacity-0 transition-opacity group-hover:opacity-100" />
                         </a>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5">
                           {!isInstalled ? (
                             <button
                               onClick={() => isElectron && installPlugin(plugin.id)}
@@ -281,20 +281,20 @@ export function PluginHubView({ onClose }: { onClose?: () => void }) {
                                   ? 'Instalar plugin'
                                   : 'Solo disponible en la app de escritorio'
                               }
-                              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all duration-200 ${
+                              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-bold transition-all duration-200 ${
                                 !isElectron
                                   ? 'cursor-not-allowed border border-border/50 bg-secondary/40 text-muted-foreground'
-                                  : `bg-gradient-to-r ${gradient} text-white shadow-lg hover:scale-[1.03] hover:shadow-xl active:scale-95 disabled:opacity-60`
+                                  : `bg-gradient-to-r ${gradient} text-white shadow-md hover:scale-[1.03] active:scale-95 disabled:opacity-60`
                               }`}
                             >
                               {isInstalling ? (
                                 <>
-                                  <span className="size-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                  <span className="size-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
                                   Instalando…
                                 </>
                               ) : (
                                 <>
-                                  <Download className="size-3.5" />
+                                  <Download className="size-3" />
                                   {isElectron ? 'Instalar' : 'Solo escritorio'}
                                 </>
                               )}
@@ -304,20 +304,20 @@ export function PluginHubView({ onClose }: { onClose?: () => void }) {
                               {/* Enable / Disable toggle */}
                               <button
                                 onClick={() => togglePlugin(plugin.id)}
-                                className={`flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold transition-all duration-200 ${
+                                className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all duration-200 ${
                                   isEnabled
                                     ? 'bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/30'
                                     : 'bg-secondary/60 text-muted-foreground hover:bg-secondary hover:text-foreground'
                                 }`}
                               >
                                 <span
-                                  className={`relative h-3.5 w-6 rounded-full transition-colors ${
+                                  className={`relative h-3 w-5 rounded-full transition-colors ${
                                     isEnabled ? 'bg-emerald-400' : 'bg-muted-foreground/30'
                                   }`}
                                 >
                                   <span
-                                    className={`absolute top-0.5 size-2.5 rounded-full bg-white transition-all ${
-                                      isEnabled ? 'left-3' : 'left-0.5'
+                                    className={`absolute top-0.5 size-2 rounded-full bg-white transition-all ${
+                                      isEnabled ? 'left-2.5' : 'left-0.5'
                                     }`}
                                   />
                                 </span>
@@ -328,9 +328,9 @@ export function PluginHubView({ onClose }: { onClose?: () => void }) {
                               <button
                                 onClick={() => uninstallPlugin(plugin.id)}
                                 title="Desinstalar plugin"
-                                className="rounded-xl p-2 text-muted-foreground transition-colors hover:bg-rose-500/10 hover:text-rose-400"
+                                className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-rose-500/10 hover:text-rose-400"
                               >
-                                <Trash2 className="size-4" />
+                                <Trash2 className="size-3.5" />
                               </button>
                             </>
                           )}
