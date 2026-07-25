@@ -104,10 +104,13 @@ export function ArtistDetailView({
 
   const avatarUrl = initialTrack?.artworkUrl || artistTracks[0]?.artworkUrl || '/placeholder.svg'
 
-  // Dynamic 5+ Albums & Playlists combining real YouTube Playlists and dynamic sets
+  // Dynamic Albums & Playlists combining exact official YouTube Playlists
   const albums: Album[] = React.useMemo(() => {
-    const list: Album[] = [...realPlaylists]
+    if (realPlaylists.length > 0) {
+      return realPlaylists
+    }
 
+    const list: Album[] = []
     if (artistTracks.length > 0) {
       const customCollections = [
         { title: `${artistName} - Club & Remix Sessions`, offset: 0 },
@@ -117,7 +120,7 @@ export function ArtistDetailView({
         { title: `${artistName} - Special Studio Anthology`, offset: 0 },
       ]
 
-      for (let i = 0; list.length < 5 && i < customCollections.length; i++) {
+      for (let i = 0; i < customCollections.length; i++) {
         const col = customCollections[i]
         const sub = artistTracks.slice(col.offset, col.offset + 5)
         const tracksToUse = sub.length > 0 ? sub : artistTracks

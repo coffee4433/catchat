@@ -9,71 +9,86 @@ export async function GET(request: Request) {
     return NextResponse.json({ results: [] })
   }
 
-  // 1. YouTube Playlists Search Parser
+  // 1. YouTube Official Channel Playlists Search Parser
   if (type === 'playlist') {
-    try {
-      const response = await fetch(
-        `https://www.youtube.com/results?search_query=${encodeURIComponent(query + ' playlist')}&sp=EgIQAw%253D%253D`,
-        {
+    const cleanHandle = query.toLowerCase().replace(/[^a-z0-9_]/g, '')
+    const channelUrls = [
+      `https://www.youtube.com/@${cleanHandle}/playlists`,
+      `https://www.youtube.com/c/${encodeURIComponent(query)}/playlists`,
+      `https://www.youtube.com/results?search_query=${encodeURIComponent(query + ' official playlist')}&sp=EgIQAw%253D%253D`,
+    ]
+
+    for (const targetUrl of channelUrls) {
+      try {
+        const response = await fetch(targetUrl, {
           headers: {
             'User-Agent':
               'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
             'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
           },
-        }
-      )
+        })
 
-      if (response.ok) {
-        const html = await response.text()
+        if (response.ok) {
+          const html = await response.text()
+          const match =
+            html.match(/var ytInitialData = ({.*?});<\/script>/) ||
+            html.match(/window\["ytInitialData"\] = ({.*?});/)
 
-        const match =
-          html.match(/var ytInitialData = ({.*?});<\/script>/) ||
-          html.match(/window\["ytInitialData"\] = ({.*?});/)
+          if (match && match[1]) {
+            const jsonStr = match[1]
+            const playlistMatches = jsonStr.match(/{"playlistRenderer":{.*?}}|{"gridPlaylistRenderer":{.*?}}/g)
 
-        if (match && match[1]) {
-          const json = JSON.parse(match[1])
-          const contents =
-            json?.contents?.twoColumnSearchResultsRenderer?.primaryContents
-              ?.sectionListRenderer?.contents?.[0]?.itemSectionRenderer?.contents
+            if (playlistMatches && playlistMatches.length > 0) {
+              const playlists: any[] = []
+              const seenIds = new Set<string>()
 
-          if (Array.isArray(contents)) {
-            const playlists: any[] = []
+              for (const pStr of playlistMatches) {
+                try {
+                  const pObj = JSON.parse(pStr)
+                  const pl = pObj.playlistRenderer || pObj.gridPlaylistRenderer
+                  if (!pl || !pl.playlistId || seenIds.has(pl.playlistId)) continue
 
-            for (const item of contents) {
-              const pl = item.playlistRenderer
-              if (!pl || !pl.playlistId) continue
+                  const playlistId = pl.playlistId
+                  seenIds.add(playlistId)
 
-              const playlistId = pl.playlistId
-              const title = pl.title?.simpleText || pl.title?.runs?.[0]?.text || 'Playlist de YouTube'
-              const videoCount = pl.videoCount || pl.videoCountText?.runs?.[0]?.text || '10+'
-              const owner =
-                pl.shortBylineText?.runs?.[0]?.text ||
-                pl.longBylineText?.runs?.[0]?.text ||
-                query
-              const videoId = pl.navigationEndpoint?.watchEndpoint?.videoId || ''
-              const thumbUrl = videoId
-                ? `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`
-                : pl.thumbnails?.[0]?.thumbnails?.[0]?.url || '/placeholder.svg'
+                  const title = pl.title?.simpleText || pl.title?.runs?.[0]?.text || 'Playlist Oficial'
+                  const videoCount = pl.videoCount || pl.videoCountText?.runs?.[0]?.text || 'Vídeos'
+                  const owner =
+                    pl.shortBylineText?.runs?.[0]?.text ||
+                    pl.longBylineText?.runs?.[0]?.text ||
+                    query
 
-              playlists.push({
-                id: playlistId,
-                playlistId,
-                title,
-                artist: owner,
-                videoCount,
-                coverUrl: thumbUrl,
-                tracks: [],
-              })
-            }
+                  const videoId = pl.navigationEndpoint?.watchEndpoint?.videoId || ''
+                  const thumbUrl = videoId
+                    ? `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`
+                    : pl.sidebarPrimaryRenderer?.thumbnailRenderer?.playlistVideoThumbnailRenderer?.thumbnail?.thumbnails?.[0]?.url ||
+                      pl.thumbnails?.[0]?.thumbnails?.[0]?.url ||
+                      '/placeholder.svg'
 
-            if (playlists.length > 0) {
-              return NextResponse.json({ results: playlists })
+                  playlists.push({
+                    id: playlistId,
+                    playlistId,
+                    title,
+                    artist: owner,
+                    videoCount,
+                    coverUrl: thumbUrl,
+                    tracks: [],
+                  })
+                } catch {
+                  // Ignore parse snippet error
+                }
+              }
+
+              if (playlists.length > 0) {
+                // Return official channel playlists (deduplicated & precise)
+                return NextResponse.json({ results: playlists.slice(0, 10) })
+              }
             }
           }
         }
+      } catch (err) {
+        console.error('YouTube Channel Playlists fetch error:', err)
       }
-    } catch (err) {
-      console.error('YouTube Playlist Search error:', err)
     }
   }
 
