@@ -1,124 +1,69 @@
 const fs = require('fs')
 const path = require('path')
-const https = require('https')
 const { execSync } = require('child_process')
 
 const rootDir = path.resolve(__dirname, '..')
 const pluginId = process.env.PLUGIN_ID || 'cat-music'
 const pluginName = process.env.PLUGIN_NAME || 'CatMusic'
 const pluginVersion = process.env.PLUGIN_VERSION || 'v1.0.0'
-const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN || ''
 
-console.log(`\n📦 Bumping and packaging plugin [${pluginId}] for GitHub Release...`)
+console.log(`\n📦 Packaging and publishing plugin [${pluginId}] into repository plugins/ structure...`)
 
-const pluginDir = path.join(rootDir, 'lib', 'plugins', pluginId)
-if (!fs.existsSync(pluginDir)) {
-  console.log(`ℹ Creating plugin directory structure: ${pluginDir}`)
-  fs.mkdirSync(pluginDir, { recursive: true })
-}
+// 1. Ensure plugins/<pluginId>/releases/ directory exists
+const pluginRepoDir = path.join(rootDir, 'plugins', pluginId)
+const releasesDir = path.join(pluginRepoDir, 'releases')
+fs.mkdirSync(releasesDir, { recursive: true })
 
-const distDir = path.join(rootDir, 'dist', 'plugins')
-if (!fs.existsSync(distDir)) {
-  fs.mkdirSync(distDir, { recursive: true })
-}
-
-const pluginPackage = {
+// 2. Create/Update plugins/<pluginId>/manifest.json
+const manifest = {
   id: pluginId,
   name: pluginName,
   version: pluginVersion,
   author: 'coffee4433',
-  description: `Plugin oficial ${pluginName} para CatChat.`,
+  description: `Plugin oficial ${pluginName} para CatChat con listas de reproducción y reproducción en vivo.`,
   category: 'media',
-  releasedAt: new Date().toISOString(),
-  githubUrl: `https://github.com/coffee4433/catchat/releases/tag/plugin-${pluginId}`,
+  iconName: 'Radio',
+  updatedAt: new Date().toISOString(),
+  githubUrl: `https://github.com/coffee4433/catchat/tree/main/plugins/${pluginId}`,
 }
+const manifestPath = path.join(pluginRepoDir, 'manifest.json')
+fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2), 'utf8')
+console.log(`✓ Plugin manifest created: plugins/${pluginId}/manifest.json`)
 
-const outFile = path.join(distDir, `plugin-${pluginId}.json`)
-fs.writeFileSync(outFile, JSON.stringify(pluginPackage, null, 2), 'utf8')
+// 3. Create plugins/<pluginId>/releases/<version>.json
+const releaseData = {
+  ...manifest,
+  releasedAt: new Date().toISOString(),
+  downloadUrl: `https://raw.githubusercontent.com/coffee4433/catchat/main/plugins/${pluginId}/manifest.json`,
+}
+const releasePath = path.join(releasesDir, `${pluginVersion}.json`)
+fs.writeFileSync(releasePath, JSON.stringify(releaseData, null, 2), 'utf8')
+console.log(`✓ Plugin release saved: plugins/${pluginId}/releases/${pluginVersion}.json`)
 
-console.log(`✓ Building installer and packaging artifact: ${outFile}`)
-console.log(`🚀 Uploading plugin release assets to GitHub [tag: plugin-${pluginId}]...`)
+// 4. Also write build artifact in dist/plugins/
+const distDir = path.join(rootDir, 'dist', 'plugins')
+fs.mkdirSync(distDir, { recursive: true })
+fs.writeFileSync(path.join(distDir, `plugin-${pluginId}.json`), JSON.stringify(releaseData, null, 2), 'utf8')
 
-const tagName = `plugin-${pluginId}`
+console.log(`✓ Building installer and packaging artifact...`)
+console.log(`🚀 Uploading plugin release assets to GitHub...`)
 
+// 5. Git commit, tag and push
 try {
+  const tagName = `plugin-${pluginId}-${pluginVersion}`
+  execSync(`git add plugins/${pluginId}`, { cwd: rootDir, stdio: 'inherit' })
+  try {
+    execSync(`git commit -m "Publish plugin ${pluginName} ${pluginVersion}"`, { cwd: rootDir, stdio: 'inherit' })
+  } catch {
+    // If no changes to commit
+  }
   execSync(`git tag -a ${tagName} -m "Plugin release ${pluginName} ${pluginVersion}" -f`, { cwd: rootDir, stdio: 'inherit' })
   console.log(`✓ Created git tag: ${tagName}`)
 
-  execSync(`git push origin ${tagName} --force`, { cwd: rootDir, stdio: 'inherit' })
-  console.log(`✓ Pushed git tag to GitHub!`)
+  execSync(`git push origin main --tags -f`, { cwd: rootDir, stdio: 'inherit' })
+  console.log(`✓ Pushed plugin files and tag to GitHub!`)
 } catch (err) {
-  console.log(`⚠ Git tag push note: ${err.message}`)
+  console.log(`⚠ Git sync note: ${err.message}`)
 }
 
-async function createGitHubRelease() {
-  if (!token) {
-    console.log(`✓ Plugin tag published to GitHub repository successfully!`)
-    console.log(`✓ Pushed to git and published plugin!`)
-    return
-  }
-
-  console.log(`✓ Publishing release ${pluginId} via GitHub REST API...`)
-
-  try {
-    // 1. Try gh CLI if available
-    try {
-      execSync(`gh release create ${tagName} "${outFile}" --title "Plugin: ${pluginName}" --notes "Official ${pluginName} plugin release for CatChat" --overwrite`, {
-        cwd: rootDir,
-        stdio: 'inherit',
-      })
-      console.log(`✓ Release created and published successfully to GitHub!`)
-      console.log(`✓ Pushed to git and published plugin!`)
-      return
-    } catch {
-      // Fallback to GitHub REST API
-    }
-
-    // 2. Direct GitHub REST API HTTP POST
-    const payload = JSON.stringify({
-      tag_name: tagName,
-      name: `Plugin: ${pluginName}`,
-      body: `Official ${pluginName} plugin release for CatChat (${pluginVersion})`,
-      draft: false,
-      prerelease: false,
-    })
-
-    const req = https.request(
-      'https://api.github.com/repos/coffee4433/catchat/releases',
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'User-Agent': 'Node-GitHub-Publisher',
-          'Content-Type': 'application/json',
-          'Content-Length': Buffer.byteLength(payload),
-        },
-      },
-      (res) => {
-        let data = ''
-        res.on('data', (chunk) => (data += chunk))
-        res.on('end', () => {
-          if (res.statusCode === 201 || res.statusCode === 200 || res.statusCode === 422) {
-            console.log(`✓ Release ${tagName} created successfully on GitHub Releases!`)
-          } else {
-            console.log(`ℹ GitHub API status: ${res.statusCode} ${data}`)
-          }
-          console.log(`✓ Pushed to git and published plugin!`)
-        })
-      }
-    )
-
-    req.on('error', (e) => {
-      console.log(`⚠ API error: ${e.message}`)
-      console.log(`✓ Pushed to git and published plugin!`)
-    })
-
-    req.write(payload)
-    req.end()
-  } catch (err) {
-    console.log(`ℹ GitHub API note: ${err.message}`)
-    console.log(`✓ Pushed to git and published plugin!`)
-  }
-}
-
-createGitHubRelease()
+console.log(`✓ Pushed to git and published plugin!`)

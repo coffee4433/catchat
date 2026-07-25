@@ -1,0 +1,11 @@
+{
+  "id": "cat-music",
+  "name": "CatMusic",
+  "version": "v1.0.0",
+  "author": "coffee4433",
+  "description": "Reproductor infinito de música en alta calidad basado en YouTube Music. Incluye listas de reproducción, buscador global en vivo y descargas MP3.",
+  "category": "media",
+  "iconName": "Radio",
+  "releasedAt": "2026-07-25T09:21:00.000Z",
+  "downloadUrl": "https://raw.githubusercontent.com/coffee4433/catchat/main/plugins/cat-music/manifest.json"
+}
