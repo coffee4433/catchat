@@ -120,13 +120,13 @@ export function UserProfileModal({
           <div className="flex w-[340px] shrink-0 flex-col border-r border-border">
             {/* Banner */}
             <div
-              className="relative h-[120px] w-full shrink-0"
-              style={
-                user.banner
-                  ? { backgroundImage: `url(${user.banner})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-                  : { backgroundColor: bannerColor }
-              }
-            />
+              className="relative h-[120px] w-full shrink-0 overflow-hidden"
+              style={!user.banner ? { backgroundColor: bannerColor } : undefined}
+            >
+              {user.banner && (
+                <img src={user.banner} alt="" className="absolute inset-0 size-full object-cover" />
+              )}
+            </div>
 
             {/* Avatar overlapping banner */}
             <div className="relative px-5">

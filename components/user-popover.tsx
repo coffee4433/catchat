@@ -121,13 +121,12 @@ export function UserPopover({
       >
         {/* Banner */}
         <div
-          className="relative h-[72px] w-full"
-          style={
-            user.banner
-              ? { backgroundImage: `url(${user.banner})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-              : { backgroundColor: bannerColor }
-          }
+          className="relative h-[72px] w-full overflow-hidden"
+          style={!user.banner ? { backgroundColor: bannerColor } : undefined}
         >
+          {user.banner && (
+            <img src={user.banner} alt="" className="absolute inset-0 size-full object-cover" />
+          )}
           {/* Action buttons on banner */}
           {!isSelf && (
             <div className="absolute right-2 top-2 flex gap-1.5">

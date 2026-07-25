@@ -32,7 +32,7 @@ export type ConversationListItem = {
   id: number
   title: string
   isDirect: boolean
-  otherUser: { id: string; name: string; email: string; image: string | null } | null
+  otherUser: { id: string; name: string; email: string; image: string | null; banner?: string | null } | null
   createdAt: Date
   updatedAt: Date
 }
@@ -65,6 +65,7 @@ export async function getConversations(): Promise<ConversationListItem[]> {
       name: user.name,
       email: user.email,
       image: user.image,
+      banner: user.banner,
     })
     .from(conversationParticipants)
     .innerJoin(user, eq(user.id, conversationParticipants.userId))
@@ -87,7 +88,7 @@ export async function getConversations(): Promise<ConversationListItem[]> {
       title: other ? other.name : c.title,
       isDirect: Boolean(other),
       otherUser: other
-        ? { id: other.id, name: other.name, email: other.email, image: other.image }
+        ? { id: other.id, name: other.name, email: other.email, image: other.image, banner: other.banner }
         : null,
       createdAt: c.createdAt,
       updatedAt: c.updatedAt,
@@ -186,6 +187,7 @@ export type MessageWithSender = {
   createdAt: Date
   senderName: string
   senderImage: string | null
+  senderBanner?: string | null
   replyToId: number | null
   isPinned: boolean
   pinnedBy: string | null
@@ -206,6 +208,7 @@ export async function getMessages(conversationId: number): Promise<MessageWithSe
       createdAt: messages.createdAt,
       senderName: user.name,
       senderImage: user.image,
+      senderBanner: user.banner,
       replyToId: messages.replyToId,
       isPinned: messages.isPinned,
       pinnedBy: messages.pinnedBy,

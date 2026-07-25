@@ -242,7 +242,7 @@ export function ChatThread({
 }: {
   infoOpen?: boolean
   onToggleInfo?: () => void
-  user: { id: string; name: string; email: string; image?: string | null }
+  user: { id: string; name: string; email: string; image?: string | null; banner?: string | null }
   conversation: Conversation | null
   onConversationChange: (id: number) => void
   onConversationInfoChange?: (conversationId: number) => void
@@ -1269,7 +1269,8 @@ export function ChatThread({
             <button
               onClick={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect()
-                setPopoverUser({ id: msg.userId, name: msg.senderName, image: msg.senderImage })
+                const banner = msg.senderBanner ?? (msg.userId === user.id ? user.banner : conversation?.otherUser?.banner)
+                setPopoverUser({ id: msg.userId, name: msg.senderName, image: msg.senderImage, banner })
                 setPopoverAnchor(rect)
               }}
               className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-secondary text-[12px] font-semibold text-muted-foreground mt-0.5 cursor-pointer hover:opacity-80 transition-opacity"
@@ -1292,7 +1293,8 @@ export function ChatThread({
                 <span
                   onClick={(e) => {
                     const rect = e.currentTarget.getBoundingClientRect()
-                    setPopoverUser({ id: msg.userId, name: msg.senderName, image: msg.senderImage })
+                    const banner = msg.senderBanner ?? (msg.userId === user.id ? user.banner : conversation?.otherUser?.banner)
+                    setPopoverUser({ id: msg.userId, name: msg.senderName, image: msg.senderImage, banner })
                     setPopoverAnchor(rect)
                   }}
                   className="text-[13.5px] font-semibold hover:underline cursor-pointer text-foreground"
