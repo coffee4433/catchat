@@ -41,6 +41,7 @@ export function ArtistDetailView({
   const [activeTab, setActiveTab] = useState<'tracks' | 'albums'>('tracks')
   const [isFollowing, setIsFollowing] = useState(false)
   const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null)
+  const [loadingAlbumTracks, setLoadingAlbumTracks] = useState(false)
 
   const [artistTracks, setArtistTracks] = useState<Track[]>(() => {
     const seedMatch = SEED_TRACKS.filter(
@@ -49,6 +50,7 @@ export function ArtistDetailView({
     if (initialTrack) return [initialTrack, ...seedMatch.filter((t) => t.id !== initialTrack.id)]
     return seedMatch
   })
+  const [realPlaylists, setRealPlaylists] = useState<Album[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   const { playTrack } = useCatMusicPlayer()
@@ -58,6 +60,7 @@ export function ArtistDetailView({
     let isMounted = true
     setIsLoading(true)
 
+    // 1. Fetch real tracks
     fetch(`/api/youtube/search?q=${encodeURIComponent(artistName + ' song audio')}`)
       .then((res) => res.json())
       .then((data) => {
@@ -75,6 +78,25 @@ export function ArtistDetailView({
         if (isMounted) setIsLoading(false)
       })
 
+    // 2. Fetch real YouTube Playlists for this channel
+    fetch(`/api/youtube/search?q=${encodeURIComponent(artistName)}&type=playlist`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (!isMounted) return
+        if (data.results && Array.isArray(data.results) && data.results.length > 0) {
+          const mapped: Album[] = data.results.map((pl: any) => ({
+            id: pl.playlistId || pl.id,
+            title: pl.title,
+            artist: pl.artist || artistName,
+            year: 2024,
+            coverUrl: pl.coverUrl || '/placeholder.svg',
+            tracks: [],
+          }))
+          setRealPlaylists(mapped)
+        }
+      })
+      .catch(() => {})
+
     return () => {
       isMounted = false
     }
@@ -82,58 +104,71 @@ export function ArtistDetailView({
 
   const avatarUrl = initialTrack?.artworkUrl || artistTracks[0]?.artworkUrl || '/placeholder.svg'
 
-  // Dynamic 5+ Albums & Playlists for this Channel/Artist
+  // Dynamic 5+ Albums & Playlists combining real YouTube Playlists and dynamic sets
   const albums: Album[] = React.useMemo(() => {
-    if (artistTracks.length === 0) return []
+    const list: Album[] = [...realPlaylists]
 
-    const albumMap = new Map<string, Track[]>()
-    artistTracks.forEach((t) => {
-      const albName = t.album && t.album !== 'YouTube Music' ? t.album : 'Grandes Éxitos'
-      if (!albumMap.has(albName)) {
-        albumMap.set(albName, [])
+    if (artistTracks.length > 0) {
+      const customCollections = [
+        { title: `${artistName} - Club & Remix Sessions`, offset: 0 },
+        { title: `${artistName} - Live Sets & Festival Anthems`, offset: 2 },
+        { title: `${artistName} - Essential Hits & Top Tracks`, offset: 1 },
+        { title: `${artistName} - Radio Edit Collection`, offset: 3 },
+        { title: `${artistName} - Special Studio Anthology`, offset: 0 },
+      ]
+
+      for (let i = 0; list.length < 5 && i < customCollections.length; i++) {
+        const col = customCollections[i]
+        const sub = artistTracks.slice(col.offset, col.offset + 5)
+        const tracksToUse = sub.length > 0 ? sub : artistTracks
+        list.push({
+          id: `col-${i}-${artistName}`,
+          title: col.title,
+          artist: artistName,
+          year: 2024 - i,
+          coverUrl: tracksToUse[0]?.artworkUrl || avatarUrl,
+          tracks: tracksToUse,
+        })
       }
-      albumMap.get(albName)!.push(t)
-    })
-
-    const result: Album[] = []
-    let albumIdx = 1
-
-    albumMap.forEach((tracks, title) => {
-      result.push({
-        id: `alb-${albumIdx++}-${artistName}`,
-        title: title === 'Grandes Éxitos' ? `${artistName} - Grandes Éxitos & Sencillos` : title,
-        artist: artistName,
-        year: 2024 - (albumIdx % 4),
-        coverUrl: tracks[0]?.artworkUrl || avatarUrl,
-        tracks,
-      })
-    })
-
-    // Guarantee at least 5 complete playlists for the channel
-    const customCollections = [
-      { title: `${artistName} - Club & Remix Sessions`, offset: 0 },
-      { title: `${artistName} - Live Sets & Festival Anthems`, offset: 2 },
-      { title: `${artistName} - Essential Hits & Top Tracks`, offset: 1 },
-      { title: `${artistName} - Radio Edit Collection`, offset: 3 },
-      { title: `${artistName} - Special Studio Anthology`, offset: 0 },
-    ]
-
-    for (let i = 0; result.length < 5 && i < customCollections.length; i++) {
-      const col = customCollections[i]
-      const sub = artistTracks.slice(col.offset, col.offset + 5)
-      const tracksToUse = sub.length > 0 ? sub : artistTracks
-      result.push({
-        id: `col-${i}-${artistName}`,
-        title: col.title,
-        artist: artistName,
-        year: 2024 - i,
-        coverUrl: tracksToUse[0]?.artworkUrl || avatarUrl,
-        tracks: tracksToUse,
-      })
     }
 
-    return result
-  }, [artistTracks, artistName, avatarUrl])
+    return list
+  }, [realPlaylists, artistTracks, artistName, avatarUrl])
+
+  // Handle clicking on an album / playlist
+  const handleSelectAlbum = async (album: Album) => {
+    setSelectedAlbum(album)
+
+    // If real playlist has empty tracks, fetch real playlist tracks on demand
+    if (album.tracks.length === 0 && album.id) {
+      setLoadingAlbumTracks(true)
+      try {
+        const res = await fetch(`/api/youtube/playlist?id=${encodeURIComponent(album.id)}`)
+        if (res.ok) {
+          const data = await res.json()
+          if (data.tracks && Array.isArray(data.tracks) && data.tracks.length > 0) {
+            setSelectedAlbum({
+              ...album,
+              tracks: data.tracks,
+            })
+          } else {
+            // Fallback to artist tracks
+            setSelectedAlbum({
+              ...album,
+              tracks: artistTracks,
+            })
+          }
+        }
+      } catch {
+        setSelectedAlbum({
+          ...album,
+          tracks: artistTracks,
+        })
+      } finally {
+        setLoadingAlbumTracks(false)
+      }
+    }
+  }
 
   return (
     <div className="flex h-full w-full flex-col overflow-y-auto bg-background/60 p-5 text-foreground space-y-6">
@@ -189,17 +224,28 @@ export function ArtistDetailView({
 
           {/* Album Tracks List */}
           <div className="space-y-3">
-            <h3 className="text-sm font-bold text-foreground">Canciones del Álbum</h3>
+            <h3 className="text-sm font-bold text-foreground">Canciones de la Playlist</h3>
             <div className="space-y-1 rounded-2xl border border-border/40 bg-secondary/15 p-3">
-              {selectedAlbum.tracks.map((t, idx) => (
-                <TrackRow
-                  key={t.id}
-                  track={t}
-                  index={idx}
-                  queue={selectedAlbum.tracks}
-                  onSelectTrack={onSelectTrack}
-                />
-              ))}
+              {loadingAlbumTracks ? (
+                <div className="py-12 flex items-center justify-center gap-2 text-muted-foreground text-xs">
+                  <span className="size-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                  <span>Obteniendo canciones de la playlist de YouTube...</span>
+                </div>
+              ) : selectedAlbum.tracks.length > 0 ? (
+                selectedAlbum.tracks.map((t, idx) => (
+                  <TrackRow
+                    key={`${t.id}-${idx}`}
+                    track={t}
+                    index={idx}
+                    queue={selectedAlbum.tracks}
+                    onSelectTrack={onSelectTrack}
+                  />
+                ))
+              ) : (
+                <div className="py-12 text-center text-muted-foreground text-xs">
+                  No se pudieron cargar las canciones de esta playlist.
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -323,12 +369,12 @@ export function ArtistDetailView({
           {/* TAB 2: ALBUMS & PLAYLISTS */}
           {activeTab === 'albums' && (
             <div className="space-y-4">
-              <h3 className="text-sm font-bold text-foreground">Álbumes y Colecciones del Canal</h3>
+              <h3 className="text-sm font-bold text-foreground">Playlists Oficiales del Canal de YouTube</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 {albums.map((alb) => (
                   <div
                     key={alb.id}
-                    onClick={() => setSelectedAlbum(alb)}
+                    onClick={() => handleSelectAlbum(alb)}
                     className="group relative flex flex-col justify-between rounded-2xl border border-border/60 bg-secondary/20 p-4 transition-all hover:border-primary/40 hover:bg-secondary/40 cursor-pointer"
                   >
                     <div className="space-y-3">
@@ -348,9 +394,9 @@ export function ArtistDetailView({
                         </div>
                       </div>
                       <div>
-                        <h4 className="font-bold text-foreground text-sm truncate">{alb.title}</h4>
+                        <h4 className="font-bold text-foreground text-sm line-clamp-2">{alb.title}</h4>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          Álbum • {alb.year} • {alb.tracks.length} canciones
+                          Playlist Oficial • {alb.artist}
                         </p>
                       </div>
                     </div>

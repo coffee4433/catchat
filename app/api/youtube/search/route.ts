@@ -3,12 +3,81 @@ import { NextResponse } from 'next/server'
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const query = searchParams.get('q')?.trim()
+  const type = searchParams.get('type')?.trim() // 'video' | 'playlist'
 
   if (!query || query.length < 2) {
     return NextResponse.json({ results: [] })
   }
 
-  // 1. Direct YouTube HTML search parser (Server-side, 100% reliable)
+  // 1. YouTube Playlists Search Parser
+  if (type === 'playlist') {
+    try {
+      const response = await fetch(
+        `https://www.youtube.com/results?search_query=${encodeURIComponent(query + ' playlist')}&sp=EgIQAw%253D%253D`,
+        {
+          headers: {
+            'User-Agent':
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+            'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
+          },
+        }
+      )
+
+      if (response.ok) {
+        const html = await response.text()
+
+        const match =
+          html.match(/var ytInitialData = ({.*?});<\/script>/) ||
+          html.match(/window\["ytInitialData"\] = ({.*?});/)
+
+        if (match && match[1]) {
+          const json = JSON.parse(match[1])
+          const contents =
+            json?.contents?.twoColumnSearchResultsRenderer?.primaryContents
+              ?.sectionListRenderer?.contents?.[0]?.itemSectionRenderer?.contents
+
+          if (Array.isArray(contents)) {
+            const playlists: any[] = []
+
+            for (const item of contents) {
+              const pl = item.playlistRenderer
+              if (!pl || !pl.playlistId) continue
+
+              const playlistId = pl.playlistId
+              const title = pl.title?.simpleText || pl.title?.runs?.[0]?.text || 'Playlist de YouTube'
+              const videoCount = pl.videoCount || pl.videoCountText?.runs?.[0]?.text || '10+'
+              const owner =
+                pl.shortBylineText?.runs?.[0]?.text ||
+                pl.longBylineText?.runs?.[0]?.text ||
+                query
+              const videoId = pl.navigationEndpoint?.watchEndpoint?.videoId || ''
+              const thumbUrl = videoId
+                ? `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`
+                : pl.thumbnails?.[0]?.thumbnails?.[0]?.url || '/placeholder.svg'
+
+              playlists.push({
+                id: playlistId,
+                playlistId,
+                title,
+                artist: owner,
+                videoCount,
+                coverUrl: thumbUrl,
+                tracks: [],
+              })
+            }
+
+            if (playlists.length > 0) {
+              return NextResponse.json({ results: playlists })
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error('YouTube Playlist Search error:', err)
+    }
+  }
+
+  // 2. Direct YouTube HTML Video search parser (Server-side, 100% reliable)
   try {
     const response = await fetch(
       `https://www.youtube.com/results?search_query=${encodeURIComponent(query + ' music')}&sp=EgIQAQ%253D%253D`,
