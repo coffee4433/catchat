@@ -132,7 +132,7 @@ export function CatMusicMainView() {
       <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-border/40">
         <div className="flex items-center gap-3">
           <div className="flex size-11 items-center justify-center rounded-2xl overflow-hidden border border-border/40 shadow-sm">
-            <img src="/catmusic.png" alt="CatMusic" className="w-full h-full object-cover" />
+            <img src="/catmusic.png" alt="CatMusic" className="w-full h-full object-cover scale-135" />
           </div>
           <div>
             <h1 className="text-lg font-bold text-foreground flex items-center gap-2">

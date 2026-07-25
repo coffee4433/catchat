@@ -39,7 +39,7 @@ function PluginIcon({ id, className }: { id: string; className?: string }) {
       <img
         src="/plugins/cat-music/icon.png"
         alt="CatMusic"
-        className="w-full h-full object-cover rounded-xl"
+        className="w-full h-full object-cover scale-135 rounded-xl"
       />
     )
   }
@@ -201,7 +201,7 @@ export function PluginHubView({ onClose }: { onClose?: () => void }) {
                     {/* Header */}
                     <div className="flex items-start justify-between gap-2.5">
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-sm overflow-hidden">
+                        <div className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-border/40 shadow-md overflow-hidden bg-background/50">
                           <PluginIcon id={plugin.id} className="size-full" />
                         </div>
                         <div className="min-w-0">
