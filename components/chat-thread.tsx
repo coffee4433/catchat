@@ -3023,22 +3023,28 @@ export function ChatThread({
       )}
 
       {/* User popover */}
-      {popoverUser && popoverAnchor && (
-        <UserPopover
-          user={{
-            ...popoverUser,
-            isOnline: popoverUser.id === user.id ? true : onlineUserIds.has(popoverUser.id),
-          }}
-          currentUserId={user.id}
-          anchorRect={popoverAnchor}
-          onClose={() => { setPopoverUser(null); setPopoverAnchor(null) }}
-          onOpenFullProfile={() => {
-            setProfileModalUser(popoverUser)
-            setPopoverUser(null)
-            setPopoverAnchor(null)
-          }}
-        />
-      )}
+      {popoverUser && popoverAnchor && (() => {
+        const isOnline = popoverUser.id === user.id || Array.from(onlineUserIds).some((id) => String(id) === String(popoverUser.id))
+        return (
+          <UserPopover
+            user={{
+              ...popoverUser,
+              isOnline,
+            }}
+            currentUserId={user.id}
+            anchorRect={popoverAnchor}
+            onClose={() => { setPopoverUser(null); setPopoverAnchor(null) }}
+            onOpenFullProfile={() => {
+              setProfileModalUser({
+                ...popoverUser,
+                isOnline,
+              })
+              setPopoverUser(null)
+              setPopoverAnchor(null)
+            }}
+          />
+        )
+      })()}
 
       {/* Full profile modal */}
       {profileModalUser && (
