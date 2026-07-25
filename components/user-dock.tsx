@@ -343,14 +343,14 @@ export function UserDock({
       <ElectricBorder active={glowActive} roundedClass="rounded-2xl">
         <div
           ref={dockRef}
-          className="relative z-10 flex flex-col-reverse rounded-2xl border border-border bg-card/95 shadow-lg backdrop-blur-sm overflow-hidden"
+          className="relative z-10 flex w-64 flex-col-reverse rounded-2xl border border-border bg-card/95 shadow-lg backdrop-blur-sm overflow-hidden"
         >
           {/* Collapsed bar */}
           <div
-            className="flex cursor-pointer items-center gap-2 py-2 pl-2 pr-2.5"
+            className="flex w-full cursor-pointer items-center justify-between gap-2 py-2 pl-2 pr-2.5"
             onClick={handleToggle}
           >
-            <div className="flex items-center gap-2.5 rounded-xl px-1 py-0.5">
+            <div className="flex items-center gap-2.5 rounded-xl px-1 py-0.5 min-w-0 flex-1">
               <span className="relative flex size-9 shrink-0 items-center justify-center rounded-full bg-secondary text-[12px] font-semibold text-muted-foreground">
                 {user.image ? (
                   <img
@@ -363,19 +363,19 @@ export function UserDock({
                 )}
                 <span className={`absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-card ${hasUpdate ? 'bg-[#5865F2] animate-pulse' : 'bg-success'}`} />
               </span>
-              <span className="min-w-0 pr-1">
-                <span className="block max-w-32 truncate text-[13px] font-semibold leading-tight">
+              <span className="min-w-0 flex-1 pr-1">
+                <span className="block truncate text-[13px] font-semibold leading-tight">
                   {user.name}
                   {appVersion && (
                     <span className="ml-1.5 inline-flex items-center rounded-full bg-secondary/60 px-1.5 py-px text-[9.5px] font-medium text-muted-foreground">v{appVersion}</span>
                   )}
                 </span>
-                <span className="block max-w-32 truncate text-[11px] leading-tight text-muted-foreground">
+                <span className="block truncate text-[11px] leading-tight text-muted-foreground">
                   {user.email}
                 </span>
               </span>
             </div>
-            <div className="flex items-center gap-0.5">
+            <div className="flex items-center gap-0.5 shrink-0">
               <button
                 onClick={(e) => {
                   e.stopPropagation()
