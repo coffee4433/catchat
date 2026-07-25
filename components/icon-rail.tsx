@@ -30,7 +30,7 @@ export function IconRail({
             : 'bg-secondary/60 hover:bg-secondary hover:ring-1 hover:ring-border'
         }`}
       >
-        <img src="/catchat.png" alt="CatChat Logo" className="w-full h-full object-cover scale-135" />
+        <img src="/catchat.png" alt="CatChat Logo" className="w-full h-full object-contain p-0.5" />
       </button>
 
       <div className="w-6 h-[1px] bg-border/40 my-1" />
