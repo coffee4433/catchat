@@ -36,8 +36,8 @@ function initialsOf(name: string) {
 }
 
 function getPopoverPosition(anchor: DOMRect) {
-  const W = 320
-  const H = 340
+  const W = 300
+  const H = 276
   const GAP = 8
   let x = anchor.right + GAP
   let y = anchor.top
@@ -116,12 +116,12 @@ export function UserPopover({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.92, y: 8 }}
         transition={{ duration: 0.18, ease: 'easeOut' }}
-        className="fixed z-[60] w-[320px] overflow-hidden rounded-2xl border border-border bg-popover shadow-2xl"
+        className="fixed z-[60] w-[300px] h-[276px] overflow-hidden rounded-2xl border border-border bg-popover shadow-2xl flex flex-col justify-between"
         style={{ left: pos.x, top: pos.y }}
       >
         {/* Banner */}
         <div
-          className="relative h-[72px] w-full overflow-hidden"
+          className="relative h-[105px] w-full shrink-0 overflow-hidden"
           style={!user.banner ? { backgroundColor: bannerColor } : undefined}
         >
           {user.banner && (
