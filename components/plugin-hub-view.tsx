@@ -175,7 +175,7 @@ export function PluginHubView({ onClose }: { onClose?: () => void }) {
             </p>
           </section>
         ) : (
-          <section className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <section className="grid grid-cols-1 gap-5 md:grid-cols-2">
             {filteredPlugins.map((plugin) => {
               const isInstalled = isPluginInstalled(plugin.id)
               const isEnabled = isPluginEnabled(plugin.id)
