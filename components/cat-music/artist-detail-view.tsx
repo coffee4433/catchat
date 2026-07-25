@@ -82,25 +82,58 @@ export function ArtistDetailView({
 
   const avatarUrl = initialTrack?.artworkUrl || artistTracks[0]?.artworkUrl || '/placeholder.svg'
 
-  // Dynamic Albums for this Channel/Artist
-  const albums: Album[] = [
-    {
-      id: `alb-1-${artistName}`,
-      title: `${artistName} - Colección de Éxitos`,
-      artist: artistName,
-      year: 2024,
-      coverUrl: avatarUrl,
-      tracks: artistTracks,
-    },
-    {
-      id: `alb-2-${artistName}`,
-      title: `${artistName} - Live & Studio Sessions`,
-      artist: artistName,
-      year: 2023,
-      coverUrl: artistTracks[1]?.artworkUrl || avatarUrl,
-      tracks: artistTracks.slice(1),
-    },
-  ]
+  // Dynamic 5+ Albums & Playlists for this Channel/Artist
+  const albums: Album[] = React.useMemo(() => {
+    if (artistTracks.length === 0) return []
+
+    const albumMap = new Map<string, Track[]>()
+    artistTracks.forEach((t) => {
+      const albName = t.album && t.album !== 'YouTube Music' ? t.album : 'Grandes Éxitos'
+      if (!albumMap.has(albName)) {
+        albumMap.set(albName, [])
+      }
+      albumMap.get(albName)!.push(t)
+    })
+
+    const result: Album[] = []
+    let albumIdx = 1
+
+    albumMap.forEach((tracks, title) => {
+      result.push({
+        id: `alb-${albumIdx++}-${artistName}`,
+        title: title === 'Grandes Éxitos' ? `${artistName} - Grandes Éxitos & Sencillos` : title,
+        artist: artistName,
+        year: 2024 - (albumIdx % 4),
+        coverUrl: tracks[0]?.artworkUrl || avatarUrl,
+        tracks,
+      })
+    })
+
+    // Guarantee at least 5 complete playlists for the channel
+    const customCollections = [
+      { title: `${artistName} - Club & Remix Sessions`, offset: 0 },
+      { title: `${artistName} - Live Sets & Festival Anthems`, offset: 2 },
+      { title: `${artistName} - Essential Hits & Top Tracks`, offset: 1 },
+      { title: `${artistName} - Radio Edit Collection`, offset: 3 },
+      { title: `${artistName} - Special Studio Anthology`, offset: 0 },
+    ]
+
+    for (let i = 0; result.length < 5 && i < customCollections.length; i++) {
+      const col = customCollections[i]
+      const sub = artistTracks.slice(col.offset, col.offset + 5)
+      const tracksToUse = sub.length > 0 ? sub : artistTracks
+      result.push({
+        id: `col-${i}-${artistName}`,
+        title: col.title,
+        artist: artistName,
+        year: 2024 - i,
+        coverUrl: tracksToUse[0]?.artworkUrl || avatarUrl,
+        tracks: tracksToUse,
+      })
+    }
+
+    return result
+  }, [artistTracks, artistName, avatarUrl])
 
   return (
     <div className="flex h-full w-full flex-col overflow-y-auto bg-background/60 p-5 text-foreground space-y-6">
