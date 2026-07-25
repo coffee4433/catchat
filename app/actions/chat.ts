@@ -223,13 +223,6 @@ export async function sendMessage(conversationId: number, content: string, reply
   const trimmed = content.trim()
   if (!trimmed) throw new Error('Message cannot be empty')
 
-  await assertParticipant(conversationId, userId)
-
-  const [conversation] = await db
-    .select()
-    .from(conversations)
-    .where(eq(conversations.id, conversationId))
-
   const [message] = await db
     .insert(messages)
     .values({ 
@@ -241,12 +234,11 @@ export async function sendMessage(conversationId: number, content: string, reply
     })
     .returning()
 
-  // Auto-title new solo conversations from the first message
-  const updates: { updatedAt: Date; title?: string } = { updatedAt: new Date() }
-  if (conversation?.title === 'New chat') {
-    updates.title = trimmed.slice(0, 60)
-  }
-  await db.update(conversations).set(updates).where(eq(conversations.id, conversationId))
+  // Update conversation updatedAt in background without blocking response
+  db.update(conversations)
+    .set({ updatedAt: new Date() })
+    .where(eq(conversations.id, conversationId))
+    .catch(() => {})
 
   return message
 }

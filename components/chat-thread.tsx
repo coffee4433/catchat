@@ -289,23 +289,48 @@ export function ChatThread({
       .on('presence', { event: 'sync' }, () => {
         const state = channel.presenceState()
         const keys = new Set<string>()
-        Object.keys(state).forEach((key) => keys.add(key))
+        Object.entries(state).forEach(([key, presences]) => {
+          keys.add(String(key))
+          if (Array.isArray(presences)) {
+            presences.forEach((p: any) => {
+              if (p?.user_id) keys.add(String(p.user_id))
+              if (p?.userId) keys.add(String(p.userId))
+            })
+          }
+        })
         setOnlineUserIds(keys)
       })
-      .on('presence', { event: 'join' }, ({ key }) => {
-        setOnlineUserIds((prev) => new Set([...prev, key]))
-      })
-      .on('presence', { event: 'leave' }, ({ key }) => {
+      .on('presence', { event: 'join' }, ({ key, newPresences }) => {
         setOnlineUserIds((prev) => {
           const next = new Set(prev)
-          next.delete(key)
+          next.add(String(key))
+          if (Array.isArray(newPresences)) {
+            newPresences.forEach((p: any) => {
+              if (p?.user_id) next.add(String(p.user_id))
+              if (p?.userId) next.add(String(p.userId))
+            })
+          }
+          return next
+        })
+      })
+      .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+        setOnlineUserIds((prev) => {
+          const next = new Set(prev)
+          next.delete(String(key))
+          if (Array.isArray(leftPresences)) {
+            leftPresences.forEach((p: any) => {
+              if (p?.user_id) next.delete(String(p.user_id))
+              if (p?.userId) next.delete(String(p.userId))
+            })
+          }
           return next
         })
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
           await channel.track({
-            user_id: user.id,
+            user_id: String(user.id),
+            userId: String(user.id),
             name: user.name,
             online_at: new Date().toISOString(),
           })
@@ -318,7 +343,9 @@ export function ChatThread({
   }, [user?.id, user?.name])
 
   const isOtherUserOnline = conversation?.otherUser?.id
-    ? onlineUserIds.has(conversation.otherUser.id)
+    ? Array.from(onlineUserIds).some(
+        (id) => String(id) === String(conversation.otherUser?.id)
+      )
     : false
 
   const { startOutgoingCall } = useCallContext()
