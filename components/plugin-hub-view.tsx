@@ -201,7 +201,7 @@ export function PluginHubView({ onClose }: { onClose?: () => void }) {
                     {/* Header */}
                     <div className="flex items-start justify-between gap-2.5">
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="flex size-11 shrink-0 items-center justify-center rounded-none overflow-hidden shadow-sm">
+                        <div className="flex size-11 shrink-0 items-center justify-center overflow-hidden">
                           <PluginIcon id={plugin.id} className="size-full" />
                         </div>
                         <div className="min-w-0">
