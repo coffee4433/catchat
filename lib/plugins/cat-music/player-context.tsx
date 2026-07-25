@@ -123,18 +123,22 @@ export function CatMusicPlayerProvider({ children }: { children: React.ReactNode
     }
   }, [])
 
-  // Position ticker via rAF
+  // Position ticker via rAF (throttled to avoid frame drops)
   useEffect(() => {
     let lastTick = 0
 
     const tick = (now: number) => {
-      if (now - lastTick > 250) {
-        // ~4 fps update for smooth UI without re-render spam
+      if (now - lastTick > 500) {
         lastTick = now
         if (ytPlayerRef.current && typeof ytPlayerRef.current.getCurrentTime === 'function' && !isSeekingRef.current) {
           const currentTime = ytPlayerRef.current.getCurrentTime() || 0
           const dur = ytPlayerRef.current.getDuration() || currentTrack?.durationSeconds || 180
-          setPlayerState((s) => ({ ...s, position: currentTime, duration: dur }))
+          setPlayerState((s) => {
+            if (Math.abs(s.position - currentTime) < 0.5 && s.duration === dur) {
+              return s
+            }
+            return { ...s, position: currentTime, duration: dur }
+          })
         }
       }
       if (playerState.isPlaying) {
