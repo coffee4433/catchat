@@ -11,6 +11,7 @@ import { useCallContext } from '@/components/calls/call-provider'
 import type { ActiveCall } from '@/lib/calls/types'
 import { usePlugins } from '@/lib/plugins/plugin-provider'
 import { CatMusicDockWidget } from '@/components/cat-music/dock-widget'
+import { catMusicStore } from '@/lib/plugins/cat-music/cat-music-store'
 
 function initialsOf(name: string) {
   return name
@@ -322,6 +323,26 @@ export function UserDock({
   const hasUpdate = update.phase !== 'idle'
   const glowActive = showMenu || hasUpdate || hasActiveCall
 
+  const wasPlayingBeforeCallRef = useRef(false)
+
+  // Pause music on voice/video call start and resume on call end
+  useEffect(() => {
+    if (!isPluginEnabled('cat-music')) return
+    const currentState = catMusicStore.getSnapshot()
+
+    if (hasActiveCall) {
+      if (currentState.isPlaying) {
+        wasPlayingBeforeCallRef.current = true
+        catMusicStore.setState({ isPlaying: false })
+      }
+    } else {
+      if (wasPlayingBeforeCallRef.current) {
+        wasPlayingBeforeCallRef.current = false
+        catMusicStore.setState({ isPlaying: true })
+      }
+    }
+  }, [hasActiveCall, isPluginEnabled])
+
   function handleToggle() {
     // If there's an update and menu is closed, show update panel
     // If there's an update and menu is open, toggle off
@@ -400,9 +421,9 @@ export function UserDock({
             </div>
           </div>
 
-          {/* CatMusic Dock Mini Player (shown in Chat view when profile menu is closed) */}
+          {/* CatMusic Dock Mini Player (shown in Chat view when profile menu & calls are inactive) */}
           <AnimatePresence mode="wait">
-            {isPluginEnabled('cat-music') && activeView !== 'cat-music' && !showMenu && (
+            {isPluginEnabled('cat-music') && activeView !== 'cat-music' && !showMenu && !hasActiveCall && (
               <motion.div
                 key="cat-music-dock-widget"
                 initial={{ height: 0, opacity: 0 }}
