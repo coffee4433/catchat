@@ -41,13 +41,8 @@ export type ArtworkSize = 'maxres' | 'sd' | 'hq' | 'mq'
  */
 export function getArtworkUrl(youtubeId: string, size: ArtworkSize = 'mq'): string {
   if (!youtubeId) return '/placeholder.svg'
-  const qualityMap: Record<ArtworkSize, string> = {
-    maxres: 'mqdefault', // mqdefault is 100% guaranteed on YouTube
-    sd: 'mqdefault',
-    hq: 'hqdefault',
-    mq: 'mqdefault',
-  }
-  return `https://i.ytimg.com/vi/${youtubeId}/${qualityMap[size]}.jpg`
+  // mqdefault is 100% guaranteed on YouTube CDN for all videos without 404 errors
+  return `https://i.ytimg.com/vi/${youtubeId}/mqdefault.jpg`
 }
 
 /**

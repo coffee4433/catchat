@@ -28,13 +28,7 @@ function ChatAppInner({
   user: AppUser
   initialConversations: ConversationListItem[]
 }) {
-  const [activeView, setActiveView] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('cz-active-app-view')
-      if (saved) return saved
-    }
-    return 'chat'
-  })
+  const [activeView, setActiveView] = useState<string>('chat')
   const [searchOpen, setSearchOpen] = useState(false)
   const [newChatOpen, setNewChatOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -51,6 +45,14 @@ function ChatAppInner({
   )
 
   const { isPluginEnabled, getActiveRailTabs } = usePlugins()
+
+  // Restore saved active view after hydration on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('cz-active-app-view')
+    if (saved) {
+      setActiveView(saved)
+    }
+  }, [])
 
   // Persist active view in localStorage
   useEffect(() => {

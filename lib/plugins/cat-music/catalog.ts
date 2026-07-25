@@ -3,12 +3,12 @@ import { getArtworkUrl } from './youtube'
 
 export const SEED_TRACKS: Track[] = [
   {
-    id: 'jfKfPfyJRdk',
+    id: 'DWcJFNfaw9c',
     title: 'Lofi Hip Hop Radio - Beats to Relax/Study to',
     artist: 'Lofi Girl',
     album: 'Lofi Sessions',
     durationSeconds: 215,
-    artworkUrl: getArtworkUrl('jfKfPfyJRdk', 'hq'),
+    artworkUrl: getArtworkUrl('DWcJFNfaw9c', 'mq'),
     genre: 'Lo-Fi',
     year: 2024,
     source: 'youtube',
