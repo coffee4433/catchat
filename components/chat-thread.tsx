@@ -459,7 +459,7 @@ export function ChatThread({
     { refreshInterval: 1000 }, // Actualizado: de 4000ms a 1000ms para refrescos más rápidos
   )
 
-  // Realtime Supabase Broadcast for instant message receiving
+  // Realtime Supabase Broadcast for instant message & read receipt receiving
   useEffect(() => {
     if (!conversation?.id) return
 
@@ -468,6 +468,34 @@ export function ChatThread({
     channel
       .on('broadcast', { event: 'new_message' }, () => {
         mutateMessages()
+      })
+      .on('broadcast', { event: 'read_receipt' }, ({ payload }) => {
+        if (payload?.userId && Array.isArray(payload?.messageIds)) {
+          // Actualizar instantáneamente la caché de SWR con los mensajes leídos por el otro usuario
+          mutateMessages((prev) => {
+            if (!prev) return prev
+            return prev.map((msg) => {
+              if (payload.messageIds.includes(msg.id)) {
+                let currentReadBy: string[] = []
+                if (msg.readBy) {
+                  try {
+                    currentReadBy = JSON.parse(msg.readBy)
+                  } catch {
+                    currentReadBy = []
+                  }
+                }
+                if (!currentReadBy.includes(payload.userId)) {
+                  currentReadBy.push(payload.userId)
+                }
+                return {
+                  ...msg,
+                  readBy: JSON.stringify(currentReadBy),
+                }
+              }
+              return msg
+            })
+          }, false)
+        }
       })
       .subscribe()
 
@@ -699,14 +727,16 @@ export function ChatThread({
       .map((msg) => msg.id)
 
     if (unreadMessageIds.length > 0) {
-      // Mark messages as read immediately (300ms delay for visibility assurance)
-      const timer = setTimeout(() => {
-        markMessagesAsRead(unreadMessageIds).catch(() => {
-          // Silently fail - read receipts are not critical
+      // Mark messages as read immediately and broadcast via Supabase Realtime WebSockets
+      markMessagesAsRead(unreadMessageIds)
+        .then(() => {
+          supabase.channel(`conversation-${conversation.id}`).send({
+            type: 'broadcast',
+            event: 'read_receipt',
+            payload: { userId: user.id, messageIds: unreadMessageIds },
+          }).catch(() => {})
         })
-      }, 300) // Reducido de 1000ms a 300ms
-
-      return () => clearTimeout(timer)
+        .catch(() => {})
     }
   }, [conversation?.id, messages, user.id, mutateMessages])
 
