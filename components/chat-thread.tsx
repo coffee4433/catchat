@@ -1026,6 +1026,11 @@ export function ChatThread({
 
       // Crear mensaje optimista
       const tempId = -Math.floor(Math.random() * 1000000)
+      const recipientId = conversation?.otherUser?.id
+      const initialReadBy = isOtherUserOnline && recipientId
+        ? JSON.stringify([recipientId])
+        : null
+
       const optimisticMsg: MessageWithSender = {
         id: tempId,
         conversationId,
@@ -1035,7 +1040,7 @@ export function ChatThread({
         isPinned: false,
         pinnedBy: null,
         reactions: null,
-        readBy: null,
+        readBy: initialReadBy,
         createdAt: new Date(),
         senderName: user.name,
         senderImage: user.image || null,
@@ -1068,6 +1073,7 @@ export function ChatThread({
         const savedMsg = await sendMessage(conversationId, content, prevReplyingTo?.id ?? undefined)
         const fullMsg: MessageWithSender = {
           ...savedMsg,
+          readBy: savedMsg.readBy || initialReadBy,
           senderName: user.name,
           senderImage: user.image || null,
         }
