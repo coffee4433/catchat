@@ -36,21 +36,28 @@ export function IconRail({
       <div className="w-6 h-[1px] bg-border/40 my-1" />
 
       {/* Dynamic Plugin Rail Tabs */}
-      {pluginTabs.map((tab) => (
-        <button
-          key={tab.id}
-          onClick={() => onSelectView?.(tab.id)}
-          title={tab.label}
-          aria-label={tab.label}
-          className={`flex size-9 items-center justify-center rounded-xl transition-all ${
-            activeView === tab.id
-              ? 'bg-primary text-primary-foreground shadow-lg scale-105 ring-2 ring-primary/40'
-              : 'bg-secondary/80 text-foreground/70 hover:scale-105 hover:bg-secondary hover:text-foreground'
-          }`}
-        >
-          {tab.icon}
-        </button>
-      ))}
+      {pluginTabs.map((tab) => {
+        const isSelected = activeView === tab.id
+        return (
+          <button
+            key={tab.id}
+            onClick={() => onSelectView?.(tab.id)}
+            title={tab.label}
+            aria-label={tab.label}
+            className={`flex size-10 shrink-0 items-center justify-center overflow-hidden transition-all ${
+              isSelected
+                ? 'scale-105 opacity-100'
+                : 'opacity-70 hover:opacity-100 hover:scale-105'
+            }`}
+          >
+            {tab.id === 'cat-music' ? (
+              <img src="/catmusic.png" alt={tab.label} className="w-full h-full object-cover" />
+            ) : (
+              tab.icon
+            )}
+          </button>
+        )
+      })}
     </aside>
   )
 }
