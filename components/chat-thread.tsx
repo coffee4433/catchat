@@ -271,6 +271,56 @@ export function ChatThread({
 
   const [prefs] = usePrefs()
 
+  // Track online users in real-time via Supabase Presence
+  const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    if (!user?.id) return
+
+    const channel = supabase.channel('online-presence', {
+      config: {
+        presence: {
+          key: user.id,
+        },
+      },
+    })
+
+    channel
+      .on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState()
+        const keys = new Set<string>()
+        Object.keys(state).forEach((key) => keys.add(key))
+        setOnlineUserIds(keys)
+      })
+      .on('presence', { event: 'join' }, ({ key }) => {
+        setOnlineUserIds((prev) => new Set([...prev, key]))
+      })
+      .on('presence', { event: 'leave' }, ({ key }) => {
+        setOnlineUserIds((prev) => {
+          const next = new Set(prev)
+          next.delete(key)
+          return next
+        })
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await channel.track({
+            user_id: user.id,
+            name: user.name,
+            online_at: new Date().toISOString(),
+          })
+        }
+      })
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [user?.id, user?.name])
+
+  const isOtherUserOnline = conversation?.otherUser?.id
+    ? onlineUserIds.has(conversation.otherUser.id)
+    : false
+
   const { startOutgoingCall } = useCallContext()
 
   const handleStartCall = (type: 'voice' | 'video') => {
@@ -1272,11 +1322,37 @@ export function ChatThread({
   return (
     <section className="relative flex h-full min-w-0 flex-1 flex-col rounded-2xl border border-border bg-card shadow-sm ml-3">
       <header className="flex items-center justify-between border-b border-border px-4 py-3">
-        <div className="flex min-w-0 items-center gap-1.5 text-sm">
-          <span className="led shrink-0 text-success" aria-hidden style={{ animation: 'led-blink 2.4s ease-in-out infinite' }} />
-          <span className="flex size-5 items-center justify-center rounded-lg bg-secondary text-[11px] font-semibold text-muted-foreground">
-            #
-          </span>
+        <div className="flex min-w-0 items-center gap-2 text-sm">
+          {conversation?.otherUser ? (
+            <div className="relative flex size-7 shrink-0 items-center justify-center rounded-full bg-secondary">
+              {conversation.otherUser.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={conversation.otherUser.image}
+                  alt={conversation.otherUser.name}
+                  className="size-7 rounded-full object-cover"
+                />
+              ) : (
+                <span className="text-[10px] font-bold text-muted-foreground">
+                  {initialsOf(conversation.otherUser.name)}
+                </span>
+              )}
+              <span
+                className={`absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-card transition-colors ${
+                  isOtherUserOnline ? 'bg-emerald-500' : 'bg-muted-foreground/40'
+                }`}
+                title={
+                  isOtherUserOnline
+                    ? lang === 'es' ? 'Conectado' : 'Online'
+                    : lang === 'es' ? 'Desconectado' : 'Offline'
+                }
+              />
+            </div>
+          ) : conversation ? (
+            <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-xs">
+              #
+            </div>
+          ) : null}
           <span className="truncate font-semibold">
             {conversation ? conversation.title : (lang === 'es' ? 'Nueva conversación' : 'New Conversation')}
           </span>
