@@ -248,7 +248,6 @@ export async function sendMessage(conversationId: number, content: string, reply
   }
   await db.update(conversations).set(updates).where(eq(conversations.id, conversationId))
 
-  revalidatePath('/')
   return message
 }
 

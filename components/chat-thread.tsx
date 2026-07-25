@@ -459,6 +459,23 @@ export function ChatThread({
     { refreshInterval: 1000 }, // Actualizado: de 4000ms a 1000ms para refrescos más rápidos
   )
 
+  // Realtime Supabase Broadcast for instant message receiving
+  useEffect(() => {
+    if (!conversation?.id) return
+
+    const channel = supabase.channel(`conversation-${conversation.id}`)
+
+    channel
+      .on('broadcast', { event: 'new_message' }, () => {
+        mutateMessages()
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [conversation?.id, mutateMessages])
+
   // Realtime typing indicator con Supabase
   const [typingUsers, setTypingUsers] = useState<string[]>([])
   // Para forzar la limpieza si la BD no lo hace a tiempo
@@ -993,8 +1010,15 @@ export function ChatThread({
         }
         stopTypingSupabase(conversationId).catch(e => console.warn('stopTypingSupabase failed:', e))
 
+        // Broadcast instantáneamente vía Supabase Realtime
+        supabase.channel(`conversation-${conversationId}`).send({
+          type: 'broadcast',
+          event: 'new_message',
+          payload: optimisticMsg,
+        }).catch(e => console.warn('Supabase broadcast failed:', e))
+
         await sendMessage(conversationId, content, prevReplyingTo?.id ?? undefined)
-        await mutateMessages()
+        mutateMessages()
         onConversationInfoChange?.(conversationId)
       } catch {
         // Rollback
