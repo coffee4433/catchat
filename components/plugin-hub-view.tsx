@@ -45,48 +45,6 @@ export const AVAILABLE_HUB_PLUGINS: StorePluginItem[] = [
     iconName: 'Radio',
     verified: true,
   },
-  {
-    id: 'cat-arcade',
-    name: 'CatArcade Games',
-    description:
-      'Minijuegos retro estilo arcade multijugador para competir con amigos dentro de llamadas y salas de chat.',
-    version: 'v0.9.4',
-    author: 'catchat-devs',
-    category: 'utility',
-    downloads: '8.2k',
-    rating: 4.8,
-    githubUrl: 'https://github.com/coffee4433/catchat/releases/tag/plugin-cat-arcade',
-    iconName: 'Boxes',
-    verified: true,
-  },
-  {
-    id: 'cat-ai',
-    name: 'CatAI Assistant',
-    description:
-      'Asistente multimodal IA para resumen automático de mensajes, traducción en directo y generación de imágenes.',
-    version: 'v1.2.0',
-    author: 'deepmind-team',
-    category: 'ai',
-    downloads: '22.1k',
-    rating: 5.0,
-    githubUrl: 'https://github.com/coffee4433/catchat/releases/tag/plugin-cat-ai',
-    iconName: 'Sparkles',
-    verified: true,
-  },
-  {
-    id: 'cat-canvas',
-    name: 'CatCanvas',
-    description:
-      'Pizarra colaborativa infinita en tiempo real para dibujar, diagramar y tomar notas durante videollamadas.',
-    version: 'v1.1.0',
-    author: 'canvas-team',
-    category: 'productivity',
-    downloads: '5.6k',
-    rating: 4.7,
-    githubUrl: 'https://github.com/coffee4433/catchat/releases/tag/plugin-cat-canvas',
-    iconName: 'Zap',
-    verified: true,
-  },
 ]
 
 export function PluginHubView({ onClose }: { onClose?: () => void }) {
