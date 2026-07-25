@@ -1218,7 +1218,7 @@ export function ChatThread({
 
             {/* Content Area */}
             <div className="min-w-0 flex-1">
-              <div className="flex items-baseline gap-2">
+              <div className="flex items-center gap-2 leading-none">
                 <span
                   onClick={(e) => {
                     const rect = e.currentTarget.getBoundingClientRect()
