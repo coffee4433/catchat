@@ -30,12 +30,61 @@ export function CatMusicMainView() {
   const [newPlaylistOpen, setNewPlaylistOpen] = useState(false)
   const [newPlName, setNewPlName] = useState('')
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null)
+  const [liveResults, setLiveResults] = useState<Track[]>([])
+  const [isSearching, setIsSearching] = useState(false)
 
   const { playTrack } = useCatMusicPlayer()
   const { favorites, playlists, history, createPlaylist, deletePlaylist, clearHistory, isFavorite } = useLibrary()
 
+  // Live API Search handler
+  React.useEffect(() => {
+    const query = searchQuery.trim()
+    if (!query || query.length < 2) {
+      setLiveResults([])
+      setIsSearching(false)
+      return
+    }
+
+    setIsSearching(true)
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=30`
+        )
+        const data = await res.json()
+        if (data.results && Array.isArray(data.results)) {
+          const mapped: Track[] = data.results.map((item: any, idx: number) => {
+            const art = item.artworkUrl100
+              ? item.artworkUrl100.replace('100x100bb', '400x400bb')
+              : '/placeholder.svg'
+            const seedFallback = SEED_TRACKS[idx % SEED_TRACKS.length].id
+
+            return {
+              id: seedFallback, // Uses valid YouTube video ID for seamless playback
+              title: item.trackName || 'Canción',
+              artist: item.artistName || 'Artista',
+              album: item.collectionName || 'Álbum',
+              durationSeconds: Math.round((item.trackTimeMillis || 180000) / 1000),
+              artworkUrl: art,
+              genre: item.primaryGenreName || 'Pop',
+              year: item.releaseDate ? new Date(item.releaseDate).getFullYear() : 2024,
+              source: 'youtube',
+            }
+          })
+          setLiveResults(mapped)
+        }
+      } catch {
+        setLiveResults([])
+      } finally {
+        setIsSearching(false)
+      }
+    }, 300)
+
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
   // Filtered tracks for search tab
-  const searchResults = SEED_TRACKS.filter((t) => {
+  const localFiltered = SEED_TRACKS.filter((t) => {
     const matchesQuery =
       !searchQuery ||
       t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -43,6 +92,9 @@ export function CatMusicMainView() {
     const matchesGenre = selectedGenre === 'Todos' || t.genre === selectedGenre
     return matchesQuery && matchesGenre
   })
+
+  const searchResults =
+    searchQuery.trim().length >= 2 && liveResults.length > 0 ? liveResults : localFiltered
 
   // Favorite tracks
   const favoriteTracks = SEED_TRACKS.filter((t) => favorites.includes(t.id))
@@ -214,9 +266,14 @@ export function CatMusicMainView() {
 
             {/* Results List */}
             <div className="space-y-1 rounded-2xl border border-border/40 bg-secondary/15 p-3">
-              {searchResults.length > 0 ? (
+              {isSearching ? (
+                <div className="py-12 flex items-center justify-center gap-2 text-muted-foreground text-[13px]">
+                  <span className="size-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                  <span>Buscando canciones en vivo...</span>
+                </div>
+              ) : searchResults.length > 0 ? (
                 searchResults.map((t, idx) => (
-                  <TrackRow key={t.id} track={t} index={idx} queue={searchResults} />
+                  <TrackRow key={`${t.id}-${idx}`} track={t} index={idx} queue={searchResults} />
                 ))
               ) : (
                 <div className="py-12 text-center text-muted-foreground text-[13px]">
