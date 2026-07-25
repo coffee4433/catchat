@@ -16,6 +16,8 @@ type LibraryContextType = {
   deletePlaylist: (playlistId: string) => void
   addTrackToPlaylist: (playlistId: string, track: Track) => void
   removeTrackFromPlaylist: (playlistId: string, trackId: string) => void
+  startDownload: (track: Track) => void
+  removeDownload: (trackId: string) => void
   recordPlay: (track: Track, msPlayed: number, completed: boolean) => void
   clearHistory: () => void
   saveSettings: (patch: Partial<CatMusicSettings>) => void
@@ -137,6 +139,48 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     )
   }
 
+  const startDownload = (track: Track) => {
+    const existing = downloads.find((d) => d.trackId === track.id)
+    if (existing) return
+
+    const newJob: DownloadJob = {
+      id: `dl-${Date.now()}`,
+      trackId: track.id,
+      track,
+      status: 'processing',
+      progress: 15,
+      format: 'mp3',
+      bitrateKbps: settings.downloadBitrate || 320,
+      requestedAt: new Date().toISOString(),
+    }
+
+    setDownloads((prev) => [newJob, ...prev])
+
+    let currentProgress = 15
+    const interval = setInterval(() => {
+      currentProgress += 25
+      if (currentProgress >= 100) {
+        currentProgress = 100
+        clearInterval(interval)
+        setDownloads((prev) =>
+          prev.map((d) =>
+            d.trackId === track.id
+              ? { ...d, status: 'ready', progress: 100, completedAt: new Date().toISOString() }
+              : d
+          )
+        )
+      } else {
+        setDownloads((prev) =>
+          prev.map((d) => (d.trackId === track.id ? { ...d, progress: currentProgress } : d))
+        )
+      }
+    }, 350)
+  }
+
+  const removeDownload = (trackId: string) => {
+    setDownloads((prev) => prev.filter((d) => d.trackId !== trackId))
+  }
+
   const recordPlay = (track: Track, msPlayed: number, completed: boolean) => {
     const entry: PlayHistoryEntry = {
       id: `hist-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
@@ -171,6 +215,8 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         deletePlaylist,
         addTrackToPlaylist,
         removeTrackFromPlaylist,
+        startDownload,
+        removeDownload,
         recordPlay,
         clearHistory,
         saveSettings,

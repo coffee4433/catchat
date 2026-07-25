@@ -19,6 +19,8 @@ import { useCatMusicPlayer } from '@/lib/plugins/cat-music/player-context'
 import { useLibrary } from '@/lib/plugins/cat-music/library-context'
 import { TrackCard } from './track-card'
 import { TrackRow } from './track-row'
+import { TrackDetailView } from './track-detail-view'
+import { ArtistDetailView } from './artist-detail-view'
 import type { Track } from '@/lib/plugins/cat-music/types'
 
 type Tab = 'home' | 'search' | 'playlists' | 'favorites' | 'history'
@@ -32,6 +34,10 @@ export function CatMusicMainView() {
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null)
   const [liveResults, setLiveResults] = useState<Track[]>([])
   const [isSearching, setIsSearching] = useState(false)
+
+  // Sub-view navigation state
+  const [selectedTrackDetail, setSelectedTrackDetail] = useState<Track | null>(null)
+  const [selectedArtistName, setSelectedArtistName] = useState<string | null>(null)
 
   const { playTrack } = useCatMusicPlayer()
   const { favorites, playlists, history, createPlaylist, deletePlaylist, clearHistory, isFavorite } = useLibrary()
@@ -92,6 +98,32 @@ export function CatMusicMainView() {
   const setNewChatOpenFalse = () => setNewPlaylistOpen(false)
 
   const selectedPlaylist = playlists.find((p) => p.id === selectedPlaylistId)
+
+  if (selectedTrackDetail) {
+    return (
+      <TrackDetailView
+        track={selectedTrackDetail}
+        onBack={() => setSelectedTrackDetail(null)}
+        onSelectArtist={(artistName) => {
+          setSelectedTrackDetail(null)
+          setSelectedArtistName(artistName)
+        }}
+      />
+    )
+  }
+
+  if (selectedArtistName) {
+    return (
+      <ArtistDetailView
+        artistName={selectedArtistName}
+        onBack={() => setSelectedArtistName(null)}
+        onSelectTrack={(track) => {
+          setSelectedArtistName(null)
+          setSelectedTrackDetail(track)
+        }}
+      />
+    )
+  }
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden bg-background/50 p-4 text-foreground">
@@ -207,7 +239,14 @@ export function CatMusicMainView() {
               <h3 className="text-base font-bold text-foreground mb-3">Recomendados para ti</h3>
               <div className="space-y-1 rounded-2xl border border-border/40 bg-secondary/15 p-3">
                 {SEED_TRACKS.slice(4, 10).map((t, idx) => (
-                  <TrackRow key={t.id} track={t} index={idx} queue={SEED_TRACKS} />
+                  <TrackRow
+                    key={t.id}
+                    track={t}
+                    index={idx}
+                    queue={SEED_TRACKS}
+                    onSelectArtist={(a) => setSelectedArtistName(a)}
+                    onSelectTrack={(tr) => setSelectedTrackDetail(tr)}
+                  />
                 ))}
               </div>
             </div>
@@ -255,7 +294,14 @@ export function CatMusicMainView() {
                 </div>
               ) : searchResults.length > 0 ? (
                 searchResults.map((t, idx) => (
-                  <TrackRow key={`${t.id}-${idx}`} track={t} index={idx} queue={searchResults} />
+                  <TrackRow
+                    key={`${t.id}-${idx}`}
+                    track={t}
+                    index={idx}
+                    queue={searchResults}
+                    onSelectArtist={(a) => setSelectedArtistName(a)}
+                    onSelectTrack={(tr) => setSelectedTrackDetail(tr)}
+                  />
                 ))
               ) : (
                 <div className="py-12 text-center text-muted-foreground text-[13px]">
@@ -327,7 +373,14 @@ export function CatMusicMainView() {
                 <div className="space-y-1 rounded-2xl border border-border/40 bg-secondary/15 p-3">
                   {selectedPlaylist.tracks.length > 0 ? (
                     selectedPlaylist.tracks.map((t, idx) => (
-                      <TrackRow key={t.id} track={t} index={idx} queue={selectedPlaylist.tracks} />
+                      <TrackRow
+                        key={`${t.id}-${idx}`}
+                        track={t}
+                        index={idx}
+                        queue={selectedPlaylist.tracks}
+                        onSelectArtist={(a) => setSelectedArtistName(a)}
+                        onSelectTrack={(tr) => setSelectedTrackDetail(tr)}
+                      />
                     ))
                   ) : (
                     <p className="py-8 text-center text-[12.5px] text-muted-foreground">
@@ -401,7 +454,14 @@ export function CatMusicMainView() {
             <div className="space-y-1 rounded-2xl border border-border/40 bg-secondary/15 p-3">
               {favoriteTracks.length > 0 ? (
                 favoriteTracks.map((t, idx) => (
-                  <TrackRow key={t.id} track={t} index={idx} queue={favoriteTracks} />
+                  <TrackRow
+                    key={t.id}
+                    track={t}
+                    index={idx}
+                    queue={favoriteTracks}
+                    onSelectArtist={(a) => setSelectedArtistName(a)}
+                    onSelectTrack={(tr) => setSelectedTrackDetail(tr)}
+                  />
                 ))
               ) : (
                 <div className="py-12 text-center text-muted-foreground text-[13px]">
@@ -431,8 +491,14 @@ export function CatMusicMainView() {
 
             <div className="space-y-1 rounded-2xl border border-border/40 bg-secondary/15 p-3">
               {history.length > 0 ? (
-                history.map((entry) => (
-                  <TrackRow key={entry.id} track={entry.track} queue={history.map((h) => h.track)} />
+                history.map((entry, idx) => (
+                  <TrackRow
+                    key={`${entry.id}-${idx}`}
+                    track={entry.track}
+                    queue={history.map((h) => h.track)}
+                    onSelectArtist={(a) => setSelectedArtistName(a)}
+                    onSelectTrack={(tr) => setSelectedTrackDetail(tr)}
+                  />
                 ))
               ) : (
                 <div className="py-12 text-center text-muted-foreground text-[13px]">
