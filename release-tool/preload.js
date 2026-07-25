@@ -10,6 +10,7 @@ contextBridge.exposeInMainWorld('releaseTool', {
   generateAiNotes: (prompt) => ipcRenderer.invoke('generate:ai-notes', prompt),
   chatAiNotes: (messages) => ipcRenderer.invoke('chat:ai-notes', messages),
   editReleaseNotesComponent: (code) => ipcRenderer.invoke('edit:release-notes-component', code),
+  publishPlugin: (pluginId) => ipcRenderer.invoke('publish:plugin', pluginId),
   release: (version, notes, showModal) => ipcRenderer.invoke('release', version, notes, showModal),
   onOutput: (cb) => {
     const fn = (_e, chunk) => cb(chunk)

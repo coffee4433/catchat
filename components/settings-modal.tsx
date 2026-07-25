@@ -27,6 +27,7 @@ import {
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { usePlugins } from '@/lib/plugins/plugin-provider'
+import { PluginHubView } from './plugin-hub-view'
 import {
   changePassword,
   deleteAccount as deleteAccountAction,
@@ -1171,84 +1172,5 @@ function ReleaseNotesSettingsSection({ onClose }: { onClose: () => void }) {
 }
 
 function PluginsSettingsSection() {
-  const { lang } = useLanguage()
-  const { registeredPlugins, isPluginEnabled, togglePlugin } = usePlugins()
-
-  return (
-    <div className="max-w-2xl space-y-6 select-none">
-      {/* Header Banner */}
-      <div className="flex items-center justify-between gap-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400">
-            <Boxes className="size-5" />
-          </div>
-          <div>
-            <h3 className="text-base font-bold text-foreground">
-              {lang === 'es' ? 'Gestor de Plugins y Extensiones' : 'Plugins & Extensions Manager'}
-            </h3>
-            <p className="text-[12.5px] text-muted-foreground mt-0.5">
-              {lang === 'es'
-                ? 'Activa o desactiva extensiones integradas para personalizar CatChat.'
-                : 'Enable or disable built-in extensions to customize CatChat.'}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Plugins List */}
-      <div className="space-y-4">
-        {registeredPlugins.map((plugin) => {
-          const enabled = isPluginEnabled(plugin.metadata.id)
-          return (
-            <div
-              key={plugin.metadata.id}
-              className={`flex items-start justify-between gap-4 rounded-2xl border p-4 transition-all ${
-                enabled
-                  ? 'border-emerald-500/30 bg-emerald-500/5 shadow-sm'
-                  : 'border-border/60 bg-secondary/10'
-              }`}
-            >
-              <div className="flex items-start gap-3.5">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-secondary text-primary font-bold text-lg">
-                  📻
-                </div>
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <h4 className="text-sm font-bold text-foreground">{plugin.metadata.name}</h4>
-                    <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
-                      v{plugin.metadata.version}
-                    </span>
-                    <span className="rounded-full bg-primary/20 px-2 py-0.5 text-[10px] font-bold text-primary">
-                      {plugin.metadata.category}
-                    </span>
-                  </div>
-                  <p className="text-[12.5px] text-muted-foreground leading-relaxed">
-                    {plugin.metadata.description}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground/70 font-mono">
-                    Autor: {plugin.metadata.author}
-                  </p>
-                </div>
-              </div>
-
-              <button
-                role="switch"
-                aria-checked={enabled}
-                onClick={() => togglePlugin(plugin.metadata.id)}
-                className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
-                  enabled ? 'bg-emerald-500' : 'bg-secondary'
-                }`}
-              >
-                <span
-                  className={`absolute left-0.5 top-0.5 size-5 rounded-full bg-card shadow-sm transition-transform ${
-                    enabled ? 'translate-x-5' : 'translate-x-0'
-                  }`}
-                />
-              </button>
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
+  return <PluginHubView />
 }

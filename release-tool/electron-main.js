@@ -378,5 +378,33 @@ ipcMain.handle('release', async (_event, version, notes, showModal) => {
   })
 })
 
+ipcMain.handle('publish:plugin', async (_event, pluginId) => {
+  const cfg = loadConfig()
+  if (!cfg.projectPath) throw new Error('No project selected')
+
+  const publishScript = path.join(cfg.projectPath, 'scripts', 'publish-plugin.cjs')
+
+  return new Promise((resolve, reject) => {
+    const child = spawn('node', [publishScript], {
+      cwd: cfg.projectPath,
+      env: {
+        ...process.env,
+        PLUGIN_ID: pluginId || 'cat-music',
+        GH_TOKEN: cfg.ghToken || process.env.GH_TOKEN || '',
+      },
+      shell: true,
+    })
+
+    child.stdout.on('data', (d) => mainWindow?.webContents.send('release:output', d.toString()))
+    child.stderr.on('data', (d) => mainWindow?.webContents.send('release:output', d.toString()))
+
+    child.on('close', (code) => {
+      resolve({ success: code === 0 })
+    })
+
+    child.on('error', (err) => reject(err))
+  })
+})
+
 app.on('ready', createWindow)
 app.on('window-all-closed', () => app.quit())
