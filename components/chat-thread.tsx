@@ -630,14 +630,12 @@ export function ChatThread({
     }
   }, [allMessages.length, typingUsers.length, conversation?.id])
 
-  // Scroll smoothly when reply or edit state changes to adjust layout height smoothly
+  // Adjust scroll position instantly when reply or edit panel opens
   useEffect(() => {
     const el = scrollRef.current
     if (!el) return
-    if (wasAtBottom.current) {
-      setTimeout(() => {
-        el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
-      }, 50)
+    if (wasAtBottom.current && (replyingTo || editingMessage)) {
+      el.scrollTop = el.scrollHeight
     }
   }, [replyingTo, editingMessage])
 
@@ -700,10 +698,7 @@ export function ChatThread({
     if (unreadMessageIds.length > 0) {
       // Mark messages as read immediately (300ms delay for visibility assurance)
       const timer = setTimeout(() => {
-        markMessagesAsRead(unreadMessageIds).then(() => {
-          // Force immediate refetch after marking as read
-          mutateMessages()
-        }).catch(() => {
+        markMessagesAsRead(unreadMessageIds).catch(() => {
           // Silently fail - read receipts are not critical
         })
       }, 300) // Reducido de 1000ms a 300ms
