@@ -586,7 +586,19 @@ export function ChatThread({
   // Fetch all conversations for forwarding target
   const { data: allConversations = [] } = useSWR('conversations', getConversations)
 
-  const allMessages = [...messages, ...pendingMessages]
+  const allMessages = [
+    ...messages,
+    ...pendingMessages.filter(
+      (pm) =>
+        !messages.some(
+          (m) =>
+            m.id === pm.id ||
+            (m.userId === pm.userId &&
+              m.content.trim() === pm.content.trim() &&
+              Math.abs(new Date(m.createdAt).getTime() - new Date(pm.createdAt).getTime()) < 10000),
+        ),
+    ),
+  ]
 
   const handleOpenEmojiPicker = (e: React.MouseEvent, msgId: number) => {
     e.stopPropagation()
