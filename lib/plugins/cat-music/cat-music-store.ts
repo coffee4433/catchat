@@ -1,17 +1,16 @@
 'use client'
 
-import type { PlayerState, Track, RepeatMode } from './types'
-import { SEED_TRACKS } from './catalog'
+import type { PlayerState } from './types'
 
 type Listener = () => void
 
 const initialPlayerState: PlayerState = {
-  queue: SEED_TRACKS,
+  queue: [], // Starts empty - no song loaded until user plays a track
   index: 0,
   isPlaying: false,
   isBuffering: false,
   position: 0,
-  duration: SEED_TRACKS[0]?.durationSeconds || 180,
+  duration: 0,
   volume: 80,
   muted: false,
   shuffle: false,
