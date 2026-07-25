@@ -204,9 +204,9 @@ export function PluginHubView({ onClose }: { onClose?: () => void }) {
                         <div className="flex size-11 shrink-0 items-center justify-center overflow-hidden">
                           <PluginIcon id={plugin.id} className="size-full" />
                         </div>
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            <h3 className="truncate text-xs font-bold tracking-tight">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <h3 className="text-xs font-bold tracking-tight text-foreground">
                               {plugin.name}
                             </h3>
                             {!isInstalled ? (
