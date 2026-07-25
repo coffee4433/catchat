@@ -26,7 +26,7 @@ import {
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
-import { usePlugins } from '@/lib/plugins/plugin-provider'
+import { isElectronEnv, usePlugins } from '@/lib/plugins/plugin-provider'
 import { PluginHubView } from './plugin-hub-view'
 import {
   changePassword,
@@ -100,12 +100,14 @@ export function SettingsModal({
     { id: 'notifications', label: lang === 'es' ? 'Notificaciones' : 'Notifications', icon: <Bell className="size-4" /> },
   ]
 
+  const isElectron = isElectronEnv()
+
   const appSettings: { id: Section; label: string; icon: React.ReactNode }[] = [
     { id: 'appearance', label: lang === 'es' ? 'Apariencia' : 'Appearance', icon: <Palette className="size-4" /> },
     { id: 'chat', label: lang === 'es' ? 'Chat y texto' : 'Text & Images', icon: <MessageCircle className="size-4" /> },
     { id: 'language', label: lang === 'es' ? 'Idioma' : 'Language', icon: <Globe className="size-4" /> },
     { id: 'releasenotes', label: lang === 'es' ? 'Novedades de la versión' : 'Release Notes', icon: <Sparkles className="size-4 text-[#7983f5]" /> },
-    { id: 'plugins', label: lang === 'es' ? 'Plugins y Extensiones' : 'Plugins & Extensions', icon: <Boxes className="size-4 text-emerald-400" /> },
+    ...(isElectron ? [{ id: 'plugins' as Section, label: lang === 'es' ? 'Plugins y Extensiones' : 'Plugins & Extensions', icon: <Boxes className="size-4 text-emerald-400" /> }] : []),
   ]
 
   const allSections = [...userSettings, ...appSettings]

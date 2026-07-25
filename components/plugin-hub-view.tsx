@@ -75,19 +75,6 @@ export function PluginHubView({ onClose }: { onClose?: () => void }) {
 
   return (
     <div className="flex h-full w-full flex-col overflow-y-auto bg-background/60 p-6 text-foreground space-y-6">
-      {/* Web mode restriction notice */}
-      {!isElectron && (
-        <div className="flex items-center gap-3.5 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-amber-200 text-xs shadow-md">
-          <Laptop className="size-5 shrink-0 text-amber-400" />
-          <div>
-            <p className="font-extrabold text-amber-300">Instalación de plugins exclusiva para la App de Escritorio</p>
-            <p className="opacity-80 mt-0.5">
-              La instalación y ejecución de plugins personalizados requiere la aplicación de escritorio CatChat (Electron). En la versión web puedes explorar el catálogo.
-            </p>
-          </div>
-        </div>
-      )}
-
       {/* Hero Store Header */}
       <div className="relative overflow-hidden rounded-3xl border border-border/40 bg-gradient-to-r from-emerald-500/20 via-teal-500/10 to-indigo-500/20 p-6 shadow-xl backdrop-blur-xl">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
