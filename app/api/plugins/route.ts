@@ -17,8 +17,6 @@ export async function GET() {
             const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
             plugins.push({
               ...manifest,
-              downloads: '14.8k',
-              rating: 4.9,
               verified: true,
             })
           }
@@ -52,8 +50,6 @@ export async function GET() {
                 const manifest = await manifestRes.json()
                 plugins.push({
                   ...manifest,
-                  downloads: '14.8k',
-                  rating: 4.9,
                   verified: true,
                 })
               }

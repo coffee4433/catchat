@@ -3,9 +3,10 @@
 import React, { useState } from 'react'
 import {
   Boxes,
-  CheckCircle2,
+  Cloud,
   Command,
   Download,
+  HardDrive,
   Layers,
   PackageOpen,
   Radio,
@@ -24,17 +25,24 @@ export type StorePluginItem = {
   version: string
   author: string
   category: 'media' | 'productivity' | 'utility' | 'ai'
-  downloads: string
-  rating: number
+  icon?: string
+  rating?: number
   githubUrl: string
-  iconName: string
   verified: boolean
 }
 
 export const AVAILABLE_HUB_PLUGINS: StorePluginItem[] = []
 
 function PluginIcon({ id, className }: { id: string; className?: string }) {
-  if (id === 'cat-music') return <Radio className={className} />
+  if (id === 'cat-music') {
+    return (
+      <img
+        src="/plugins/cat-music/icon.png"
+        alt="CatMusic"
+        className={`${className} object-contain`}
+      />
+    )
+  }
   if (id === 'cat-ai') return <Sparkles className={className} />
   if (id === 'cat-canvas') return <Zap className={className} />
   return <Boxes className={className} />
@@ -134,7 +142,7 @@ export function PluginHubView({ onClose }: { onClose?: () => void }) {
                 <button
                   key={cat.id}
                   onClick={() => setSelectedCategory(cat.id)}
-                  className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold transition-all duration-200 ${
+                  className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold transition-colors ${
                     active
                       ? 'bg-primary text-primary-foreground shadow-md'
                       : 'text-muted-foreground hover:bg-secondary/60 hover:text-foreground'
@@ -184,7 +192,7 @@ export function PluginHubView({ onClose }: { onClose?: () => void }) {
               return (
                 <article
                   key={plugin.id}
-                  className="group relative overflow-hidden rounded-2xl border border-border/50 bg-secondary/20 backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-secondary/30 hover:shadow-xl"
+                  className="relative overflow-hidden rounded-2xl border border-border/50 bg-secondary/20 backdrop-blur-xl transition-colors hover:border-primary/40 hover:bg-secondary/30"
                 >
                   {/* Top theme accent bar */}
                   <div className="h-1 w-full bg-primary/60" />
@@ -193,21 +201,24 @@ export function PluginHubView({ onClose }: { onClose?: () => void }) {
                     {/* Header */}
                     <div className="flex items-start justify-between gap-2.5">
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-sm transition-transform duration-300 group-hover:scale-105">
-                          <PluginIcon id={plugin.id} className="size-4.5" />
+                        <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-sm">
+                          <PluginIcon id={plugin.id} className="size-5" />
                         </div>
                         <div className="min-w-0">
                           <div className="flex items-center gap-1.5">
                             <h3 className="truncate text-xs font-bold tracking-tight">
                               {plugin.name}
                             </h3>
-                            {plugin.verified && (
-                              <CheckCircle2 className="size-3 shrink-0 text-primary" />
+                            {!isInstalled ? (
+                              <span title={lang === 'es' ? 'Disponible en la nube' : 'Available in cloud'}>
+                                <Cloud className="size-3 shrink-0 text-muted-foreground/80" />
+                              </span>
+                            ) : (
+                              <span title={lang === 'es' ? 'Instalando en el dispositivo' : 'Installed on device'}>
+                                <HardDrive className="size-3 shrink-0 text-emerald-400" />
+                              </span>
                             )}
                           </div>
-                          <p className="mt-0.5 truncate text-[10.5px] text-muted-foreground">
-                            @{plugin.author}
-                          </p>
                         </div>
                       </div>
 
@@ -256,10 +267,10 @@ export function PluginHubView({ onClose }: { onClose?: () => void }) {
                                   ? 'Solo disponible en la app de escritorio'
                                   : 'Desktop app only'
                             }
-                            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-bold transition-all duration-200 ${
+                            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-bold transition-colors ${
                               !isElectron
                                 ? 'cursor-not-allowed border border-border/50 bg-secondary/40 text-muted-foreground'
-                                : 'bg-primary text-primary-foreground shadow-md shadow-primary/25 hover:bg-primary/90 hover:scale-[1.03] active:scale-95 disabled:opacity-60'
+                                : 'bg-primary text-primary-foreground shadow-md shadow-primary/25 hover:bg-primary/90 disabled:opacity-60'
                             }`}
                           >
                             {isInstalling ? (
@@ -287,7 +298,7 @@ export function PluginHubView({ onClose }: { onClose?: () => void }) {
                             {/* Enable / Disable toggle */}
                             <button
                               onClick={() => togglePlugin(plugin.id)}
-                              className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all duration-200 ${
+                              className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-bold transition-colors ${
                                 isEnabled
                                   ? 'bg-primary/15 text-primary ring-1 ring-primary/30'
                                   : 'bg-secondary/60 text-muted-foreground hover:bg-secondary hover:text-foreground'
