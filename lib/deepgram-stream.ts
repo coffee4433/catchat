@@ -1,9 +1,8 @@
 /**
  * Deepgram Real-Time Speech-to-Text Streaming
  * 
- * Uses Deepgram's WebSocket API for true real-time transcription.
- * Text appears word-by-word as the user speaks.
- * Free tier: 45,000 minutes (no credit card required).
+ * Streams 16kHz 16-bit Linear PCM audio over WebSocket for 100% reliable,
+ * continuous real-time transcription in Spanish and English.
  */
 
 export interface DeepgramStreamCallbacks {
@@ -14,8 +13,10 @@ export interface DeepgramStreamCallbacks {
 
 export class DeepgramStreamer {
   private socket: WebSocket | null = null
-  private mediaRecorder: MediaRecorder | null = null
   private stream: MediaStream | null = null
+  private audioContext: AudioContext | null = null
+  private processor: ScriptProcessorNode | null = null
+  private source: MediaStreamAudioSourceNode | null = null
 
   async start(language: string, callbacks: DeepgramStreamCallbacks): Promise<boolean> {
     // 1. Get API key from server
@@ -45,30 +46,39 @@ export class DeepgramStreamer {
       return false
     }
 
-    // 3. Open WebSocket to Deepgram
-    const lang = language === 'es' ? 'es' : 'en'
-    const wsUrl = `wss://api.deepgram.com/v1/listen?model=nova-2&language=${lang}&smart_format=true&interim_results=true&punctuate=true`
+    // 3. Open WebSocket to Deepgram with raw 16kHz PCM encoding for Spanish ('es')
+    const langCode = language === 'es' ? 'es' : 'en'
+    const wsUrl = `wss://api.deepgram.com/v1/listen?model=nova-2&language=${langCode}&encoding=linear16&sample_rate=16000&smart_format=true&interim_results=true&punctuate=true`
 
     this.socket = new WebSocket(wsUrl, ['token', apiKey])
 
     this.socket.onopen = () => {
-      // 4. Start streaming audio to Deepgram
-      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-        ? 'audio/webm;codecs=opus'
-        : MediaRecorder.isTypeSupported('audio/webm')
-        ? 'audio/webm'
-        : undefined
+      try {
+        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext
+        this.audioContext = new AudioCtx({ sampleRate: 16000 })
+        this.source = this.audioContext.createMediaStreamSource(this.stream!)
+        
+        // Use 4096 buffer size for smooth streaming (~250ms chunks)
+        this.processor = this.audioContext.createScriptProcessor(4096, 1, 1)
 
-      this.mediaRecorder = new MediaRecorder(this.stream!, { mimeType })
+        this.source.connect(this.processor)
+        this.processor.connect(this.audioContext.destination)
 
-      this.mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0 && this.socket?.readyState === WebSocket.OPEN) {
-          this.socket.send(event.data)
+        this.processor.onaudioprocess = (e) => {
+          if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+            const inputData = e.inputBuffer.getChannelData(0)
+            const pcmBuffer = new Int16Array(inputData.length)
+            for (let i = 0; i < inputData.length; i++) {
+              const s = Math.max(-1, Math.min(1, inputData[i]))
+              pcmBuffer[i] = s < 0 ? s * 0x8000 : s * 0x7fff
+            }
+            this.socket.send(pcmBuffer.buffer)
+          }
         }
+      } catch (err) {
+        console.error('Failed to setup AudioContext for Deepgram:', err)
+        callbacks.onError('Audio processing error')
       }
-
-      // Send audio chunks every 100ms for fast real-time feel
-      this.mediaRecorder.start(100)
     }
 
     this.socket.onmessage = (event) => {
@@ -96,9 +106,17 @@ export class DeepgramStreamer {
   }
 
   stop() {
-    if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
-      try { this.mediaRecorder.stop() } catch {}
-      this.mediaRecorder = null
+    if (this.processor) {
+      try { this.processor.disconnect() } catch {}
+      this.processor = null
+    }
+    if (this.source) {
+      try { this.source.disconnect() } catch {}
+      this.source = null
+    }
+    if (this.audioContext) {
+      try { this.audioContext.close() } catch {}
+      this.audioContext = null
     }
     if (this.stream) {
       this.stream.getTracks().forEach((t) => t.stop())

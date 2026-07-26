@@ -305,7 +305,7 @@ export function ChatThread({
         let finalizedText = ''
         let interimText = ''
 
-        const started = await streamer.start(lang, {
+        const started = await streamer.start(lang === 'es' ? 'es' : 'en', {
           onTranscript: (text, isFinal) => {
             const cleanText = text.trim()
             if (!cleanText) return
