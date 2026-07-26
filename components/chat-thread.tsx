@@ -292,9 +292,63 @@ export function ChatThread({
   const audioPreviewRef = useRef<HTMLAudioElement | null>(null)
   const [isTranscribing, setIsTranscribing] = useState(false)
   const speechFailedRef = useRef(false)
+  const deepgramFailedRef = useRef(false)
+  const deepgramRef = useRef<any>(null)
 
   const startVoiceRecording = async () => {
-    // First, try native Web Speech API (works in Chrome desktop, some Electron configs)
+    // 1. Try Deepgram real-time streaming (fastest, text appears word-by-word)
+    if (!deepgramFailedRef.current) {
+      try {
+        const { DeepgramStreamer } = await import('@/lib/deepgram-stream')
+        const streamer = new DeepgramStreamer()
+        const baseText = draft ? draft.trim() + ' ' : ''
+        let finalizedText = ''
+
+        const started = await streamer.start(lang, {
+          onTranscript: (text, isFinal) => {
+            if (isFinal) {
+              finalizedText += (finalizedText ? ' ' : '') + text
+              const full = (baseText + finalizedText).trim()
+              setDraft(full)
+              handleInputChange(full)
+            } else {
+              // Show interim results live
+              const full = (baseText + finalizedText + (finalizedText ? ' ' : '') + text).trim()
+              setDraft(full)
+              handleInputChange(full)
+            }
+          },
+          onError: (error) => {
+            console.warn('Deepgram error:', error)
+            deepgramFailedRef.current = true
+            deepgramRef.current = null
+            setIsRecording(false)
+            // Auto-fallback to Web Speech API or Whisper
+            startWebSpeechOrWhisper()
+          },
+          onClose: () => {
+            deepgramRef.current = null
+          },
+        })
+
+        if (started) {
+          deepgramRef.current = streamer
+          setIsRecording(true)
+          return
+        } else {
+          deepgramFailedRef.current = true
+        }
+      } catch {
+        deepgramFailedRef.current = true
+      }
+    }
+
+    // 2. Try Web Speech API or Whisper
+    await startWebSpeechOrWhisper()
+  }
+
+  const startWebSpeechOrWhisper = async () => {
+    // Try native Web Speech API
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     if (SpeechRecognition && !speechFailedRef.current) {
       try {
@@ -318,14 +372,12 @@ export function ChatThread({
         recognition.onerror = (e: any) => {
           console.warn('SpeechRecognition error:', e.error)
           if (e.error === 'network') {
-            // Mark as failed so next time we skip directly to Whisper local
             speechFailedRef.current = true
             if (speechRecognitionRef.current) {
               try { speechRecognitionRef.current.stop() } catch {}
               speechRecognitionRef.current = null
             }
             setIsRecording(false)
-            // Auto-retry with local Whisper fallback
             startWhisperRecording()
           }
         }
@@ -343,7 +395,7 @@ export function ChatThread({
       }
     }
 
-    // Fallback: Local Whisper via MediaRecorder
+    // Last resort: Local Whisper
     await startWhisperRecording()
   }
 
@@ -399,6 +451,11 @@ export function ChatThread({
   }
 
   const stopVoiceRecording = () => {
+    // Stop Deepgram streamer if active
+    if (deepgramRef.current) {
+      deepgramRef.current.stop()
+      deepgramRef.current = null
+    }
     // Stop Web Speech API if active
     if (speechRecognitionRef.current) {
       try { speechRecognitionRef.current.stop() } catch {}
