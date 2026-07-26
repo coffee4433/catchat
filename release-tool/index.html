@@ -703,31 +703,41 @@
   /* ------------------------------------------------------------------
      Releases & Plugins View — Search, Modern Cards & Badges
      ------------------------------------------------------------------ */
-  .search-bar-row {
+  .search-bar-wrapper {
     position: sticky; top: 0; z-index: 40;
-    display: flex; align-items: center; justify-content: center; gap: 14px;
-    margin: 0 auto 24px auto; width: 100%; max-width: 580px;
+    padding: 10px 0 16px 0;
+    background: linear-gradient(180deg, var(--bg) 82%, rgba(11, 15, 23, 0) 100%);
+    backdrop-filter: blur(12px);
+    margin-bottom: 6px;
   }
   .search-box {
-    position: relative; flex: 1; display: flex; align-items: center;
-    background: var(--surface); border: 1px solid var(--border-strong);
-    border-radius: 999px; padding: 2px 4px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(16px);
-    transition: all 0.2s ease;
+    position: relative; max-width: 620px; margin: 0 auto;
+    display: flex; align-items: center;
+    background: var(--surface-2); border: 1px solid var(--border-strong);
+    border-radius: 14px; padding: 4px 14px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .search-box:focus-within {
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--accent-soft), 0 10px 30px rgba(59, 130, 246, 0.25);
+    background: var(--surface);
+    box-shadow: 0 0 0 3px var(--accent-soft), 0 16px 40px rgba(0, 0, 0, 0.5);
   }
-  .search-box svg {
-    position: absolute; left: 16px; width: 17px; height: 17px; color: var(--accent); pointer-events: none;
+  .search-box svg.search-icon {
+    width: 17px; height: 17px; color: var(--accent); flex-shrink: 0; margin-right: 10px;
   }
   .search-input {
-    width: 100%; padding: 10px 18px 10px 44px;
+    flex: 1; padding: 10px 0;
     background: transparent; border: none;
     color: var(--fg); font-size: 13.5px; font-weight: 500;
-    outline: none;
+    outline: none; min-width: 0;
+  }
+  .search-input::placeholder { color: var(--muted); }
+  .search-count-pill {
+    font-family: var(--mono); font-size: 11px; font-weight: 700;
+    padding: 3px 10px; border-radius: 8px;
+    background: var(--surface-3); color: var(--fg-secondary); border: 1px solid var(--border);
+    flex-shrink: 0; margin-left: 10px; whitespace: nowrap;
   }
 
   .grid-cards {
@@ -951,12 +961,12 @@
             </button>
           </div>
 
-          <div class="search-bar-row">
+          <div class="search-bar-wrapper">
             <div class="search-box">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               <input type="text" id="releaseSearchInput" class="search-input" placeholder="Buscar actualización por versión, título o notas..." oninput="filterReleases()">
+              <span class="search-count-pill" id="releasesCountBadge">0 versiones</span>
             </div>
-            <span class="badge-outline" id="releasesCountBadge">0 versiones</span>
           </div>
 
           <div class="grid-cards" id="releasesListGrid">
@@ -979,12 +989,12 @@
             </button>
           </div>
 
-          <div class="search-bar-row">
+          <div class="search-bar-wrapper">
             <div class="search-box">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               <input type="text" id="pluginSearchInput" class="search-input" placeholder="Buscar plugin por nombre, id o descripción..." oninput="filterPlugins()">
+              <span class="search-count-pill" id="pluginsCountBadge">0 plugins</span>
             </div>
-            <span class="badge-outline" id="pluginsCountBadge">0 plugins</span>
           </div>
 
           <div class="grid-cards" id="pluginsListGrid">
