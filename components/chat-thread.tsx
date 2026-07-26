@@ -291,7 +291,10 @@ export function ChatThread({
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null)
   const audioPreviewRef = useRef<HTMLAudioElement | null>(null)
 
+  const hasNetworkErrorRef = useRef(false)
+
   const startVoiceRecording = async () => {
+    hasNetworkErrorRef.current = false
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     if (!SpeechRecognition) {
       alert(lang === 'es' ? 'Tu navegador o app no soporta el reconocimiento de voz automático.' : 'Voice recognition is not supported in this browser.')
@@ -323,8 +326,17 @@ export function ChatThread({
 
       recognition.onerror = (event: any) => {
         console.warn('Speech recognition error:', event.error)
-        if (event.error === 'no-speech' || event.error === 'network') {
-          // Ignore soft transient network/silence errors and let onend restart smoothly
+        if (event.error === 'network') {
+          hasNetworkErrorRef.current = true
+          stopVoiceRecording()
+          alert(
+            lang === 'es'
+              ? 'El servicio de dictado por voz de Chrome no está disponible en este navegador o entorno (Google Speech API bloqueado o sin conexión).'
+              : 'Google Chrome Speech API service is blocked or unavailable in this environment.'
+          )
+          return
+        }
+        if (event.error === 'no-speech') {
           return
         }
         if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
@@ -334,12 +346,12 @@ export function ChatThread({
       }
 
       recognition.onend = () => {
-        // Save current draft as accumulated base before restarting chunk
+        if (hasNetworkErrorRef.current) return
         setDraft((prev) => {
           accumulated = prev.trim()
           return prev
         })
-        if (speechRecognitionRef.current) {
+        if (speechRecognitionRef.current && isRecording) {
           try {
             recognition.start()
           } catch {}
