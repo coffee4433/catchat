@@ -37,6 +37,7 @@ function createWindow() {
     frame: false,
     transparent: true,
     roundedCorners: true,
+    icon: path.join(__dirname, 'icon.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,

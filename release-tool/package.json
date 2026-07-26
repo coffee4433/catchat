@@ -30,7 +30,10 @@
       "oneClick": false,
       "perMachine": false,
       "runAfterFinish": true,
-      "createDesktopShortcut": false,
+      "installerIcon": "icon.png",
+      "uninstallerIcon": "icon.png",
+      "installerHeaderIcon": "icon.png",
+      "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "CatChat Release"
     },
