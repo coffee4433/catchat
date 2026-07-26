@@ -81,6 +81,7 @@
   "dependencies": {
     "@base-ui/react": "^1.5.0",
     "@bubblewrap/core": "^1.24.1",
+    "@huggingface/transformers": "^4.2.0",
     "@livekit/components-react": "^2.9.23",
     "@livekit/components-styles": "^1.2.0",
     "@supabase/supabase-js": "^2.110.7",

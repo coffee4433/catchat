@@ -290,68 +290,124 @@ export function ChatThread({
   const animFrameRef = useRef<number | null>(null)
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null)
   const audioPreviewRef = useRef<HTMLAudioElement | null>(null)
+  const [isTranscribing, setIsTranscribing] = useState(false)
+  const speechFailedRef = useRef(false)
 
-  const startVoiceRecording = () => {
+  const startVoiceRecording = async () => {
+    // First, try native Web Speech API (works in Chrome desktop, some Electron configs)
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-    if (!SpeechRecognition) {
-      alert(lang === 'es' ? 'Tu navegador no soporta el reconocimiento de voz Web Speech API.' : 'Web Speech API is not supported in this browser.')
-      return
+    if (SpeechRecognition && !speechFailedRef.current) {
+      try {
+        const recognition = new SpeechRecognition()
+        recognition.lang = lang === 'es' ? 'es-ES' : 'en-US'
+        recognition.continuous = true
+        recognition.interimResults = true
+
+        const baseText = draft ? draft.trim() + ' ' : ''
+
+        recognition.onresult = (event: any) => {
+          let transcript = ''
+          for (let i = 0; i < event.results.length; i++) {
+            transcript += event.results[i][0].transcript
+          }
+          const fullContent = (baseText + transcript).trim()
+          setDraft(fullContent)
+          handleInputChange(fullContent)
+        }
+
+        recognition.onerror = (e: any) => {
+          console.warn('SpeechRecognition error:', e.error)
+          if (e.error === 'network') {
+            // Mark as failed so next time we skip directly to Whisper local
+            speechFailedRef.current = true
+            if (speechRecognitionRef.current) {
+              try { speechRecognitionRef.current.stop() } catch {}
+              speechRecognitionRef.current = null
+            }
+            setIsRecording(false)
+            // Auto-retry with local Whisper fallback
+            startWhisperRecording()
+          }
+        }
+
+        recognition.onend = () => {
+          setIsRecording(false)
+        }
+
+        recognition.start()
+        speechRecognitionRef.current = recognition
+        setIsRecording(true)
+        return
+      } catch {
+        speechFailedRef.current = true
+      }
     }
 
+    // Fallback: Local Whisper via MediaRecorder
+    await startWhisperRecording()
+  }
+
+  const startWhisperRecording = async () => {
     try {
-      const recognition = new SpeechRecognition()
-      recognition.lang = lang === 'es' ? 'es-ES' : 'en-US'
-      recognition.continuous = true
-      recognition.interimResults = true
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      audioChunksRef.current = []
 
-      const baseText = draft ? draft.trim() + ' ' : ''
+      const options = MediaRecorder.isTypeSupported('audio/webm')
+        ? { mimeType: 'audio/webm' }
+        : MediaRecorder.isTypeSupported('audio/mp4')
+        ? { mimeType: 'audio/mp4' }
+        : undefined
 
-      recognition.onresult = (event: any) => {
-        let transcript = ''
-        for (let i = 0; i < event.results.length; i++) {
-          transcript += event.results[i][0].transcript
+      const recorder = new MediaRecorder(stream, options)
+
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) {
+          audioChunksRef.current.push(e.data)
         }
-        const fullContent = (baseText + transcript).trim()
-        setDraft(fullContent)
-        handleInputChange(fullContent)
       }
 
-      recognition.onerror = (e: any) => {
-        console.warn('SpeechRecognition error:', e.error)
-        if (e.error === 'network') {
-          if (speechRecognitionRef.current) {
-            try {
-              speechRecognitionRef.current.stop()
-            } catch {}
-            speechRecognitionRef.current = null
+      recorder.onstop = async () => {
+        stream.getTracks().forEach((track) => track.stop())
+        const audioBlob = new Blob(audioChunksRef.current, { type: recorder.mimeType || 'audio/webm' })
+        if (audioBlob.size < 100) return
+
+        setIsTranscribing(true)
+        try {
+          const { transcribeAudio } = await import('@/lib/whisper-local')
+          const text = await transcribeAudio(audioBlob, lang === 'es' ? 'es' : 'en')
+          if (text) {
+            setDraft((prev) => {
+              const newText = prev ? `${prev.trim()} ${text}` : text
+              handleInputChange(newText)
+              return newText
+            })
           }
-          setIsRecording(false)
-          alert(
-            lang === 'es'
-              ? 'El servicio de voz de Google Chrome no está disponible en este navegador o entorno (error de red Chrome Speech API).'
-              : 'Google Chrome Speech API service is unavailable in this environment.'
-          )
+        } catch (err) {
+          console.error('Local Whisper transcription failed:', err)
+        } finally {
+          setIsTranscribing(false)
         }
       }
 
-      recognition.onend = () => {
-        setIsRecording(false)
-      }
-
-      recognition.start()
-      speechRecognitionRef.current = recognition
+      recorder.start()
+      mediaRecorderRef.current = recorder
       setIsRecording(true)
     } catch (err) {
-      console.error('Failed to start SpeechRecognition:', err)
+      console.error('Microphone access error:', err)
+      alert(lang === 'es' ? 'No se pudo acceder al micrófono.' : 'Microphone access denied.')
     }
   }
 
   const stopVoiceRecording = () => {
+    // Stop Web Speech API if active
     if (speechRecognitionRef.current) {
-      try {
-        speechRecognitionRef.current.stop()
-      } catch {}
+      try { speechRecognitionRef.current.stop() } catch {}
       speechRecognitionRef.current = null
+    }
+    // Stop MediaRecorder if active (Whisper fallback)
+    if (mediaRecorderRef.current) {
+      try { mediaRecorderRef.current.stop() } catch {}
+      mediaRecorderRef.current = null
     }
     setIsRecording(false)
   }
@@ -2187,22 +2243,27 @@ export function ChatThread({
                   className="w-full bg-transparent text-[13px] outline-none placeholder:text-muted-foreground disabled:opacity-60 resize-none max-h-40 py-[7px]"
                 />
 
-                {/* Voice Note Button (Pure Web Speech API) */}
+                {/* Voice Dictation Button (Web Speech API + Local Whisper fallback) */}
                 <button
                   type="button"
                   onClick={isRecording ? stopVoiceRecording : startVoiceRecording}
+                  disabled={isTranscribing}
                   className={`flex size-7.5 items-center justify-center rounded-lg transition-all duration-200 shrink-0 self-center ${
-                    isRecording
+                    isTranscribing
+                      ? 'bg-amber-500/20 text-amber-400 animate-pulse cursor-wait'
+                      : isRecording
                       ? 'bg-red-500 text-white shadow-md shadow-red-500/30 animate-pulse'
                       : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
                   }`}
                   title={
-                    isRecording
+                    isTranscribing
+                      ? (lang === 'es' ? 'Transcribiendo con IA local...' : 'Transcribing with local AI...')
+                      : isRecording
                       ? (lang === 'es' ? 'Detener dictado por voz' : 'Stop voice dictation')
                       : (lang === 'es' ? 'Dictar mensaje por voz' : 'Dictate message by voice')
                   }
                 >
-                  {isRecording ? <MicOff className="size-4" /> : <Mic className="size-4" />}
+                  {isTranscribing ? <Loader2 className="size-4 animate-spin" /> : isRecording ? <MicOff className="size-4" /> : <Mic className="size-4" />}
                 </button>
               </div>
             </div>

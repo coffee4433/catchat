@@ -5,7 +5,12 @@ const http = require('http')
 const { autoUpdater } = require('electron-updater')
 const { registerCommandRunnerIPC } = require('./electron/commandRunner')
 
-// Load environment variables from a .env file packaged with the app (if present).
+// Enable Chromium speech recognition support in Electron
+// Without these flags, webkitSpeechRecognition will fail with 'network' error
+app.commandLine.appendSwitch('enable-speech-input')
+app.commandLine.appendSwitch('enable-features', 'AudioServiceSandbox')
+
+
 // This helps the embedded Next server find `DATABASE_URL` and other runtime vars.
 try {
   const exeDir = path.dirname(app.getPath('exe'))
@@ -166,11 +171,20 @@ function createWindow() {
   // Register command runner IPC handlers
   registerCommandRunnerIPC(mainWindow)
 
-  // Auto-grant media permissions for local origin
+  // Auto-grant media & speech permissions
   mainWindow.webContents.session.setPermissionRequestHandler(
     (webContents, permission, callback) => {
-      const allowedPermissions = ['media', 'mediaKeySystem']
+      // Allow: microphone, camera, speech recognition, media keys
+      const allowedPermissions = ['media', 'mediaKeySystem', 'audioCapture', 'speech']
       callback(allowedPermissions.includes(permission))
+    },
+  )
+
+  // Also grant permission checks (for navigator.permissions.query)
+  mainWindow.webContents.session.setPermissionCheckHandler(
+    (webContents, permission) => {
+      const allowedPermissions = ['media', 'mediaKeySystem', 'audioCapture', 'speech', 'microphone']
+      return allowedPermissions.includes(permission)
     },
   )
 
