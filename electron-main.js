@@ -129,6 +129,7 @@ function createSplashWindow() {
     alwaysOnTop: true,
     transparent: false,
     backgroundColor: '#1e1f22',
+    icon: path.join(appDir, 'build', 'icon.png'),
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true
@@ -152,6 +153,7 @@ function createWindow() {
     minWidth: 900,
     minHeight: 600,
     title: "CatChat",
+    icon: path.join(appDir, 'build', 'icon.png'),
     autoHideMenuBar: true, // Oculta la barra de menú para que parezca una app nativa estilo Discord
     show: false, // Inicialmente invisible para que cargue por detrás del splash
     webPreferences: {
