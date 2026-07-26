@@ -209,8 +209,8 @@ export function UserDock({
   activeView?: string
   onOpenCatMusic?: () => void
 }) {
-  const { t } = useLanguage()
-  const { isPluginEnabled } = usePlugins()
+  const { t, lang } = useLanguage()
+  const { isPluginEnabled, pluginUpdates, updatePlugin, dismissPluginUpdate } = usePlugins()
   const router = useRouter()
   const [signingOut, setSigningOut] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
@@ -318,10 +318,14 @@ export function UserDock({
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  const activePluginUpdateId = Object.keys(pluginUpdates || {})[0]
+  const activePluginUpdate = activePluginUpdateId ? pluginUpdates[activePluginUpdateId] : null
+  const hasPluginUpdate = Boolean(activePluginUpdate)
+
   const { activeCall } = useCallContext()
   const hasActiveCall = Boolean(activeCall)
   const hasUpdate = update.phase !== 'idle'
-  const glowActive = showMenu || hasUpdate || hasActiveCall
+  const glowActive = showMenu || hasUpdate || hasPluginUpdate || hasActiveCall
 
   const wasPlayingBeforeCallRef = useRef(false)
 
@@ -347,7 +351,7 @@ export function UserDock({
     // If there's an update and menu is closed, show update panel
     // If there's an update and menu is open, toggle off
     // If no update, toggle profile panel
-    if (hasUpdate && !showMenu) {
+    if ((hasUpdate || hasPluginUpdate) && !showMenu) {
       setShowMenu(true)
     } else {
       setShowMenu((v) => !v)
@@ -548,12 +552,50 @@ export function UserDock({
                           </div>
                           <button
                             onClick={(e) => { e.stopPropagation(); setUpdate({ phase: 'idle' }) }}
-                            className="w-full flex items-center justify-center gap-2 rounded-lg bg-secondary px-4 py-2 text-[12.5px] font-medium text-foreground hover:bg-secondary/80 transition-all active:scale-[0.98]"
+                            className="w-full flex items-center justify-center gap-2 rounded-lg bg-secondary px-4 py-2 text-[12.5px] font-semibold text-foreground hover:bg-secondary/80 transition-all"
                           >
                             Dismiss
                           </button>
                         </div>
                       )}
+                    </div>
+                  </div>
+                ) : hasPluginUpdate && activePluginUpdate ? (
+                  /* Plugin Update panel (same spot as CatChat app update) */
+                  <div className="w-64">
+                    <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-border/60 bg-gradient-to-r from-emerald-500/10 via-transparent to-transparent">
+                      <div className="flex items-center gap-2">
+                        <Download className="size-4 text-emerald-400 animate-pulse" />
+                        <span className="text-[12px] font-semibold text-foreground">
+                          {lang === 'es' ? 'Actualización de Plugin' : 'Plugin Update Available'}
+                        </span>
+                      </div>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); activePluginUpdateId && dismissPluginUpdate(activePluginUpdateId) }}
+                        className="text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded-full hover:bg-secondary/60"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                      </button>
+                    </div>
+
+                    <div className="px-3.5 py-3 space-y-3">
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[12.5px] font-bold text-foreground">{activePluginUpdate.name}</span>
+                          <span className="font-mono text-[10px] font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-1.5 py-0.5 rounded">{activePluginUpdate.newVersion}</span>
+                        </div>
+                        {activePluginUpdate.releaseNotes && (
+                          <p className="text-[11px] text-muted-foreground/80 mt-1.5 leading-relaxed max-h-16 overflow-y-auto">
+                            {activePluginUpdate.releaseNotes.replace(/<[^>]*>/g, '').trim()}
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); activePluginUpdateId && updatePlugin(activePluginUpdateId) }}
+                        className="w-full flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-emerald-500 transition-all active:scale-[0.98] shadow-lg shadow-emerald-600/25"
+                      >
+                        <Download className="size-3.5" /> {lang === 'es' ? 'Actualizar Plugin' : 'Update Plugin'}
+                      </button>
                     </div>
                   </div>
                 ) : (

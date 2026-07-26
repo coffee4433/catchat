@@ -57,7 +57,10 @@ export function PluginHubView({ onClose }: { onClose?: () => void }) {
   const {
     isPluginInstalled,
     isPluginEnabled,
+    hasPluginUpdate,
+    getPluginUpdateInfo,
     installPlugin,
+    updatePlugin,
     uninstallPlugin,
     togglePlugin,
     installingPluginId,
@@ -229,9 +232,16 @@ export function PluginHubView({ onClose }: { onClose?: () => void }) {
                         </div>
                       </div>
 
-                      <span className="shrink-0 rounded-md border border-border/50 bg-secondary/60 px-1.5 py-0.5 font-mono text-[9.5px] text-muted-foreground">
-                        {formattedVersion}
-                      </span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {isInstalled && hasPluginUpdate(plugin.id) && (
+                          <span className="rounded-md border border-emerald-500/40 bg-emerald-500/15 px-1.5 py-0.5 font-mono text-[9.5px] font-bold text-emerald-400 animate-pulse">
+                            {lang === 'es' ? `Actualización ${getPluginUpdateInfo(plugin.id)?.newVersion}` : `Update ${getPluginUpdateInfo(plugin.id)?.newVersion}`}
+                          </span>
+                        )}
+                        <span className="rounded-md border border-border/50 bg-secondary/60 px-1.5 py-0.5 font-mono text-[9.5px] text-muted-foreground">
+                          {formattedVersion}
+                        </span>
+                      </div>
                     </div>
 
                     {/* Description */}
@@ -302,6 +312,27 @@ export function PluginHubView({ onClose }: { onClose?: () => void }) {
                           </button>
                         ) : (
                           <>
+                            {/* Update Button when an update is available */}
+                            {hasPluginUpdate(plugin.id) && (
+                              <button
+                                onClick={() => updatePlugin(plugin.id)}
+                                disabled={isInstalling}
+                                title={
+                                  lang === 'es'
+                                    ? `Actualizar a ${getPluginUpdateInfo(plugin.id)?.newVersion}`
+                                    : `Update to ${getPluginUpdateInfo(plugin.id)?.newVersion}`
+                                }
+                                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all bg-emerald-500 text-white shadow-md shadow-emerald-500/25 hover:bg-emerald-600 disabled:opacity-60 animate-pulse"
+                              >
+                                <Download className="size-3" />
+                                <span>
+                                  {lang === 'es'
+                                    ? `Actualizar (${getPluginUpdateInfo(plugin.id)?.newVersion})`
+                                    : `Update (${getPluginUpdateInfo(plugin.id)?.newVersion})`}
+                                </span>
+                              </button>
+                            )}
+
                             {/* Enable / Disable toggle */}
                             <button
                               onClick={() => togglePlugin(plugin.id)}

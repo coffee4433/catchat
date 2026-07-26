@@ -4,15 +4,27 @@ import React, { createContext, useContext, useEffect, useState } from 'react'
 import type { CatChatPlugin, PluginRailTab } from './plugin-types'
 import { getRegisteredPlugins } from './plugin-registry'
 
+type PluginUpdateInfo = {
+  available: boolean
+  newVersion: string
+  name: string
+  releaseNotes?: string
+}
+
 type PluginContextType = {
   registeredPlugins: CatChatPlugin[]
   installedPluginIds: string[]
   enabledPluginIds: string[]
   installingPluginId: string | null
   installProgressMap: Record<string, number>
+  pluginUpdates: Record<string, PluginUpdateInfo>
   isPluginInstalled: (id: string) => boolean
   isPluginEnabled: (id: string) => boolean
-  installPlugin: (id: string) => Promise<void>
+  hasPluginUpdate: (id: string) => boolean
+  getPluginUpdateInfo: (id: string) => PluginUpdateInfo | null
+  installPlugin: (id: string, isUpdate?: boolean) => Promise<void>
+  updatePlugin: (id: string) => Promise<void>
+  dismissPluginUpdate: (id: string) => void
   uninstallPlugin: (id: string) => void
   enablePlugin: (id: string) => void
   disablePlugin: (id: string) => void
@@ -64,6 +76,33 @@ export function PluginProvider({ children, user }: { children: React.ReactNode; 
 
   const [installingPluginId, setInstallingPluginId] = useState<string | null>(null)
   const [installProgressMap, setInstallProgressMap] = useState<Record<string, number>>({})
+  const [pluginUpdates, setPluginUpdates] = useState<Record<string, PluginUpdateInfo>>({})
+
+  // Fetch live published plugins from GitHub Releases API to detect available updates
+  useEffect(() => {
+    fetch('/api/plugins')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.plugins && Array.isArray(data.plugins)) {
+          const updatesMap: Record<string, PluginUpdateInfo> = {}
+          for (const p of data.plugins) {
+            const installedVer = localStorage.getItem(`cz-plugin-ver-${p.id}`) || '1.0.0'
+            const remoteVer = (p.version || '1.0.0').replace(/^v/, '')
+            const cleanInstalledVer = installedVer.replace(/^v/, '')
+            if (installedPluginIds.includes(p.id) && remoteVer !== cleanInstalledVer) {
+              updatesMap[p.id] = {
+                available: true,
+                newVersion: p.version.startsWith('v') ? p.version : `v${p.version}`,
+                name: p.name || p.id,
+                releaseNotes: p.description,
+              }
+            }
+          }
+          setPluginUpdates(updatesMap)
+        }
+      })
+      .catch(() => {})
+  }, [installedPluginIds])
 
   // Persist installed and enabled plugins
   useEffect(() => {
@@ -82,10 +121,12 @@ export function PluginProvider({ children, user }: { children: React.ReactNode; 
 
   const isPluginInstalled = (id: string) => installedPluginIds.includes(id)
   const isPluginEnabled = (id: string) => isPluginInstalled(id) && enabledPluginIds.includes(id)
+  const hasPluginUpdate = (id: string) => Boolean(pluginUpdates[id]?.available)
+  const getPluginUpdateInfo = (id: string) => pluginUpdates[id] || null
 
-  const installPlugin = async (id: string) => {
+  const installPlugin = async (id: string, isUpdate = false) => {
     if (!isElectronEnv()) return
-    if (installingPluginId === id || isPluginInstalled(id)) return
+    if (installingPluginId === id || (isPluginInstalled(id) && !isUpdate)) return
     setInstallingPluginId(id)
     setInstallProgressMap((prev) => ({ ...prev, [id]: 10 }))
 
@@ -97,10 +138,33 @@ export function PluginProvider({ children, user }: { children: React.ReactNode; 
 
     setInstalledPluginIds((prev) => (prev.includes(id) ? prev : [...prev, id]))
     setEnabledPluginIds((prev) => (prev.includes(id) ? prev : [...prev, id]))
+
+    if (pluginUpdates[id]?.newVersion) {
+      localStorage.setItem(`cz-plugin-ver-${id}`, pluginUpdates[id].newVersion)
+    }
+
+    setPluginUpdates((prev) => {
+      const copy = { ...prev }
+      delete copy[id]
+      return copy
+    })
+
     setInstallingPluginId(null)
 
     const plugin = registered.find((p) => p.metadata.id === id)
     plugin?.onEnable?.()
+  }
+
+  const updatePlugin = async (id: string) => {
+    return installPlugin(id, true)
+  }
+
+  const dismissPluginUpdate = (id: string) => {
+    setPluginUpdates((prev) => {
+      const copy = { ...prev }
+      delete copy[id]
+      return copy
+    })
   }
 
   const uninstallPlugin = (id: string) => {
@@ -111,6 +175,7 @@ export function PluginProvider({ children, user }: { children: React.ReactNode; 
     if (typeof window !== 'undefined') {
       try {
         localStorage.removeItem(`cz-plugin-data-${id}`)
+        localStorage.removeItem(`cz-plugin-ver-${id}`)
         if (id === 'cat-music') {
           localStorage.removeItem('cz-catmusic-store')
           localStorage.removeItem('cz-catmusic-playlists')
@@ -177,9 +242,14 @@ export function PluginProvider({ children, user }: { children: React.ReactNode; 
         enabledPluginIds,
         installingPluginId,
         installProgressMap,
+        pluginUpdates,
         isPluginInstalled,
         isPluginEnabled,
+        hasPluginUpdate,
+        getPluginUpdateInfo,
         installPlugin,
+        updatePlugin,
+        dismissPluginUpdate,
         uninstallPlugin,
         enablePlugin,
         disablePlugin,

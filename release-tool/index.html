@@ -191,7 +191,7 @@
 
   .view {
     display: none; flex: 1; min-height: 0;
-    flex-direction: column; overflow-y: auto;
+    flex-direction: column; overflow-y: auto; scroll-behavior: smooth;
     padding: 30px 36px 120px;
   }
   .view.active { display: flex; }
@@ -704,22 +704,30 @@
      Releases & Plugins View — Search, Modern Cards & Badges
      ------------------------------------------------------------------ */
   .search-bar-row {
-    display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 20px;
+    position: sticky; top: 0; z-index: 40;
+    display: flex; align-items: center; justify-content: center; gap: 14px;
+    margin: 0 auto 24px auto; width: 100%; max-width: 580px;
   }
   .search-box {
-    position: relative; flex: 1; max-width: 500px; display: flex; align-items: center;
+    position: relative; flex: 1; display: flex; align-items: center;
+    background: var(--surface); border: 1px solid var(--border-strong);
+    border-radius: 999px; padding: 2px 4px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(16px);
+    transition: all 0.2s ease;
+  }
+  .search-box:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft), 0 10px 30px rgba(59, 130, 246, 0.25);
   }
   .search-box svg {
-    position: absolute; left: 14px; width: 16px; height: 16px; color: var(--muted); pointer-events: none;
+    position: absolute; left: 16px; width: 17px; height: 17px; color: var(--accent); pointer-events: none;
   }
   .search-input {
-    width: 100%; padding: 10px 14px 10px 42px;
-    background: var(--surface); border: 1px solid var(--border-strong);
-    border-radius: 12px; color: var(--fg); font-size: 13.5px;
-    outline: none; transition: border-color 0.15s, box-shadow 0.15s;
-  }
-  .search-input:focus {
-    border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft);
+    width: 100%; padding: 10px 18px 10px 44px;
+    background: transparent; border: none;
+    color: var(--fg); font-size: 13.5px; font-weight: 500;
+    outline: none;
   }
 
   .grid-cards {
@@ -2228,7 +2236,10 @@ function selectPluginToPublish(pluginId) {
 
 function scrollToPublishPlugin() {
   const card = $('pluginPublishCard')
-  if (card) card.scrollIntoView({ behavior: 'smooth' })
+  const view = $('view-plugins')
+  if (card && view) {
+    view.scrollTo({ top: card.offsetTop - 20, behavior: 'smooth' })
+  }
 }
 
 function escapeHtml(str) {
