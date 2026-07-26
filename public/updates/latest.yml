@@ -1,27 +1,11 @@
-version: 0.3.25
+version: 0.3.27
 files:
-  - url: https://github.com/coffee4433/catchat/releases/download/v0.3.25/CatChat-Setup-0.3.25.exe
-    sha512: pqQYKyh0rkZF+6ZLY4ba7ufTRgM3RlpfuReute/59BugawRd1YsSTaS+T3O4PA1g/1Vjlf0RBxAfdXoAkg1Yrw==
-    size: 244420789
-path: CatChat-Setup-0.3.25.exe
-sha512: pqQYKyh0rkZF+6ZLY4ba7ufTRgM3RlpfuReute/59BugawRd1YsSTaS+T3O4PA1g/1Vjlf0RBxAfdXoAkg1Yrw==
-releaseDate: '2026-07-26T06:44:21.300Z'
+  - url: https://github.com/coffee4433/catchat/releases/download/v0.3.27/CatChat-Setup-0.3.27.exe
+    sha512: mIPtMXXuWTK4c2LR7UJsFGGNqZIu9LQYwLZv3CtXvSyxn0dIzwCDzTL81mWXlKgNm9qPbLLcTs7+XnKLqH6V7A==
+    size: 244489380
+path: CatChat-Setup-0.3.27.exe
+sha512: mIPtMXXuWTK4c2LR7UJsFGGNqZIu9LQYwLZv3CtXvSyxn0dIzwCDzTL81mWXlKgNm9qPbLLcTs7+XnKLqH6V7A==
+releaseDate: '2026-07-26T07:24:45.734Z'
 showReleaseModal: true
 releaseNotes: |
-  ## ✨ Novedades Destacadas
-  
-  - [MEJORA] **Restauración del módulo cat-music:** se ha recuperado la funcionalidad de los módulos de música, que estaban ausentes en la versión anterior.  
-  - [DISEÑO] **Logo oficial implementado:** la barra de título, la pantalla de bienvenida y el icono del instalador ahora muestran el nuevo logotipo `catchat.png`.
-  
-  ## 🐛 Correcciones y Ajustes
-  
-  - [FIX] **Sincronización al eliminar complementos:** se resolvió un fallo en CatChat Hub que impedía que la eliminación de un complemento se reflejara correctamente en todos los clientes conectados.
-  
-  ## ⚡ Rendimiento y Optimización
-  
-  - [MEJORA] **Calidad del código:** se limpiaron advertencias del linter, mejorando la mantenibilidad y evitando posibles errores silenciosos.
-  
-  ## 🎨 UI & Experiencia de Usuario
-  
-  > [!NOTE]  
-  > A partir de esta versión, el logo oficial de CatChat se ha integrado en los puntos de contacto clave: barra de título, pantalla de carga (splash) e instalador. La experiencia visual ahora es más consistente y profesional.
+  CatChat v0.3.27
