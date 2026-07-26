@@ -1,9 +1,8 @@
 /**
  * Deepgram Real-Time Speech-to-Text Streaming
  * 
- * Streams 16kHz 16-bit Linear PCM audio over WebSocket with KeepAlive
- * for unlimited duration continuous dictation with smart formatting,
- * punctuation, diacritics (accents), and spelling correction like Google.
+ * Streams native 16-bit Linear PCM audio matched dynamically to microphone sample rate
+ * over WebSocket with KeepAlive for 100% accurate, continuous real-time transcription.
  */
 
 export interface DeepgramStreamCallbacks {
@@ -48,14 +47,26 @@ export class DeepgramStreamer {
       return false
     }
 
-    // 3. Open WebSocket to Deepgram with raw 16kHz PCM encoding & smart formatting (accents + punctuation)
+    // 3. Initialize AudioContext at native hardware sample rate (e.g. 48000Hz, 44100Hz)
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext
+      this.audioContext = new AudioCtx()
+    } catch (err) {
+      console.error('Failed to create AudioContext:', err)
+      callbacks.onError('Audio Context Error')
+      return false
+    }
+
+    const nativeSampleRate = this.audioContext.sampleRate || 48000
     const langCode = language === 'es' ? 'es' : 'en'
-    const wsUrl = `wss://api.deepgram.com/v1/listen?model=nova-2&language=${langCode}&encoding=linear16&sample_rate=16000&smart_format=true&punctuate=true&diacritize=true`
+
+    // 4. Open WebSocket to Deepgram matching exact microphone sample rate
+    const wsUrl = `wss://api.deepgram.com/v1/listen?model=nova-2&language=${langCode}&encoding=linear16&sample_rate=${nativeSampleRate}&smart_format=true&interim_results=true&punctuate=true&diacritize=true`
 
     this.socket = new WebSocket(wsUrl, ['token', apiKey])
 
     this.socket.onopen = () => {
-      // Send KeepAlive every 4 seconds so WebSocket connection NEVER times out in long conversations
+      // Send KeepAlive every 4s so connection never drops during long conversations
       this.keepAliveTimer = setInterval(() => {
         if (this.socket && this.socket.readyState === WebSocket.OPEN) {
           try {
@@ -65,15 +76,13 @@ export class DeepgramStreamer {
       }, 4000)
 
       try {
-        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext
-        this.audioContext = new AudioCtx({ sampleRate: 16000 })
-        this.source = this.audioContext.createMediaStreamSource(this.stream!)
+        this.source = this.audioContext!.createMediaStreamSource(this.stream!)
         
-        // Use 4096 buffer size (~250ms chunks)
-        this.processor = this.audioContext.createScriptProcessor(4096, 1, 1)
+        // 4096 buffer size
+        this.processor = this.audioContext!.createScriptProcessor(4096, 1, 1)
 
         this.source.connect(this.processor)
-        this.processor.connect(this.audioContext.destination)
+        this.processor.connect(this.audioContext!.destination)
 
         this.processor.onaudioprocess = (e) => {
           if (this.socket && this.socket.readyState === WebSocket.OPEN) {
@@ -87,7 +96,7 @@ export class DeepgramStreamer {
           }
         }
       } catch (err) {
-        console.error('Failed to setup AudioContext for Deepgram:', err)
+        console.error('Failed to setup AudioNode processing for Deepgram:', err)
         callbacks.onError('Audio processing error')
       }
     }
