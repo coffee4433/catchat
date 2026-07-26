@@ -11,7 +11,6 @@ import { useCallContext } from '@/components/calls/call-provider'
 import type { ActiveCall } from '@/lib/calls/types'
 import { usePlugins } from '@/lib/plugins/plugin-provider'
 import { CatMusicDockWidget } from '@/components/cat-music/dock-widget'
-import { catMusicStore } from '@/lib/plugins/cat-music/cat-music-store'
 
 function initialsOf(name: string) {
   return name
@@ -331,19 +330,12 @@ export function UserDock({
 
   // Pause music on voice/video call start and resume on call end
   useEffect(() => {
-    if (!isPluginEnabled('cat-music')) return
-    const currentState = catMusicStore.getSnapshot()
+    if (!isPluginEnabled('cat-music') || typeof window === 'undefined') return
 
     if (hasActiveCall) {
-      if (currentState.isPlaying) {
-        wasPlayingBeforeCallRef.current = true
-        catMusicStore.setState({ isPlaying: false })
-      }
+      window.dispatchEvent(new CustomEvent('cat-music:pause-call'))
     } else {
-      if (wasPlayingBeforeCallRef.current) {
-        wasPlayingBeforeCallRef.current = false
-        catMusicStore.setState({ isPlaying: true })
-      }
+      window.dispatchEvent(new CustomEvent('cat-music:resume-call'))
     }
   }, [hasActiveCall, isPluginEnabled])
 
