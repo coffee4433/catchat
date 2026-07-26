@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
 
     const audioBuffer = await file.arrayBuffer()
 
-    const HF_TOKEN = process.env.HF_TOKEN || process.env.HUGGINGFACE_TOKEN || ''
+    const HF_TOKEN = process.env.HF_TOKEN || process.env.HUGGINGFACE_TOKEN || 'hf_KxLpWnMrQvSAYzXFvhZfTqJg'
     const GROQ_API_KEY = process.env.GROQ_API_KEY || ''
     const OPENAI_API_KEY = process.env.OPENAI_API_KEY || ''
 
@@ -69,8 +69,8 @@ export async function POST(request: NextRequest) {
     }
 
     const hfModels = [
-      'https://api-inference.huggingface.co/models/openai/whisper-small',
       'https://api-inference.huggingface.co/models/openai/whisper-large-v3-turbo',
+      'https://api-inference.huggingface.co/models/openai/whisper-small',
       'https://api-inference.huggingface.co/models/facebook/wav2vec2-base-960h',
     ]
 
@@ -93,7 +93,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Return empty text cleanly without showing alert dialogs
     return NextResponse.json({ text: '' })
   } catch (err: any) {
     console.error('STT API error:', err)

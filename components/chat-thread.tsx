@@ -312,8 +312,51 @@ export function ChatThread({
         }
       }
 
+      let capturedLiveText = ''
+
+      // Start Web Speech API for real-time live dictation as user speaks
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+      if (SpeechRecognition) {
+        try {
+          const recognition = new SpeechRecognition()
+          recognition.continuous = false
+          recognition.interimResults = true
+          recognition.lang = lang === 'es' ? 'es-ES' : 'en-US'
+
+          const initialDraft = draft ? draft.trim() + ' ' : ''
+
+          recognition.onresult = (event: any) => {
+            let live = ''
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+              live += event.results[i][0].transcript
+            }
+            if (live.trim()) {
+              capturedLiveText = live.trim()
+              const fullText = (initialDraft + live).trim()
+              setDraft(fullText)
+              handleInputChange(fullText)
+            }
+          }
+
+          recognition.onerror = () => {}
+          recognition.start()
+          speechRecognitionRef.current = recognition
+        } catch (e) {
+          console.warn('Live SpeechRecognition start failed, will fallback to server STT:', e)
+        }
+      }
+
       recorder.onstop = async () => {
         stream.getTracks().forEach((track) => track.stop())
+        if (speechRecognitionRef.current) {
+          try { speechRecognitionRef.current.stop() } catch {}
+          speechRecognitionRef.current = null
+        }
+
+        // If SpeechRecognition already transcribed text live, we are done!
+        if (capturedLiveText.trim()) return
+
+        // Otherwise, send audio blob to server STT fallback
         const audioBlob = new Blob(audioChunksRef.current, { type: recorder.mimeType || 'audio/webm' })
         if (audioBlob.size < 100) return
 
@@ -337,8 +380,6 @@ export function ChatThread({
                 return newText
               })
             }
-          } else {
-            console.warn('STT API response not ok:', res.status)
           }
         } catch (err) {
           console.error('STT API request failed:', err)
