@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import type { CatChatPlugin, PluginRailTab } from './plugin-types'
-import { getRegisteredPlugins } from './plugin-registry'
+import { catMusicPlugin, getRegisteredPlugins, registerPlugin, unregisterPlugin } from './plugin-registry'
 
 type PluginUpdateInfo = {
   available: boolean
@@ -109,6 +109,11 @@ export function PluginProvider({ children, user }: { children: React.ReactNode; 
     if (typeof window !== 'undefined') {
       localStorage.setItem(STORAGE_KEY_INSTALLED, JSON.stringify(installedPluginIds))
     }
+    if (installedPluginIds.includes('cat-music')) {
+      registerPlugin(catMusicPlugin)
+    } else {
+      unregisterPlugin('cat-music')
+    }
   }, [installedPluginIds])
 
   useEffect(() => {
@@ -169,6 +174,7 @@ export function PluginProvider({ children, user }: { children: React.ReactNode; 
 
   const uninstallPlugin = (id: string) => {
     disablePlugin(id)
+    unregisterPlugin(id)
     setInstalledPluginIds((prev) => prev.filter((pId) => pId !== id))
 
     // Purge all persistent data associated with this plugin completely
