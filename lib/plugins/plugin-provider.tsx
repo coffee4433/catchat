@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import type { CatChatPlugin, PluginRailTab } from './plugin-types'
-import { catMusicPlugin, getRegisteredPlugins, registerPlugin, unregisterPlugin } from './plugin-registry'
+import { getRegisteredPlugins, registerPlugin, unregisterPlugin } from './plugin-registry'
 
 type PluginUpdateInfo = {
   available: boolean
@@ -110,7 +110,11 @@ export function PluginProvider({ children, user }: { children: React.ReactNode; 
       localStorage.setItem(STORAGE_KEY_INSTALLED, JSON.stringify(installedPluginIds))
     }
     if (installedPluginIds.includes('cat-music')) {
-      registerPlugin(catMusicPlugin)
+      import('./cat-music')
+        .then((m) => {
+          if (m?.catMusicPlugin) registerPlugin(m.catMusicPlugin)
+        })
+        .catch(() => {})
     } else {
       unregisterPlugin('cat-music')
     }

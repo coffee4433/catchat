@@ -1,5 +1,4 @@
 import type { CatChatPlugin } from './plugin-types'
-import { catMusicPlugin } from './cat-music'
 
 // Registry array for all dynamically installed and registered plugins
 const registeredPlugins: CatChatPlugin[] = []
@@ -19,8 +18,6 @@ export function unregisterPlugin(id: string) {
     registeredPlugins.splice(existingIndex, 1)
   }
 }
-
-export { catMusicPlugin }
 
 export function getRegisteredPlugins(): CatChatPlugin[] {
   return registeredPlugins
