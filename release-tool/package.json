@@ -18,7 +18,7 @@
       "output": "dist"
     },
     "win": {
-      "icon": "icon.png",
+      "icon": "icon.ico",
       "target": [
         {
           "target": "nsis",
@@ -30,9 +30,9 @@
       "oneClick": false,
       "perMachine": false,
       "runAfterFinish": true,
-      "installerIcon": "icon.png",
-      "uninstallerIcon": "icon.png",
-      "installerHeaderIcon": "icon.png",
+      "installerIcon": "icon.ico",
+      "uninstallerIcon": "icon.ico",
+      "installerHeaderIcon": "icon.ico",
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "CatChat Release"
@@ -42,6 +42,7 @@
       "preload.js",
       "index.html",
       "icon.png",
+      "icon.ico",
       "../scripts/release.cjs",
       "../scripts/publish-release.cjs",
       "../package.json"

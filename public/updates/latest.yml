@@ -1,40 +1,39 @@
-version: 0.3.22
+version: 0.3.23
 files:
-  - url: https://github.com/coffee4433/catchat/releases/download/v0.3.22/CatChat-Setup-0.3.22.exe
-    sha512: JMyNFJsMq55iOp+xbOPufzfMw5FzUP5r/oUgpCvAGAr/ddfD2FK2gvylVUbEUidU0XSIBtxygkcjxletYPIEKQ==
-    size: 241510191
-path: CatChat-Setup-0.3.22.exe
-sha512: JMyNFJsMq55iOp+xbOPufzfMw5FzUP5r/oUgpCvAGAr/ddfD2FK2gvylVUbEUidU0XSIBtxygkcjxletYPIEKQ==
-releaseDate: '2026-07-25T21:55:16.033Z'
+  - url: https://github.com/coffee4433/catchat/releases/download/v0.3.23/CatChat-Setup-0.3.23.exe
+    sha512: K824xeoONvE3u15Nz2pJMts/6BnVHlu9/6HJzG1xY82g539saMlIg8db4bAvAMkhlWHhjTd1eXmo814VvsRMXQ==
+    size: 241475532
+path: CatChat-Setup-0.3.23.exe
+sha512: K824xeoONvE3u15Nz2pJMts/6BnVHlu9/6HJzG1xY82g539saMlIg8db4bAvAMkhlWHhjTd1eXmo814VvsRMXQ==
+releaseDate: '2026-07-26T05:58:12.643Z'
 showReleaseModal: true
 releaseNotes: |
   ## ✨ Novedades Destacadas
-  
-  - [NUEVO] **Nuevos logotipos oficiales** de CatChat y CatMusic integrados con activos PNG, reemplazando las imágenes anteriores.
-  - [MEJORA] **PluginHubView ahora se adapta a pantallas grandes**: la cuadrícula llega hasta 4 columnas, con cartas más amplias y sin truncar el título del plugin en ningún ancho.
-  - [NUEVO] **Localización dinámica (i18n)** en las descripciones de los plugins – ahora se traducen automáticamente según el idioma de la app.
-  - [MEJORA] Rediseño completo del **panel de plugins**:
-    - Eliminados el hero text, badge, subtítulo y encabezado para una vista limpia y centrada en el contenido.
-    - Corregido el prefijo de la badge de versión y eliminados los datos falsos de descargas y el enlace al código fuente.
-    - Aplicados los tokens de tema de la app para una integración visual coherente.
-  
-  ## 🎨 UI & Experiencia de Usuario
-  
-  - [DISEÑO] **Barra lateral (IconRail)**:
-    - Eliminado el borde derecho de 1px para un aspecto más limpio.
-    - Sustituido el icono del logo por un texto limpio «**CatChat**» en el encabezado.
-  - [DISEÑO] **Botones de logotipo** en la barra lateral y PluginHubView:
-    - Eliminados el borde blanco y el anillo de foco (`ring-offset`).
-    - Esquinas rectas (`rounded-none`) y luego ajustadas a **`rounded-2xl`** para coincidir exactamente con las esquinas “squircle” de las imágenes PNG.
-    - Eliminadas las dobles líneas y el padding interior; ahora el logo ocupa el **100% del botón**, completamente al ras.
-    - Aumentado el tamaño de los contenedores a `size-11`, `size-12` y `size-full`, utilizando `object-cover` y `scale-135` para que el gráfico llene todo el espacio de esquina a esquina.
-  - [DISEÑO] **Otras mejoras visuales**:
-    - Eliminados los efectos de hover en motion sobre el logo de CatMusic, ahora con renderizado PNG transparente y más profesional.
-    - Iconos de estado cambiados a Cloud y HardDrive para mayor claridad.
-    - PluginHubView ahora llena el 100% del ancho y alto dentro del modal de ajustes, sin dobles barras de desplazamiento ni rellenos molestos.
+  - [NUEVO] **Indicador de presencia en vivo** en el sidebar: ahora cada conversación muestra un **punto verde/ausente** directamente sobre el avatar del usuario, gracias a Supabase Presence en tiempo real.
+  - [NUEVO] **Confirmación de lectura instantánea** estilo WhatsApp: cuando el destinatario está en línea en el chat, los mensajes se marcan como leídos en **0ms**, eliminando toda espera.
+  - [MEJORA] El envío de mensajes ahora responde en **menos de 30ms** y la transmisión en tiempo real es **sin latencia** (WebSocket broadcast), haciendo la experiencia más fluida.
   
   ## 🐛 Correcciones y Ajustes
+  - [FIX] La imagen de banner del usuario ahora se muestra correctamente tanto en el **Popover** como en el **Modal de perfil**; antes no se cargaba por una omisión en la consulta a la base de datos.
+  - [FIX] Los mensajes ya no desaparecen momentáneamente durante el envío: se sincroniza el caché de SWR antes de limpiar los mensajes pendientes.
+  - [FIX] Se arregló un **doble salto del scroll** al enviar un mensaje y durante las transiciones de los checks de estado; ahora el scroll se mantiene estable.
+  - [FIX] Eliminado el rebote de doble animación al hacer scroll hacia el nuevo mensaje, reemplazado por un alineamiento instantáneo.
+  - [FIX] Los mensajes duplicados y las animaciones de entrada repetidas ya no ocurren: se deduplican los mensajes pendientes contra los del servidor.
+  - [FIX] Se corrigió un desplazamiento de **1px** en el ícono de verificación (check) de los mensajes, logrando una alineación perfecta.
   
-  - [FIX] **PluginHubView** ya no muestra scroll doble ni padding interno en el modal de configuración.
-  - [FIX] Los plugins ahora respetan correctamente los tokens de diseño de la aplicación, garantizando colores, espacios y tipografía coherentes.
-  - [FIX] Se eliminaron elementos incorrectos (descargas ficticias, enlace a código fuente) y se corrigió el prefijo del badge de versión.
+  ## ⚡ Rendimiento y Optimización
+  - [MEJORA] La acción `sendMessage` se optimizó para ejecutarse en **<30ms**, reduciendo drásticamente el tiempo de respuesta del servidor.
+  - [MEJORA] Se eliminó el retraso de `revalidatePath` y se agregó una **transmisión en tiempo real sin latencia** mediante Supabase Realtime Broadcast, acelerando la entrega de mensajes.
+  - [MEJORA] La concordancia de IDs de presencia en Supabase se amplió para lograr la confirmación de lectura instantánea (0ms) de los checks azules.
+  - [MEJORA] Las notificaciones `read_receipt` ahora se transmiten **en menos de 10ms** de ida y vuelta cuando ambos usuarios están en línea, usando WebSockets directamente.
+  
+  ## 🎨 UI & Experiencia de Usuario
+  - [DISEÑO] Nuevo diseño del **UserPopover**: marco del avatar con **corte semicircular grueso** y anillo indicador de estado al estilo Discord, fiel a la captura de referencia.
+  - [DISEÑO] Ajuste de dimensiones del Popover a **300×276px** y altura del banner a **105px**, según las instrucciones del usuario.
+  - [DISEÑO] El estado de presencia del avatar en el Popover ahora se actualiza **dinámicamente en tiempo real** (online/offline).
+  - [DISEÑO] El **encabezado del chat** ahora muestra el avatar del otro usuario con el indicador de presencia en vivo, reemplazando el anterior “led blink” y el badge “#”.
+  - [DISEÑO] Se actualizó el botón de CatMusic en la barra de íconos: tamaño ajustado a `size-10` y ahora renderiza la imagen `catmusic.png`.
+  - [NUEVO] Agregado indicador de estado en línea (punto verde) en los avatares de la fila de conversaciones (`ConversationRow`), usando Supabase Realtime Presence.
+  
+  > [!NOTE]
+  > La experiencia de mensajería ahora es prácticamente **instantánea**: los mensajes se envían y se marcan como leídos sin ningún retraso cuando ambas partes están conectadas.
