@@ -459,13 +459,18 @@ ipcMain.handle('delete:plugin', async (_event, pluginId) => {
   let deletedRelease = false
 
   if (cfg.projectPath && pluginId) {
-    const pluginDir = path.join(cfg.projectPath, 'lib', 'plugins', pluginId)
-    if (fs.existsSync(pluginDir)) {
-      try {
-        fs.rmSync(pluginDir, { recursive: true, force: true })
-        deletedLocal = true
-      } catch (e) {
-        console.error(`Failed to delete local plugin directory ${pluginDir}:`, e)
+    const dirsToDelete = [
+      path.join(cfg.projectPath, 'plugins', pluginId),
+      path.join(cfg.projectPath, 'lib', 'plugins', pluginId),
+    ]
+    for (const pluginDir of dirsToDelete) {
+      if (fs.existsSync(pluginDir)) {
+        try {
+          fs.rmSync(pluginDir, { recursive: true, force: true })
+          deletedLocal = true
+        } catch (e) {
+          console.error(`Failed to delete local plugin directory ${pluginDir}:`, e)
+        }
       }
     }
   }
