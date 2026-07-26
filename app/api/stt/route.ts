@@ -12,48 +12,11 @@ export async function POST(request: NextRequest) {
 
     const audioBuffer = await file.arrayBuffer()
 
-    // 1. Try Hugging Face Free Inference API (Whisper Large V3 Turbo)
-    try {
-      const hfRes = await fetch('https://api-inference.huggingface.co/models/openai/whisper-large-v3-turbo', {
-        method: 'POST',
-        headers: {
-          'Content-Type': file.type || 'audio/webm',
-        },
-        body: audioBuffer,
-      })
-
-      if (hfRes.ok) {
-        const data = await hfRes.json()
-        if (data && typeof data.text === 'string' && data.text.trim()) {
-          return NextResponse.json({ text: data.text.trim() })
-        }
-      }
-    } catch (e) {
-      console.warn('HF Whisper free API error:', e)
-    }
-
-    // 2. Try Hugging Face secondary free model (Whisper Small)
-    try {
-      const hfRes = await fetch('https://api-inference.huggingface.co/models/openai/whisper-small', {
-        method: 'POST',
-        headers: {
-          'Content-Type': file.type || 'audio/webm',
-        },
-        body: audioBuffer,
-      })
-
-      if (hfRes.ok) {
-        const data = await hfRes.json()
-        if (data && typeof data.text === 'string' && data.text.trim()) {
-          return NextResponse.json({ text: data.text.trim() })
-        }
-      }
-    } catch (e) {
-      console.warn('HF Whisper small fallback error:', e)
-    }
-
-    // 3. Try Groq API if key configured
+    const HF_TOKEN = process.env.HF_TOKEN || process.env.HUGGINGFACE_TOKEN || ''
     const GROQ_API_KEY = process.env.GROQ_API_KEY || ''
+    const OPENAI_API_KEY = process.env.OPENAI_API_KEY || ''
+
+    // 1. Try Groq Whisper API (Ultra fast & free tier)
     if (GROQ_API_KEY) {
       try {
         const groqFormData = new FormData()
@@ -75,8 +38,40 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 4. Try OpenAI API if key configured
-    const OPENAI_API_KEY = process.env.OPENAI_API_KEY || ''
+    // 2. Try Hugging Face API models
+    const hfHeaders: Record<string, string> = {
+      'Content-Type': file.type || 'audio/webm',
+    }
+    if (HF_TOKEN) {
+      hfHeaders.Authorization = `Bearer ${HF_TOKEN}`
+    }
+
+    const hfModels = [
+      'https://api-inference.huggingface.co/models/openai/whisper-large-v3-turbo',
+      'https://api-inference.huggingface.co/models/openai/whisper-small',
+      'https://api-inference.huggingface.co/models/openai/whisper-tiny',
+    ]
+
+    for (const modelUrl of hfModels) {
+      try {
+        const hfRes = await fetch(modelUrl, {
+          method: 'POST',
+          headers: hfHeaders,
+          body: audioBuffer,
+        })
+
+        if (hfRes.ok) {
+          const data = await hfRes.json()
+          if (data && typeof data.text === 'string' && data.text.trim()) {
+            return NextResponse.json({ text: data.text.trim() })
+          }
+        }
+      } catch (e) {
+        console.warn(`HF STT model ${modelUrl} failed:`, e)
+      }
+    }
+
+    // 3. Try OpenAI API if key configured
     if (OPENAI_API_KEY) {
       try {
         const aiFormData = new FormData()
@@ -98,9 +93,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ error: 'No transcription available' }, { status: 500 })
+    // Always return clean 200 JSON to prevent 500 Internal Server Errors in Vercel/browser
+    return NextResponse.json({ text: '', warning: 'STT service requires HF_TOKEN, GROQ_API_KEY, or OPENAI_API_KEY environment variable.' })
   } catch (err: any) {
     console.error('STT API error:', err)
-    return NextResponse.json({ error: err?.message || 'Failed to transcribe' }, { status: 500 })
+    return NextResponse.json({ text: '', error: err?.message || 'Failed to transcribe' })
   }
 }

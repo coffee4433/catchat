@@ -336,6 +336,12 @@ export function ChatThread({
                 handleInputChange(newText)
                 return newText
               })
+            } else if (data?.warning) {
+              alert(
+                lang === 'es'
+                  ? 'Para transcribir voz con la API gratis de Whisper, añade la variable de entorno GROQ_API_KEY o HF_TOKEN en Vercel (es 100% gratis en groq.com o huggingface.co).'
+                  : 'To transcribe voice with free Whisper API, add GROQ_API_KEY or HF_TOKEN in Vercel environment variables (free at groq.com).'
+              )
             }
           } else {
             console.warn('STT API response not ok:', res.status)
