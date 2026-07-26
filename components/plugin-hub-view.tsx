@@ -80,7 +80,7 @@ export function PluginHubView({ onClose }: { onClose?: () => void }) {
     fetch('/api/plugins')
       .then((res) => res.json())
       .then((data) => {
-        if (data.plugins && Array.isArray(data.plugins) && data.plugins.length > 0) {
+        if (data?.plugins && Array.isArray(data.plugins)) {
           setHubPlugins(data.plugins)
         }
       })
