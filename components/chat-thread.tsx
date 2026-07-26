@@ -26,6 +26,12 @@ import {
   Star,
   Languages,
   Check,
+  Mic,
+  MicOff,
+  Square,
+  Play,
+  Pause,
+  AudioLines,
 } from 'lucide-react'
 import { IoCheckmarkDone, IoCheckmarkCircleOutline } from 'react-icons/io5'
 import React, { useEffect, useRef, useState } from 'react'
@@ -268,6 +274,150 @@ export function ChatThread({
   const wasAtBottom = useRef(true)
   const lastReportedTyping = useRef<number>(0)
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // --- Voice Note & Auto-Transcription State ---
+  const [isRecording, setIsRecording] = useState(false)
+  const [recordingSeconds, setRecordingSeconds] = useState(0)
+  const [audioWaveAmplitudes, setAudioWaveAmplitudes] = useState<number[]>([0.25, 0.45, 0.35, 0.65, 0.25, 0.55, 0.75, 0.45, 0.35, 0.65, 0.25, 0.55])
+  const [audioPreviewUrl, setAudioPreviewUrl] = useState<string | null>(null)
+  const [isPlayingAudioPreview, setIsPlayingAudioPreview] = useState(false)
+
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const audioChunksRef = useRef<Blob[]>([])
+  const speechRecognitionRef = useRef<any>(null)
+  const audioContextRef = useRef<AudioContext | null>(null)
+  const analyserRef = useRef<AnalyserNode | null>(null)
+  const animFrameRef = useRef<number | null>(null)
+  const recordingTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const audioPreviewRef = useRef<HTMLAudioElement | null>(null)
+
+  const startVoiceRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      audioChunksRef.current = []
+      const recorder = new MediaRecorder(stream)
+
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) {
+          audioChunksRef.current.push(e.data)
+        }
+      }
+
+      recorder.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
+        const url = URL.createObjectURL(audioBlob)
+        setAudioPreviewUrl(url)
+        stream.getTracks().forEach((t) => t.stop())
+      }
+
+      recorder.start()
+      mediaRecorderRef.current = recorder
+      setIsRecording(true)
+      setRecordingSeconds(0)
+
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingSeconds((prev) => prev + 1)
+      }, 1000)
+
+      try {
+        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext
+        const audioCtx = new AudioCtx()
+        audioContextRef.current = audioCtx
+        const source = audioCtx.createMediaStreamSource(stream)
+        const analyser = audioCtx.createAnalyser()
+        analyser.fftSize = 32
+        source.connect(analyser)
+        analyserRef.current = analyser
+
+        const dataArray = new Uint8Array(analyser.frequencyBinCount)
+
+        const updateWaveform = () => {
+          if (!analyserRef.current) return
+          analyserRef.current.getByteFrequencyData(dataArray)
+          const amps: number[] = []
+          for (let i = 0; i < 12; i++) {
+            const val = dataArray[i % dataArray.length] / 255
+            amps.push(Math.max(0.18, Math.min(1.0, val * 1.6)))
+          }
+          setAudioWaveAmplitudes(amps)
+          animFrameRef.current = requestAnimationFrame(updateWaveform)
+        }
+        updateWaveform()
+      } catch {}
+
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+      if (SpeechRecognition) {
+        try {
+          const recognition = new SpeechRecognition()
+          recognition.continuous = true
+          recognition.interimResults = true
+          recognition.lang = lang === 'es' ? 'es-ES' : 'en-US'
+
+          recognition.onresult = (event: any) => {
+            let transcript = ''
+            for (let i = 0; i < event.results.length; i++) {
+              transcript += event.results[i][0].transcript
+            }
+            if (transcript.trim()) {
+              setDraft(transcript)
+              handleInputChange(transcript)
+            }
+          }
+          recognition.start()
+          speechRecognitionRef.current = recognition
+        } catch {}
+      }
+    } catch (err) {
+      alert(lang === 'es' ? 'Permiso de micrófono denegado en tu navegador.' : 'Microphone access denied.')
+    }
+  }
+
+  const stopVoiceRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      try {
+        mediaRecorderRef.current.stop()
+      } catch {}
+    }
+    if (speechRecognitionRef.current) {
+      try {
+        speechRecognitionRef.current.stop()
+      } catch {}
+    }
+    if (recordingTimerRef.current) {
+      clearInterval(recordingTimerRef.current)
+    }
+    if (animFrameRef.current) {
+      cancelAnimationFrame(animFrameRef.current)
+    }
+    if (audioContextRef.current) {
+      try {
+        audioContextRef.current.close()
+      } catch {}
+    }
+    setIsRecording(false)
+  }
+
+  const cancelVoiceRecording = () => {
+    stopVoiceRecording()
+    setAudioPreviewUrl(null)
+    setIsPlayingAudioPreview(false)
+  }
+
+  const togglePlayAudioPreview = () => {
+    if (!audioPreviewUrl) return
+    if (!audioPreviewRef.current) {
+      const audio = new Audio(audioPreviewUrl)
+      audio.onended = () => setIsPlayingAudioPreview(false)
+      audioPreviewRef.current = audio
+    }
+    if (isPlayingAudioPreview) {
+      audioPreviewRef.current.pause()
+      setIsPlayingAudioPreview(false)
+    } else {
+      audioPreviewRef.current.play()
+      setIsPlayingAudioPreview(true)
+    }
+  }
 
   const [prefs] = usePrefs()
 
@@ -1823,6 +1973,99 @@ export function ChatThread({
                 )}
               </AnimatePresence>
 
+              {/* Voice Note Recording & Audio Waveform Preview */}
+              <AnimatePresence>
+                {(isRecording || audioPreviewUrl) && (
+                  <motion.div
+                    key="voicenote-banner"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2, ease: 'easeInOut' }}
+                    className="overflow-hidden px-3 pt-2.5"
+                  >
+                    <div className="flex flex-col gap-2 rounded-xl border border-primary/30 bg-secondary/40 p-3 backdrop-blur-md shadow-md">
+                      <div className="flex items-center justify-between gap-3">
+                        {/* Recording status badge + timer */}
+                        <div className="flex items-center gap-2">
+                          {isRecording ? (
+                            <span className="flex items-center gap-1.5 rounded-full bg-red-500/15 px-2.5 py-0.5 text-[11px] font-bold text-red-400 border border-red-500/30">
+                              <span className="size-2 rounded-full bg-red-500 animate-pulse" />
+                              <span>{lang === 'es' ? 'GRABANDO NOTA DE VOZ' : 'RECORDING VOICE NOTE'}</span>
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-[11px] font-bold text-emerald-400 border border-emerald-500/30">
+                              <AudioLines className="size-3" />
+                              <span>{lang === 'es' ? 'AUDIO GRABADO' : 'AUDIO RECORDED'}</span>
+                            </span>
+                          )}
+
+                          <span className="font-mono text-[12px] font-semibold text-foreground/90 tabular-nums">
+                            {Math.floor(recordingSeconds / 60).toString().padStart(2, '0')}:{(recordingSeconds % 60).toString().padStart(2, '0')}
+                          </span>
+                        </div>
+
+                        {/* Live / Preview Controls */}
+                        <div className="flex items-center gap-1.5">
+                          {audioPreviewUrl && !isRecording && (
+                            <button
+                              onClick={togglePlayAudioPreview}
+                              type="button"
+                              className="flex size-7 items-center justify-center rounded-lg bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
+                              title={isPlayingAudioPreview ? 'Pausar vista previa' : 'Escuchar vista previa'}
+                            >
+                              {isPlayingAudioPreview ? <Pause className="size-3.5" /> : <Play className="size-3.5 ml-0.5" />}
+                            </button>
+                          )}
+
+                          {isRecording ? (
+                            <button
+                              onClick={stopVoiceRecording}
+                              type="button"
+                              className="flex items-center gap-1.5 rounded-lg bg-red-500 px-2.5 py-1 text-[11px] font-bold text-white shadow-md hover:bg-red-600 transition-colors"
+                            >
+                              <Square className="size-3 fill-white" />
+                              <span>{lang === 'es' ? 'Detener' : 'Stop'}</span>
+                            </button>
+                          ) : null}
+
+                          <button
+                            onClick={cancelVoiceRecording}
+                            type="button"
+                            className="flex size-7 items-center justify-center rounded-lg text-muted-foreground hover:bg-secondary hover:text-destructive transition-colors"
+                            title={lang === 'es' ? 'Descartar grabación' : 'Discard recording'}
+                          >
+                            <Trash2 className="size-3.5" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Animated Waveform Bars */}
+                      <div className="flex items-center justify-center gap-1.5 py-1 h-7 px-3 bg-background/50 rounded-lg border border-border/40 overflow-hidden">
+                        {audioWaveAmplitudes.map((amp, idx) => (
+                          <motion.span
+                            key={idx}
+                            animate={{ height: `${Math.max(15, amp * 100)}%` }}
+                            transition={{ type: 'spring', stiffness: 300, damping: 15 }}
+                            className={`w-1.5 rounded-full transition-colors ${
+                              isRecording
+                                ? 'bg-gradient-to-t from-primary/60 to-primary shadow-[0_0_8px_rgba(88,101,242,0.5)]'
+                                : 'bg-emerald-400/80'
+                            }`}
+                          />
+                        ))}
+                      </div>
+
+                      <div className="text-[10px] text-muted-foreground italic text-center">
+                        {lang === 'es'
+                          ? 'Transcripción automática en curso. Presiona ENTER para enviar.'
+                          : 'Automatic live transcription in progress. Press ENTER to send.'}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               {/* Input Area */}
               <div className="flex items-end gap-2 px-3 py-1.5">
                 {/* Translator Button */}
@@ -2063,6 +2306,8 @@ export function ChatThread({
                     el.style.height = `${Math.min(el.scrollHeight, 160)}px`
                   }}
                   placeholder={
+                    isRecording
+                      ? (lang === 'es' ? 'Habla ahora... la transcripción aparecerá aquí...' : 'Speak now... transcription will appear here...') :
                     translating ? t.translating :
                     editingMessage ? t.saveChanges :
                     replyingTo ? t.typeReply :
@@ -2073,6 +2318,24 @@ export function ChatThread({
                   rows={1}
                   className="w-full bg-transparent text-[13px] outline-none placeholder:text-muted-foreground disabled:opacity-60 resize-none max-h-40 py-[7px]"
                 />
+
+                {/* Voice Note Button */}
+                <button
+                  type="button"
+                  onClick={isRecording ? stopVoiceRecording : startVoiceRecording}
+                  className={`flex size-7.5 items-center justify-center rounded-lg transition-all duration-200 shrink-0 self-center ${
+                    isRecording
+                      ? 'bg-red-500 text-white shadow-md shadow-red-500/30 animate-pulse'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
+                  }`}
+                  title={
+                    isRecording
+                      ? (lang === 'es' ? 'Detener grabación de voz' : 'Stop voice recording')
+                      : (lang === 'es' ? 'Grabar nota de voz con transcripción' : 'Record voice note with transcription')
+                  }
+                >
+                  {isRecording ? <MicOff className="size-4" /> : <Mic className="size-4" />}
+                </button>
               </div>
             </div>
           </footer>
