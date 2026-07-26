@@ -300,38 +300,46 @@ export function ChatThread({
 
     try {
       const recognition = new SpeechRecognition()
-      recognition.continuous = true
+      recognition.continuous = false
       recognition.interimResults = true
       recognition.lang = lang === 'es' ? 'es-ES' : 'en-US'
 
-      const baseText = draft ? draft.trim() + ' ' : ''
+      let accumulated = ''
 
       recognition.onresult = (event: any) => {
-        let transcript = ''
-        for (let i = 0; i < event.results.length; i++) {
-          transcript += event.results[i][0].transcript
+        let currentChunk = ''
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          currentChunk += event.results[i][0].transcript
         }
-        const textToSet = (baseText + transcript).trim()
-        if (textToSet) {
-          setDraft(textToSet)
-          handleInputChange(textToSet)
+        if (currentChunk.trim()) {
+          setDraft((prev) => {
+            const base = accumulated || prev.trim()
+            const full = base ? `${base} ${currentChunk.trim()}` : currentChunk.trim()
+            handleInputChange(full)
+            return full
+          })
         }
       }
 
       recognition.onerror = (event: any) => {
         console.warn('Speech recognition error:', event.error)
+        if (event.error === 'no-speech' || event.error === 'network') {
+          // Ignore soft transient network/silence errors and let onend restart smoothly
+          return
+        }
         if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-          alert(lang === 'es' ? 'Permiso de micrófono o servicio de dictado por voz denegado en tu navegador.' : 'Microphone or speech service permission denied.')
-          stopVoiceRecording()
-        } else if (event.error === 'network') {
-          alert(lang === 'es' ? 'El dictado por voz requiere conexión a internet.' : 'Voice dictation requires an internet connection.')
+          alert(lang === 'es' ? 'Permiso de micrófono denegado en tu navegador.' : 'Microphone permission denied.')
           stopVoiceRecording()
         }
       }
 
       recognition.onend = () => {
-        // If user didn't manually stop, auto restart
-        if (speechRecognitionRef.current && isRecording) {
+        // Save current draft as accumulated base before restarting chunk
+        setDraft((prev) => {
+          accumulated = prev.trim()
+          return prev
+        })
+        if (speechRecognitionRef.current) {
           try {
             recognition.start()
           } catch {}
