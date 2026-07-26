@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import type { CatChatPlugin, PluginRailTab } from './plugin-types'
+import { catMusicPlugin } from './cat-music'
 import { getRegisteredPlugins, registerPlugin, unregisterPlugin } from './plugin-registry'
 
 type PluginUpdateInfo = {
@@ -104,19 +105,17 @@ export function PluginProvider({ children, user }: { children: React.ReactNode; 
       .catch(() => {})
   }, [installedPluginIds])
 
+  // Synchronously ensure registeredPlugins matches installedPluginIds
+  if (installedPluginIds.includes('cat-music')) {
+    registerPlugin(catMusicPlugin)
+  } else {
+    unregisterPlugin('cat-music')
+  }
+
   // Persist installed and enabled plugins
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem(STORAGE_KEY_INSTALLED, JSON.stringify(installedPluginIds))
-    }
-    if (installedPluginIds.includes('cat-music')) {
-      import('./cat-music')
-        .then((m) => {
-          if (m?.catMusicPlugin) registerPlugin(m.catMusicPlugin)
-        })
-        .catch(() => {})
-    } else {
-      unregisterPlugin('cat-music')
     }
   }, [installedPluginIds])
 
