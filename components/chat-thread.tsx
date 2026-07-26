@@ -296,128 +296,10 @@ export function ChatThread({
   const deepgramRef = useRef<any>(null)
 
   const startVoiceRecording = async () => {
-    // 1. Try Deepgram real-time streaming (fastest, text appears word-by-word)
-    if (!deepgramFailedRef.current) {
-      try {
-        const { DeepgramStreamer } = await import('@/lib/deepgram-stream')
-        const streamer = new DeepgramStreamer()
-        const baseText = draft ? draft.trim() + ' ' : ''
-        let finalizedText = ''
-        let interimText = ''
-
-        const started = await streamer.start(lang === 'es' ? 'es' : 'en', {
-          onTranscript: (text, isFinal) => {
-            let cleanText = text.trim()
-            if (!cleanText) return
-
-            if (lang === 'es') {
-              cleanText = cleanText
-                .replace(/\btambien\b/gi, 'también')
-                .replace(/\bcancion\b/gi, 'canción')
-                .replace(/\bmas\b/gi, 'más')
-                .replace(/\bestas\b/gi, 'estás')
-                .replace(/\bque tal\b/gi, 'qué tal')
-            }
-
-            if (isFinal) {
-              const formatted = cleanText.charAt(0).toUpperCase() + cleanText.slice(1)
-              finalizedText = (finalizedText ? finalizedText + ' ' : '') + formatted
-              interimText = ''
-            } else {
-              interimText = cleanText
-            }
-
-            const activeText = (finalizedText ? finalizedText + ' ' : '') + interimText
-            const full = (baseText + activeText).trim()
-            setDraft(full)
-            handleInputChange(full)
-          },
-          onError: (error) => {
-            console.warn('Deepgram error:', error)
-            deepgramFailedRef.current = true
-            deepgramRef.current = null
-            setIsRecording(false)
-            // Auto-fallback to Web Speech API or Whisper
-            startWebSpeechOrWhisper()
-          },
-          onClose: () => {
-            deepgramRef.current = null
-          },
-        })
-
-        if (started) {
-          deepgramRef.current = streamer
-          setIsRecording(true)
-          return
-        } else {
-          deepgramFailedRef.current = true
-        }
-      } catch {
-        deepgramFailedRef.current = true
-      }
-    }
-
-    // 2. Try Web Speech API or Whisper
-    await startWebSpeechOrWhisper()
-  }
-
-  const startWebSpeechOrWhisper = async () => {
-    // Try native Web Speech API
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-    if (SpeechRecognition && !speechFailedRef.current) {
-      try {
-        const recognition = new SpeechRecognition()
-        recognition.lang = lang === 'es' ? 'es-ES' : 'en-US'
-        recognition.continuous = true
-        recognition.interimResults = true
-
-        const baseText = draft ? draft.trim() + ' ' : ''
-
-        recognition.onresult = (event: any) => {
-          let transcript = ''
-          for (let i = 0; i < event.results.length; i++) {
-            transcript += event.results[i][0].transcript
-          }
-          const fullContent = (baseText + transcript).trim()
-          setDraft(fullContent)
-          handleInputChange(fullContent)
-        }
-
-        recognition.onerror = (e: any) => {
-          console.warn('SpeechRecognition error:', e.error)
-          if (e.error === 'network') {
-            speechFailedRef.current = true
-            if (speechRecognitionRef.current) {
-              try { speechRecognitionRef.current.stop() } catch {}
-              speechRecognitionRef.current = null
-            }
-            setIsRecording(false)
-            startWhisperRecording()
-          }
-        }
-
-        recognition.onend = () => {
-          setIsRecording(false)
-        }
-
-        recognition.start()
-        speechRecognitionRef.current = recognition
-        setIsRecording(true)
-        return
-      } catch {
-        speechFailedRef.current = true
-      }
-    }
-
-    // Last resort: Local Whisper
-    await startWhisperRecording()
-  }
-
-  const startWhisperRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       audioChunksRef.current = []
-
+      
       const options = MediaRecorder.isTypeSupported('audio/webm')
         ? { mimeType: 'audio/webm' }
         : MediaRecorder.isTypeSupported('audio/mp4')
@@ -432,24 +314,65 @@ export function ChatThread({
         }
       }
 
+      // Live browser preview speech recognition
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+      if (SpeechRecognition) {
+        try {
+          const recognition = new SpeechRecognition()
+          recognition.continuous = true
+          recognition.interimResults = true
+          recognition.lang = lang === 'es' ? 'es-ES' : 'en-US'
+
+          const initialBase = draft ? draft.trim() + ' ' : ''
+
+          recognition.onresult = (event: any) => {
+            let live = ''
+            for (let i = 0; i < event.results.length; i++) {
+              live += event.results[i][0].transcript
+            }
+            if (live.trim()) {
+              const fullText = (initialBase + live).trim()
+              setDraft(fullText)
+              handleInputChange(fullText)
+            }
+          }
+
+          recognition.onerror = () => {}
+          recognition.start()
+          speechRecognitionRef.current = recognition
+        } catch {}
+      }
+
       recorder.onstop = async () => {
         stream.getTracks().forEach((track) => track.stop())
+        if (speechRecognitionRef.current) {
+          try { speechRecognitionRef.current.stop() } catch {}
+          speechRecognitionRef.current = null
+        }
+
         const audioBlob = new Blob(audioChunksRef.current, { type: recorder.mimeType || 'audio/webm' })
         if (audioBlob.size < 100) return
 
         setIsTranscribing(true)
         try {
-          const { transcribeAudio } = await import('@/lib/whisper-local')
-          const text = await transcribeAudio(audioBlob, lang === 'es' ? 'es' : 'en')
-          if (text) {
-            setDraft((prev) => {
-              const newText = prev ? `${prev.trim()} ${text}` : text
-              handleInputChange(newText)
-              return newText
-            })
+          const formData = new FormData()
+          formData.append('file', audioBlob, 'audio.webm')
+          formData.append('language', lang === 'es' ? 'es' : 'en')
+
+          const res = await fetch('/api/stt', {
+            method: 'POST',
+            body: formData,
+          })
+
+          if (res.ok) {
+            const data = await res.json()
+            if (data?.text) {
+              setDraft(data.text.trim())
+              handleInputChange(data.text.trim())
+            }
           }
         } catch (err) {
-          console.error('Local Whisper transcription failed:', err)
+          console.error('STT API request failed:', err)
         } finally {
           setIsTranscribing(false)
         }
@@ -465,18 +388,11 @@ export function ChatThread({
   }
 
   const stopVoiceRecording = () => {
-    // Stop Deepgram streamer if active
-    if (deepgramRef.current) {
-      deepgramRef.current.stop()
-      deepgramRef.current = null
-    }
-    // Stop Web Speech API if active
     if (speechRecognitionRef.current) {
       try { speechRecognitionRef.current.stop() } catch {}
       speechRecognitionRef.current = null
     }
-    // Stop MediaRecorder if active (Whisper fallback)
-    if (mediaRecorderRef.current) {
+    if (mediaRecorderRef.current && isRecording) {
       try { mediaRecorderRef.current.stop() } catch {}
       mediaRecorderRef.current = null
     }
