@@ -50,30 +50,21 @@ export function isElectronEnv(): boolean {
 
 export function PluginProvider({ children, user }: { children: React.ReactNode; user?: any }) {
   // Installed plugins (default empty array - plugins must be installed from Plugin Hub)
-  const [installedPluginIds, setInstalledPluginIds] = useState<string[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem(STORAGE_KEY_INSTALLED)
-        if (saved) return JSON.parse(saved)
-      } catch {
-        // Fallback
-      }
-    }
-    return []
-  })
+  const [installedPluginIds, setInstalledPluginIds] = useState<string[]>([])
+  const [enabledPluginIds, setEnabledPluginIds] = useState<string[]>([])
+  const [mounted, setMounted] = useState(false)
 
-  // Enabled plugins (default empty array)
-  const [enabledPluginIds, setEnabledPluginIds] = useState<string[]>(() => {
+  useEffect(() => {
+    setMounted(true)
     if (typeof window !== 'undefined') {
       try {
-        const saved = localStorage.getItem(STORAGE_KEY_ENABLED)
-        if (saved) return JSON.parse(saved)
-      } catch {
-        // Fallback
-      }
+        const savedInst = localStorage.getItem(STORAGE_KEY_INSTALLED)
+        if (savedInst) setInstalledPluginIds(JSON.parse(savedInst))
+        const savedEn = localStorage.getItem(STORAGE_KEY_ENABLED)
+        if (savedEn) setEnabledPluginIds(JSON.parse(savedEn))
+      } catch {}
     }
-    return []
-  })
+  }, [])
 
   const [installingPluginId, setInstallingPluginId] = useState<string | null>(null)
   const [installProgressMap, setInstallProgressMap] = useState<Record<string, number>>({})
@@ -118,16 +109,16 @@ export function PluginProvider({ children, user }: { children: React.ReactNode; 
 
   // Persist installed and enabled plugins
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (mounted && typeof window !== 'undefined') {
       localStorage.setItem(STORAGE_KEY_INSTALLED, JSON.stringify(installedPluginIds))
     }
-  }, [installedPluginIds])
+  }, [installedPluginIds, mounted])
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (mounted && typeof window !== 'undefined') {
       localStorage.setItem(STORAGE_KEY_ENABLED, JSON.stringify(enabledPluginIds))
     }
-  }, [enabledPluginIds])
+  }, [enabledPluginIds, mounted])
 
   const registered = getRegisteredPlugins()
 

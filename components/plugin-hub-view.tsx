@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Boxes,
   Cloud,
@@ -53,6 +53,11 @@ export function PluginHubView({ onClose }: { onClose?: () => void }) {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [hubPlugins, setHubPlugins] = useState<StorePluginItem[]>(AVAILABLE_HUB_PLUGINS)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const {
     isPluginInstalled,
@@ -186,7 +191,7 @@ export function PluginHubView({ onClose }: { onClose?: () => void }) {
               const progress = installProgressMap[plugin.id] || 0
 
               // Display installed version if installed, or remote version if available
-              const rawInstalled = typeof window !== 'undefined' ? localStorage.getItem(`cz-plugin-ver-${plugin.id}`) : null
+              const rawInstalled = mounted ? localStorage.getItem(`cz-plugin-ver-${plugin.id}`) : null
               const installedVerFormatted = rawInstalled ? (rawInstalled.startsWith('v') ? rawInstalled : `v${rawInstalled}`) : 'v1.0.0'
               const remoteVerFormatted = plugin.version ? (plugin.version.startsWith('v') ? plugin.version : `v${plugin.version}`) : 'v1.0.0'
               const formattedVersion = isInstalled ? installedVerFormatted : remoteVerFormatted
