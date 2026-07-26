@@ -492,7 +492,7 @@ ipcMain.handle('delete:plugin', async (_event, pluginId) => {
 
 ipcMain.handle('get:plugins', async (_event, customDir) => {
   const cfg = loadConfig()
-  const baseDir = customDir || (cfg.projectPath ? path.join(cfg.projectPath, 'lib', 'plugins') : null)
+  const baseDir = customDir || (cfg.projectPath ? path.join(cfg.projectPath, 'plugins') : null)
   const localPluginsMap = new Map()
 
   if (baseDir && fs.existsSync(baseDir)) {
