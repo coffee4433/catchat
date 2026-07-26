@@ -13,6 +13,9 @@ contextBridge.exposeInMainWorld('releaseTool', {
   getPlugins: (customDir) => ipcRenderer.invoke('get:plugins', customDir),
   selectPluginsFolder: () => ipcRenderer.invoke('select:plugins-folder'),
   publishPlugin: (pluginData) => ipcRenderer.invoke('publish:plugin', pluginData),
+  deletePlugin: (pluginId) => ipcRenderer.invoke('delete:plugin', pluginId),
+  getGitHubReleases: () => ipcRenderer.invoke('get:github-releases'),
+  deleteGitHubRelease: (releaseId, tagName) => ipcRenderer.invoke('delete:github-release', { releaseId, tagName }),
   release: (version, notes, showModal) => ipcRenderer.invoke('release', version, notes, showModal),
   onOutput: (cb) => {
     const fn = (_e, chunk) => cb(chunk)

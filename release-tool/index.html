@@ -700,6 +700,95 @@
   }
   .error-text { font-size: 12px; color: var(--red); }
 
+  /* ------------------------------------------------------------------
+     Releases & Plugins View — Search, Modern Cards & Badges
+     ------------------------------------------------------------------ */
+  .search-bar-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 20px;
+  }
+  .search-box {
+    position: relative; flex: 1; max-width: 500px; display: flex; align-items: center;
+  }
+  .search-box svg {
+    position: absolute; left: 14px; width: 16px; height: 16px; color: var(--muted); pointer-events: none;
+  }
+  .search-input {
+    width: 100%; padding: 10px 14px 10px 42px;
+    background: var(--surface); border: 1px solid var(--border-strong);
+    border-radius: 12px; color: var(--fg); font-size: 13.5px;
+    outline: none; transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .search-input:focus {
+    border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+
+  .grid-cards {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 18px;
+  }
+  .mod-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    display: flex; flex-direction: column; gap: 14px;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+    position: relative; overflow: hidden;
+  }
+  .mod-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent-border);
+    box-shadow: var(--shadow-md);
+  }
+  .mod-card-header {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  .mod-card-icon {
+    width: 46px; height: 46px; border-radius: 14px; flex-shrink: 0;
+    background: var(--surface-2); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden; color: var(--accent);
+  }
+  .mod-card-icon img { width: 100%; height: 100%; object-fit: cover; }
+  .mod-card-body { display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 0; }
+  .mod-card-title { font-size: 15px; font-weight: 700; color: var(--fg); display: flex; align-items: center; gap: 8px; }
+  .mod-card-desc { font-size: 12.5px; color: var(--muted); line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+  .mod-card-footer {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding-top: 14px; border-top: 1px solid var(--border); margin-top: auto;
+  }
+  .badge-tag {
+    font-family: var(--mono); font-size: 11px; font-weight: 700;
+    padding: 3px 10px; border-radius: 999px;
+    background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent-border);
+  }
+  .badge-outline {
+    font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 6px;
+    background: var(--surface-2); color: var(--fg-secondary); border: 1px solid var(--border);
+  }
+  .btn-danger-soft {
+    background: var(--red-soft); color: var(--red); border: 1px solid var(--red-border);
+    border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer;
+    transition: background 0.15s, transform 0.1s; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-danger-soft:hover { background: var(--red); color: #fff; transform: scale(1.02); }
+
+  /* Modal Overlay */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px);
+    display: none; align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: var(--surface); border: 1px solid var(--border-strong);
+    border-radius: 16px; width: 100%; max-width: 440px; padding: 24px;
+    box-shadow: var(--shadow-lg); display: flex; flex-direction: column; gap: 16px;
+  }
+  .modal-title { font-size: 17px; font-weight: 700; color: var(--fg); }
+  .modal-desc { font-size: 13px; color: var(--muted); line-height: 1.5; }
+  .modal-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+
   @media (max-width: 720px) {
     .settings-row { grid-template-columns: 1fr; gap: 10px; }
     .nav-rail { width: 60px; }
@@ -734,6 +823,11 @@
       <button class="nav-item active" data-view="release" onclick="navTo('release')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/></svg>
         <span>Nueva release</span>
+        <span class="nav-dot"></span>
+      </button>
+      <button class="nav-item" data-view="releases" onclick="navTo('releases')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span>Releases / Updates</span>
         <span class="nav-dot"></span>
       </button>
       <button class="nav-item" data-view="plugins" onclick="navTo('plugins')">
@@ -835,59 +929,94 @@
         </div>
       </section>
 
-      <!-- ======================= PLUGINS VIEW ======================= -->
-      <section class="view" id="view-plugins" aria-label="Plugins">
-        <div class="view-inner">
+      <!-- ======================= RELEASES VIEW ======================= -->
+      <section class="view" id="view-releases" aria-label="Releases y Repositorio">
+        <div class="view-inner" style="max-width:1000px">
           <div class="page-head">
             <div>
-              <h1>Publicar plugin</h1>
-              <p>Empaqueta y publica un plugin de CatChat en GitHub Releases.</p>
+              <h1>Releases y Repositorio</h1>
+              <p>Historial completo de versiones y actualizaciones publicadas en GitHub CatChat.</p>
             </div>
+            <button type="button" class="btn btn-sm" onclick="loadGitHubReleases()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              Refrescar
+            </button>
           </div>
 
-          <div class="card">
-            <div class="card-header">
-              <span class="card-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-                Carpeta de plugins
-              </span>
-              <button type="button" class="btn btn-sm" onclick="pickPluginsFolder()">Cambiar carpeta</button>
+          <div class="search-bar-row">
+            <div class="search-box">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" id="releaseSearchInput" class="search-input" placeholder="Buscar actualización por versión, título o notas..." oninput="filterReleases()">
             </div>
-            <div class="card-body" style="padding:14px 20px">
-              <span class="project-dir" id="pluginsFolderLabel">lib/plugins (por defecto)</span>
-            </div>
+            <span class="badge-outline" id="releasesCountBadge">0 versiones</span>
           </div>
 
-          <div class="card">
+          <div class="grid-cards" id="releasesListGrid">
+            <!-- Dynamic release cards with rounded corners -->
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================= PLUGINS VIEW ======================= -->
+      <section class="view" id="view-plugins" aria-label="Plugins">
+        <div class="view-inner" style="max-width:1000px">
+          <div class="page-head">
+            <div>
+              <h1>Plugins del Repositorio</h1>
+              <p>Administra, busca, empaqueta o elimina plugins de CatChat.</p>
+            </div>
+            <button type="button" class="btn btn-primary btn-sm" onclick="scrollToPublishPlugin()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Publicar Plugin
+            </button>
+          </div>
+
+          <div class="search-bar-row">
+            <div class="search-box">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" id="pluginSearchInput" class="search-input" placeholder="Buscar plugin por nombre, id o descripción..." oninput="filterPlugins()">
+            </div>
+            <span class="badge-outline" id="pluginsCountBadge">0 plugins</span>
+          </div>
+
+          <div class="grid-cards" id="pluginsListGrid">
+            <!-- Dynamic plugin cards with rounded corners -->
+          </div>
+
+          <div class="card" id="pluginPublishCard" style="margin-top: 10px;">
             <div class="card-header">
               <span class="card-title">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-5"/><path d="M9 8V2h6v6"/><path d="M5 8h14a1 1 0 0 1 1 1v3a7 7 0 0 1-7 7h-2a7 7 0 0 1-7-7V9a1 1 0 0 1 1-1z"/></svg>
-                Detalles del plugin
+                Publicador de Plugins
               </span>
+              <button type="button" class="btn btn-sm" onclick="pickPluginsFolder()">Cambiar carpeta</button>
             </div>
             <div class="card-body">
-              <div class="field">
-                <span class="field-label">Plugin detectado</span>
-                <select id="pluginSelect" onchange="onPluginSelectChange()">
-                  <option value="cat-music">CatMusic (cat-music)</option>
-                </select>
-              </div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+                <div class="field">
+                  <span class="field-label">Plugin detectado</span>
+                  <select id="pluginSelect" onchange="onPluginSelectChange()">
+                    <option value="cat-music">CatMusic (cat-music)</option>
+                  </select>
+                </div>
                 <div class="field">
                   <span class="field-label">ID del plugin</span>
                   <input type="text" id="pluginIdInput" value="cat-music" spellcheck="false" style="font-family:var(--mono)">
                 </div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
                 <div class="field">
                   <span class="field-label">Nombre</span>
                   <input type="text" id="pluginNameInput" value="CatMusic">
                 </div>
-              </div>
-              <div class="field" style="max-width:200px">
-                <span class="field-label">Versión</span>
-                <input type="text" id="pluginVersionInput" value="v1.0.0" spellcheck="false" style="font-family:var(--mono)">
+                <div class="field">
+                  <span class="field-label">Versión</span>
+                  <input type="text" id="pluginVersionInput" value="v1.0.0" spellcheck="false" style="font-family:var(--mono)">
+                </div>
               </div>
               <div class="divider"></div>
-              <div style="display:flex;justify-content:flex-end">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <span class="project-dir" id="pluginsFolderLabel">lib/plugins (por defecto)</span>
                 <button type="button" class="btn btn-primary btn-lg" id="pluginPublishBtn" onclick="submitPublishPlugin()">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
                   Publicar en GitHub Releases
@@ -1141,7 +1270,11 @@ function navTo(view) {
   document.querySelectorAll('.view, .view-ai-layout').forEach((el) => {
     el.classList.toggle('active', el.id === 'view-' + view)
   })
-  if (view === 'ai') {
+  if (view === 'releases') {
+    loadGitHubReleases()
+  } else if (view === 'plugins') {
+    loadPluginsList()
+  } else if (view === 'ai') {
     setTimeout(() => $('aiPromptInput').focus(), 60)
   }
 }
@@ -1923,6 +2056,238 @@ function createDemoApi() {
   }
 }
 
+// ---------------------------------------------------------------------
+// GitHub Releases & Plugins Management
+// ---------------------------------------------------------------------
+let allReleases = []
+let allPlugins = []
+let pendingDeleteAction = null
+
+async function loadGitHubReleases() {
+  const grid = $('releasesListGrid')
+  if (!grid) return
+  grid.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:20px;grid-column:1/-1">Cargando versiones desde GitHub...</div>'
+  
+  try {
+    const list = await window.releaseTool.getGitHubReleases()
+    allReleases = Array.isArray(list) ? list : []
+    renderReleases(allReleases)
+  } catch (e) {
+    grid.innerHTML = '<div style="color:var(--red);font-size:13px;padding:20px;grid-column:1/-1">Error al obtener releases de GitHub: ' + (e.message || e) + '</div>'
+  }
+}
+
+function filterReleases() {
+  const query = ($('releaseSearchInput')?.value || '').toLowerCase().trim()
+  if (!query) {
+    renderReleases(allReleases)
+    return
+  }
+  const filtered = allReleases.filter(r => 
+    (r.tagName && r.tagName.toLowerCase().includes(query)) ||
+    (r.name && r.name.toLowerCase().includes(query)) ||
+    (r.body && r.body.toLowerCase().includes(query)) ||
+    (r.author?.login && r.author.login.toLowerCase().includes(query))
+  )
+  renderReleases(filtered)
+}
+
+function renderReleases(releases) {
+  const grid = $('releasesListGrid')
+  const badge = $('releasesCountBadge')
+  if (!grid) return
+  if (badge) badge.textContent = `${releases.length} versiones`
+
+  if (!releases.length) {
+    grid.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:40px 20px;grid-column:1/-1;text-align:center">No se encontraron versiones que coincidan con la búsqueda.</div>'
+    return
+  }
+
+  grid.innerHTML = releases.map(r => {
+    const dateStr = r.publishedAt ? new Date(r.publishedAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Borrador'
+    const bodyText = (r.body || 'Sin descripción').slice(0, 180) + ((r.body || '').length > 180 ? '...' : '')
+    const assetsCount = (r.assets || []).length
+    return `
+      <div class="mod-card">
+        <div class="mod-card-header">
+          <div style="display:flex;align-items:center;gap:10px;min-width:0">
+            <span class="badge-tag">${escapeHtml(r.tagName || 'v0.0.0')}</span>
+            ${r.prerelease ? '<span class="badge-outline" style="color:var(--amber);border-color:var(--amber-soft)">Pre-release</span>' : ''}
+          </div>
+          <span style="font-size:11.5px;color:var(--muted)">${dateStr}</span>
+        </div>
+        <div class="mod-card-body">
+          <div class="mod-card-title">${escapeHtml(r.name || r.tagName)}</div>
+          <div class="mod-card-desc">${escapeHtml(bodyText)}</div>
+        </div>
+        <div class="mod-card-footer">
+          <div style="display:flex;align-items:center;gap:8px">
+            ${r.author?.avatarUrl ? `<img src="${escapeHtml(r.author.avatarUrl)}" style="width:20px;height:20px;border-radius:50%">` : ''}
+            <span style="font-size:11.5px;color:var(--muted);font-weight:600">${escapeHtml(r.author?.login || 'CatChat')}</span>
+            ${assetsCount ? `<span class="badge-outline">${assetsCount} descargas</span>` : ''}
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            ${r.htmlUrl ? `<a href="${escapeHtml(r.htmlUrl)}" target="_blank" class="btn btn-sm" title="Ver en GitHub" style="text-decoration:none;display:inline-flex;align-items:center;padding:5px 8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>` : ''}
+            <button type="button" class="btn-danger-soft" onclick="confirmDeleteRelease(${r.id}, '${escapeHtml(r.tagName)}', '${escapeHtml(r.name || r.tagName)}')" title="Eliminar Release">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    `
+  }).join('')
+}
+
+async function loadPluginsList() {
+  const grid = $('pluginsListGrid')
+  if (!grid) return
+  grid.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:20px;grid-column:1/-1">Cargando plugins del repositorio...</div>'
+
+  try {
+    const list = await window.releaseTool.getPlugins()
+    allPlugins = Array.isArray(list) ? list : []
+    renderPlugins(allPlugins)
+    refreshPluginSelectOptions(allPlugins)
+  } catch (e) {
+    grid.innerHTML = '<div style="color:var(--red);font-size:13px;padding:20px;grid-column:1/-1">Error al obtener plugins: ' + (e.message || e) + '</div>'
+  }
+}
+
+function filterPlugins() {
+  const query = ($('pluginSearchInput')?.value || '').toLowerCase().trim()
+  if (!query) {
+    renderPlugins(allPlugins)
+    return
+  }
+  const filtered = allPlugins.filter(p =>
+    (p.id && p.id.toLowerCase().includes(query)) ||
+    (p.name && p.name.toLowerCase().includes(query)) ||
+    (p.description && p.description.toLowerCase().includes(query))
+  )
+  renderPlugins(filtered)
+}
+
+function renderPlugins(plugins) {
+  const grid = $('pluginsListGrid')
+  const badge = $('pluginsCountBadge')
+  if (!grid) return
+  if (badge) badge.textContent = `${plugins.length} plugins`
+
+  if (!plugins.length) {
+    grid.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:40px 20px;grid-column:1/-1;text-align:center">No se encontraron plugins en el repositorio.</div>'
+    return
+  }
+
+  grid.innerHTML = plugins.map(p => `
+    <div class="mod-card">
+      <div class="mod-card-header">
+        <div class="mod-card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px"><path d="M12 22v-5"/><path d="M9 8V2h6v6"/><path d="M5 8h14a1 1 0 0 1 1 1v3a7 7 0 0 1-7 7h-2a7 7 0 0 1-7-7V9a1 1 0 0 1 1-1z"/></svg>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+          <span class="badge-tag">${escapeHtml(p.version || 'v1.0.0')}</span>
+          <div style="display:flex;gap:4px">
+            ${p.isLocal ? '<span class="badge-outline" style="color:var(--green);border-color:var(--green-soft)">Local</span>' : ''}
+            ${p.isPublished ? '<span class="badge-outline" style="color:var(--accent);border-color:var(--accent-soft)">Publicado</span>' : ''}
+          </div>
+        </div>
+      </div>
+      <div class="mod-card-body">
+        <div class="mod-card-title">${escapeHtml(p.name || p.id)}</div>
+        <div class="mod-card-desc">${escapeHtml(p.description || 'Plugin de CatChat')}</div>
+      </div>
+      <div class="mod-card-footer">
+        <span style="font-size:11.5px;color:var(--muted);font-family:var(--mono)">id: ${escapeHtml(p.id)}</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          <button type="button" class="btn btn-sm" onclick="selectPluginToPublish('${escapeHtml(p.id)}')" title="Publicar/Actualizar">
+            Publicar
+          </button>
+          <button type="button" class="btn-danger-soft" onclick="confirmDeletePlugin('${escapeHtml(p.id)}', '${escapeHtml(p.name || p.id)}')" title="Eliminar Plugin">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  `).join('')
+}
+
+function refreshPluginSelectOptions(plugins) {
+  const sel = $('pluginSelect')
+  if (!sel) return
+  sel.innerHTML = plugins.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)} (${escapeHtml(p.id)})</option>`).join('')
+}
+
+function selectPluginToPublish(pluginId) {
+  const sel = $('pluginSelect')
+  if (sel) {
+    sel.value = pluginId
+    onPluginSelectChange()
+  }
+  scrollToPublishPlugin()
+}
+
+function scrollToPublishPlugin() {
+  const card = $('pluginPublishCard')
+  if (card) card.scrollIntoView({ behavior: 'smooth' })
+}
+
+function escapeHtml(str) {
+  if (!str) return ''
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
+
+// ---------------------------------------------------------------------
+// Confirmation Modal for Deletion
+// ---------------------------------------------------------------------
+function confirmDeleteRelease(releaseId, tagName, name) {
+  pendingDeleteAction = { type: 'release', releaseId, tagName, name }
+  $('deleteModalTitle').textContent = `Eliminar versión ${tagName}`
+  $('deleteModalDesc').textContent = `¿Estás seguro de que deseas eliminar permanentemente la release "${name}" (${tagName}) de GitHub? Esta acción eliminará el tag de Git y el asset de instalación.`
+  $('deleteConfirmModal').classList.add('open')
+}
+
+function confirmDeletePlugin(pluginId, name) {
+  pendingDeleteAction = { type: 'plugin', pluginId, name }
+  $('deleteModalTitle').textContent = `Eliminar plugin ${name}`
+  $('deleteModalDesc').textContent = `¿Estás seguro de que deseas eliminar el plugin "${name}" (ID: ${pluginId})? Se eliminará la carpeta del proyecto local y/o cualquier release asociada en GitHub.`
+  $('deleteConfirmModal').classList.add('open')
+}
+
+function closeDeleteModal() {
+  pendingDeleteAction = null
+  $('deleteConfirmModal').classList.remove('open')
+}
+
+async function executeDeleteAction() {
+  if (!pendingDeleteAction) return
+  const action = pendingDeleteAction
+  const confirmBtn = $('deleteModalConfirmBtn')
+  confirmBtn.disabled = true
+  confirmBtn.textContent = 'Eliminando...'
+
+  try {
+    if (action.type === 'release') {
+      await window.releaseTool.deleteGitHubRelease(action.releaseId, action.tagName)
+      closeDeleteModal()
+      loadGitHubReleases()
+    } else if (action.type === 'plugin') {
+      await window.releaseTool.deletePlugin(action.pluginId)
+      closeDeleteModal()
+      loadPluginsList()
+    }
+  } catch (e) {
+    alert('Error durante la eliminación: ' + (e.message || e))
+  } finally {
+    confirmBtn.disabled = false
+    confirmBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> Eliminar permanentemente'
+  }
+}
+
 function toggleTheme() {
   const isLight = document.documentElement.classList.toggle('light');
   try { localStorage.setItem('release-tool-theme', isLight ? 'light' : 'dark'); } catch {}
@@ -1935,7 +2300,23 @@ try {
 } catch {}
 
 init()
-refreshPluginsList()
+loadGitHubReleases()
+loadPluginsList()
 </script>
+
+  <!-- Modal de Confirmación de Eliminación -->
+  <div class="modal-overlay" id="deleteConfirmModal">
+    <div class="modal-box">
+      <h3 class="modal-title" id="deleteModalTitle">Confirmar eliminación</h3>
+      <p class="modal-desc" id="deleteModalDesc">¿Estás seguro de que deseas realizar esta eliminación?</p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-sm" onclick="closeDeleteModal()">Cancelar</button>
+        <button type="button" class="btn-danger-soft" id="deleteModalConfirmBtn" onclick="executeDeleteAction()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          Eliminar permanentemente
+        </button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

@@ -379,29 +379,186 @@ ipcMain.handle('release', async (_event, version, notes, showModal) => {
   })
 })
 
+async function fetchGitHubApi(endpoint, options = {}) {
+  const cfg = loadConfig()
+  const token = cfg.ghToken || process.env.GH_TOKEN || ''
+  const url = `https://api.github.com/repos/coffee4433/catchat${endpoint}`
+  
+  const headers = {
+    'User-Agent': 'CatChat-Release-Studio',
+    'Accept': 'application/vnd.github.v3+json',
+    ...(options.headers || {}),
+  }
+  if (token) {
+    headers['Authorization'] = `token ${token}`
+  }
+
+  const res = await fetch(url, { ...options, headers })
+  if (!res.ok && res.status !== 404) {
+    const errText = await res.text().catch(() => '')
+    throw new Error(`GitHub API error (${res.status}): ${errText || res.statusText}`)
+  }
+  if (res.status === 204 || res.status === 404) return null
+  return res.json()
+}
+
+ipcMain.handle('get:github-releases', async () => {
+  try {
+    const releases = await fetchGitHubApi('/releases')
+    if (!Array.isArray(releases)) return []
+    return releases.map((r) => ({
+      id: r.id,
+      tagName: r.tag_name,
+      name: r.name || r.tag_name,
+      body: r.body || '',
+      draft: r.draft,
+      prerelease: r.prerelease,
+      createdAt: r.created_at,
+      publishedAt: r.published_at,
+      htmlUrl: r.html_url,
+      author: r.author ? { login: r.author.login, avatarUrl: r.author.avatar_url } : null,
+      assets: (r.assets || []).map((a) => ({
+        id: a.id,
+        name: a.name,
+        size: a.size,
+        downloadCount: a.download_count,
+        browserDownloadUrl: a.browser_download_url,
+      })),
+    }))
+  } catch (e) {
+    console.error('Failed to fetch GitHub releases:', e)
+    return []
+  }
+})
+
+ipcMain.handle('delete:github-release', async (_event, { releaseId, tagName }) => {
+  const errors = []
+  if (releaseId) {
+    try {
+      await fetchGitHubApi(`/releases/${releaseId}`, { method: 'DELETE' })
+    } catch (e) {
+      errors.push(e.message)
+    }
+  }
+  if (tagName) {
+    try {
+      await fetchGitHubApi(`/git/refs/tags/${tagName}`, { method: 'DELETE' })
+    } catch {
+      // Ignore tag deletion error if tag missing
+    }
+  }
+  if (errors.length > 0) {
+    throw new Error(errors.join(', '))
+  }
+  return { success: true }
+})
+
+ipcMain.handle('delete:plugin', async (_event, pluginId) => {
+  const cfg = loadConfig()
+  let deletedLocal = false
+  let deletedRelease = false
+
+  if (cfg.projectPath && pluginId) {
+    const pluginDir = path.join(cfg.projectPath, 'lib', 'plugins', pluginId)
+    if (fs.existsSync(pluginDir)) {
+      try {
+        fs.rmSync(pluginDir, { recursive: true, force: true })
+        deletedLocal = true
+      } catch (e) {
+        console.error(`Failed to delete local plugin directory ${pluginDir}:`, e)
+      }
+    }
+  }
+
+  try {
+    const ghReleases = await fetchGitHubApi('/releases')
+    if (Array.isArray(ghReleases)) {
+      for (const r of ghReleases) {
+        if (r.tag_name && (r.tag_name === `plugin-${pluginId}` || r.tag_name.startsWith(`plugin-${pluginId}-`))) {
+          try {
+            await fetchGitHubApi(`/releases/${r.id}`, { method: 'DELETE' })
+            await fetchGitHubApi(`/git/refs/tags/${r.tag_name}`, { method: 'DELETE' }).catch(() => {})
+            deletedRelease = true
+          } catch (e) {
+            console.error(`Failed to delete GitHub release ${r.id}:`, e)
+          }
+        }
+      }
+    }
+  } catch {}
+
+  return { success: true, deletedLocal, deletedRelease }
+})
+
 ipcMain.handle('get:plugins', async (_event, customDir) => {
   const cfg = loadConfig()
   const baseDir = customDir || (cfg.projectPath ? path.join(cfg.projectPath, 'lib', 'plugins') : null)
-  if (!baseDir || !fs.existsSync(baseDir)) return []
+  const localPluginsMap = new Map()
+
+  if (baseDir && fs.existsSync(baseDir)) {
+    try {
+      const entries = fs.readdirSync(baseDir, { withFileTypes: true })
+      for (const ent of entries) {
+        if (ent.isDirectory()) {
+          const pluginId = ent.name
+          const manifestPath = path.join(baseDir, pluginId, 'manifest.json')
+          let manifest = {}
+          if (fs.existsSync(manifestPath)) {
+            try {
+              manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
+            } catch {}
+          }
+          localPluginsMap.set(pluginId, {
+            id: pluginId,
+            name: manifest.name || (pluginId === 'cat-music' ? 'CatMusic' : pluginId.charAt(0).toUpperCase() + pluginId.slice(1)),
+            version: manifest.version || '1.0.0',
+            description: manifest.description || 'Plugin oficial de CatChat',
+            icon: manifest.icon || '/plugins/' + pluginId + '/icon.png',
+            author: manifest.author || 'CatChat',
+            path: path.join(baseDir, pluginId),
+            isLocal: true,
+          })
+        }
+      }
+    } catch {}
+  }
 
   try {
-    const entries = fs.readdirSync(baseDir, { withFileTypes: true })
-    const plugins = []
-
-    for (const ent of entries) {
-      if (ent.isDirectory()) {
-        const id = ent.name
-        plugins.push({
-          id,
-          name: id === 'cat-music' ? 'CatMusic' : id.charAt(0).toUpperCase() + id.slice(1),
-          path: path.join(baseDir, id),
-        })
+    const ghReleases = await fetchGitHubApi('/releases')
+    if (Array.isArray(ghReleases)) {
+      for (const r of ghReleases) {
+        if (r.tag_name && r.tag_name.startsWith('plugin-')) {
+          const parts = r.tag_name.split('-')
+          const pluginId = parts.slice(1, -1).join('-') || parts[1] || r.tag_name.replace('plugin-', '')
+          const pluginVersion = r.tag_name.split('-').pop() || r.tag_name
+          const existing = localPluginsMap.get(pluginId)
+          if (existing) {
+            existing.releaseId = r.id
+            existing.releaseTag = r.tag_name
+            existing.isPublished = true
+            existing.publishedAt = r.published_at
+          } else {
+            localPluginsMap.set(pluginId, {
+              id: pluginId,
+              name: r.name || pluginId,
+              version: pluginVersion,
+              description: r.body || 'Plugin de CatChat',
+              icon: '/plugins/' + pluginId + '/icon.png',
+              author: r.author?.login || 'CatChat',
+              path: '',
+              isLocal: false,
+              isPublished: true,
+              releaseId: r.id,
+              releaseTag: r.tag_name,
+              publishedAt: r.published_at,
+            })
+          }
+        }
       }
     }
-    return plugins
-  } catch {
-    return []
-  }
+  } catch {}
+
+  return Array.from(localPluginsMap.values())
 })
 
 ipcMain.handle('select:plugins-folder', async () => {
