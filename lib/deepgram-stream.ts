@@ -75,9 +75,9 @@ export class DeepgramStreamer {
       try {
         const data = JSON.parse(event.data)
         const transcript = data?.channel?.alternatives?.[0]?.transcript
-        if (typeof transcript === 'string' && transcript.trim()) {
-          const isFinal = data.is_final === true
-          callbacks.onTranscript(transcript.trim(), isFinal)
+        if (typeof transcript === 'string') {
+          const isFinal = data.is_final === true || data.speech_final === true
+          callbacks.onTranscript(transcript, isFinal)
         }
       } catch {
         // ignore parse errors

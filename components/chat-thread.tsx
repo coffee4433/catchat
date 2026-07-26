@@ -303,18 +303,22 @@ export function ChatThread({
         const streamer = new DeepgramStreamer()
         const baseText = draft ? draft.trim() + ' ' : ''
         let finalizedText = ''
-        let currentInterimText = ''
+        let interimText = ''
 
         const started = await streamer.start(lang, {
           onTranscript: (text, isFinal) => {
+            const cleanText = text.trim()
+            if (!cleanText) return
+
             if (isFinal) {
-              finalizedText += (finalizedText ? ' ' : '') + text
-              currentInterimText = ''
+              finalizedText = (finalizedText ? finalizedText + ' ' : '') + cleanText
+              interimText = ''
             } else {
-              currentInterimText = text
+              interimText = cleanText
             }
-            const combined = (finalizedText + (currentInterimText ? (finalizedText ? ' ' : '') + currentInterimText : '')).trim()
-            const full = (baseText + combined).trim()
+
+            const activeText = (finalizedText ? finalizedText + ' ' : '') + interimText
+            const full = (baseText + activeText).trim()
             setDraft(full)
             handleInputChange(full)
           },
