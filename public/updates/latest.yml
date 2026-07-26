@@ -1,39 +1,46 @@
-version: 0.3.23
+version: 0.3.24
 files:
-  - url: https://github.com/coffee4433/catchat/releases/download/v0.3.23/CatChat-Setup-0.3.23.exe
-    sha512: K824xeoONvE3u15Nz2pJMts/6BnVHlu9/6HJzG1xY82g539saMlIg8db4bAvAMkhlWHhjTd1eXmo814VvsRMXQ==
-    size: 241475532
-path: CatChat-Setup-0.3.23.exe
-sha512: K824xeoONvE3u15Nz2pJMts/6BnVHlu9/6HJzG1xY82g539saMlIg8db4bAvAMkhlWHhjTd1eXmo814VvsRMXQ==
-releaseDate: '2026-07-26T05:58:12.643Z'
+  - url: https://github.com/coffee4433/catchat/releases/download/v0.3.24/CatChat-Setup-0.3.24.exe
+    sha512: gkqB5B7YBa/IcXAT2ukgkBZRr3O4P0FHp1HpgAqMmy+q1lHHNRtz5n9t87eU+Q2cxGQs2/3vPD7nYzVL/rmLBw==
+    size: 244783892
+path: CatChat-Setup-0.3.24.exe
+sha512: gkqB5B7YBa/IcXAT2ukgkBZRr3O4P0FHp1HpgAqMmy+q1lHHNRtz5n9t87eU+Q2cxGQs2/3vPD7nYzVL/rmLBw==
+releaseDate: '2026-07-26T06:24:10.301Z'
 showReleaseModal: true
 releaseNotes: |
   ## ✨ Novedades Destacadas
-  - [NUEVO] **Indicador de presencia en vivo** en el sidebar: ahora cada conversación muestra un **punto verde/ausente** directamente sobre el avatar del usuario, gracias a Supabase Presence en tiempo real.
-  - [NUEVO] **Confirmación de lectura instantánea** estilo WhatsApp: cuando el destinatario está en línea en el chat, los mensajes se marcan como leídos en **0ms**, eliminando toda espera.
-  - [MEJORA] El envío de mensajes ahora responde en **menos de 30ms** y la transmisión en tiempo real es **sin latencia** (WebSocket broadcast), haciendo la experiencia más fluida.
+  
+  [NUEVO] **Gestión integrada de GitHub Releases y Plugins** desde la herramienta de lanzamiento. Búsqueda en tiempo real, tarjetas redondeadas y soporte completo de eliminación.  
+  
+  [NUEVO] **Botón de actualización de plugins** y **banner visual de actualización del dock** para mantener todo al día sin salir de la app.
+  
+  > [!NOTE]  
+  > Ahora puedes administrar releases y plugins de GitHub directamente desde la release‑tool, con una experiencia de búsqueda ágil y visual.
+  
+  ---
   
   ## 🐛 Correcciones y Ajustes
-  - [FIX] La imagen de banner del usuario ahora se muestra correctamente tanto en el **Popover** como en el **Modal de perfil**; antes no se cargaba por una omisión en la consulta a la base de datos.
-  - [FIX] Los mensajes ya no desaparecen momentáneamente durante el envío: se sincroniza el caché de SWR antes de limpiar los mensajes pendientes.
-  - [FIX] Se arregló un **doble salto del scroll** al enviar un mensaje y durante las transiciones de los checks de estado; ahora el scroll se mantiene estable.
-  - [FIX] Eliminado el rebote de doble animación al hacer scroll hacia el nuevo mensaje, reemplazado por un alineamiento instantáneo.
-  - [FIX] Los mensajes duplicados y las animaciones de entrada repetidas ya no ocurren: se deduplican los mensajes pendientes contra los del servidor.
-  - [FIX] Se corrigió un desplazamiento de **1px** en el ícono de verificación (check) de los mensajes, logrando una alineación perfecta.
+  
+  [FIX] **Desplazamiento suave y barra de búsqueda flotante centrada** en la release‑tool, garantizando una navegación consistente y sin saltos.
+  
+  ---
   
   ## ⚡ Rendimiento y Optimización
-  - [MEJORA] La acción `sendMessage` se optimizó para ejecutarse en **<30ms**, reduciendo drásticamente el tiempo de respuesta del servidor.
-  - [MEJORA] Se eliminó el retraso de `revalidatePath` y se agregó una **transmisión en tiempo real sin latencia** mediante Supabase Realtime Broadcast, acelerando la entrega de mensajes.
-  - [MEJORA] La concordancia de IDs de presencia en Supabase se amplió para lograr la confirmación de lectura instantánea (0ms) de los checks azules.
-  - [MEJORA] Las notificaciones `read_receipt` ahora se transmiten **en menos de 10ms** de ida y vuelta cuando ambos usuarios están en línea, usando WebSockets directamente.
+  
+  [MEJORA] **Renderizado de la ventana splash** mejorado:  
+  - Logo en **PNG de 500×500** para máxima calidad.  
+  - **Aceleración por hardware** activada para arranques más rápidos.  
+  - Contraste ultra nítido que asegura una presentación impecable en cualquier pantalla.
+  
+  ---
   
   ## 🎨 UI & Experiencia de Usuario
-  - [DISEÑO] Nuevo diseño del **UserPopover**: marco del avatar con **corte semicircular grueso** y anillo indicador de estado al estilo Discord, fiel a la captura de referencia.
-  - [DISEÑO] Ajuste de dimensiones del Popover a **300×276px** y altura del banner a **105px**, según las instrucciones del usuario.
-  - [DISEÑO] El estado de presencia del avatar en el Popover ahora se actualiza **dinámicamente en tiempo real** (online/offline).
-  - [DISEÑO] El **encabezado del chat** ahora muestra el avatar del otro usuario con el indicador de presencia en vivo, reemplazando el anterior “led blink” y el badge “#”.
-  - [DISEÑO] Se actualizó el botón de CatMusic en la barra de íconos: tamaño ajustado a `size-10` y ahora renderiza la imagen `catmusic.png`.
-  - [NUEVO] Agregado indicador de estado en línea (punto verde) en los avatares de la fila de conversaciones (`ConversationRow`), usando Supabase Realtime Presence.
   
-  > [!NOTE]
-  > La experiencia de mensajería ahora es prácticamente **instantánea**: los mensajes se envían y se marcan como leídos sin ningún retraso cuando ambas partes están conectadas.
+  [DISEÑO] **Nueva barra de búsqueda flotante** en la release‑tool, con diseño tipo *command palette* inspirado en **Raycast**.  
+  
+  [DISEÑO] **Icono oficial de CatChat** integrado en:  
+  - Barra de título de la ventana principal  
+  - Pantalla splash  
+  - Instalador NSIS  
+  
+  [DISEÑO] **Banner de actualización del dock** con interfaz unificada y moderna.

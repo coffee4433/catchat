@@ -371,13 +371,22 @@
     z-index: 40;
   }
   .activity-drawer.open { transform: translateY(0); }
+  .activity-drawer.minimized {
+    max-height: 52px !important;
+    overflow: hidden;
+    box-shadow: 0 -4px 18px rgba(0, 0, 0, 0.35);
+  }
+  .activity-drawer.minimized .drawer-body { display: none !important; }
+  .activity-drawer.minimized .drawer-header { border-bottom: none; cursor: pointer; }
 
   .drawer-header {
     display: flex; align-items: center; justify-content: space-between;
     padding: 12px 22px;
     border-bottom: 1px solid var(--border);
     flex-shrink: 0;
+    user-select: none;
   }
+  .drawer-header-actions { display: flex; align-items: center; gap: 8px; }
   .drawer-title { display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; }
   .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: var(--faint); }
   .status-dot.running { background: var(--accent); animation: pulse 1.2s ease-in-out infinite; }
@@ -1164,15 +1173,21 @@
 
       <!-- ======================= ACTIVITY DRAWER (pipeline) ======================= -->
       <div class="activity-drawer" id="activityDrawer" role="region" aria-label="Actividad de publicación">
-        <div class="drawer-header">
+        <div class="drawer-header" onclick="if(document.getElementById('activityDrawer').classList.contains('minimized')) toggleDrawerMinimize(event)">
           <div class="drawer-title">
             <span class="status-dot running" id="statusDot"></span>
             <span id="statusText">Publicando…</span>
           </div>
-          <button class="btn btn-sm btn-ghost" id="drawerCloseBtn" onclick="closeDrawer()" style="display:none">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
-            Cerrar
-          </button>
+          <div class="drawer-header-actions">
+            <button class="btn btn-sm btn-ghost" id="drawerMinimizeBtn" onclick="toggleDrawerMinimize(event)" title="Minimizar panel" aria-label="Minimizar panel">
+              <svg id="drawerMinimizeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:14px;height:14px"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              <span id="drawerMinimizeLabel">Minimizar</span>
+            </button>
+            <button class="btn btn-sm btn-ghost" id="drawerCloseBtn" onclick="closeDrawer(event)" style="display:none">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:14px;height:14px"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              Cerrar
+            </button>
+          </div>
         </div>
         <div class="drawer-body">
           <div class="steps" id="steps">
@@ -1302,13 +1317,39 @@ function navTo(view) {
 // ---------------------------------------------------------------------
 function openDrawer() {
   activityDrawer.classList.add('open')
+  activityDrawer.classList.remove('minimized')
+  const icon = $('drawerMinimizeIcon')
+  const label = $('drawerMinimizeLabel')
+  const btn = $('drawerMinimizeBtn')
+  if (icon) icon.innerHTML = '<line x1="5" y1="12" x2="19" y2="12"/>'
+  if (label) label.textContent = 'Minimizar'
+  if (btn) btn.title = 'Minimizar panel'
   $('drawerCloseBtn').style.display = 'none'
 }
+
+function toggleDrawerMinimize(e) {
+  if (e) e.stopPropagation()
+  const isMin = activityDrawer.classList.toggle('minimized')
+  const icon = $('drawerMinimizeIcon')
+  const label = $('drawerMinimizeLabel')
+  const btn = $('drawerMinimizeBtn')
+  if (btn) btn.title = isMin ? 'Expandir panel' : 'Minimizar panel'
+  if (label) label.textContent = isMin ? 'Expandir' : 'Minimizar'
+  if (icon) {
+    icon.innerHTML = isMin
+      ? '<polyline points="18 15 12 9 6 15"/>'
+      : '<line x1="5" y1="12" x2="19" y2="12"/>'
+  }
+}
+
 function allowCloseDrawer() {
   $('drawerCloseBtn').style.display = 'inline-flex'
 }
-function closeDrawer() {
+
+function closeDrawer(e) {
+  if (e) e.stopPropagation()
   activityDrawer.classList.remove('open')
+  activityDrawer.classList.remove('minimized')
 }
 
 // ---------------------------------------------------------------------
