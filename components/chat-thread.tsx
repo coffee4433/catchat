@@ -291,88 +291,77 @@ export function ChatThread({
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null)
   const audioPreviewRef = useRef<HTMLAudioElement | null>(null)
 
-  const hasNetworkErrorRef = useRef(false)
+  const [isTranscribing, setIsTranscribing] = useState(false)
 
   const startVoiceRecording = async () => {
-    hasNetworkErrorRef.current = false
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-    if (!SpeechRecognition) {
-      alert(lang === 'es' ? 'Tu navegador o app no soporta el reconocimiento de voz automático.' : 'Voice recognition is not supported in this browser.')
-      return
-    }
-
     try {
-      const recognition = new SpeechRecognition()
-      recognition.continuous = false
-      recognition.interimResults = true
-      recognition.lang = lang === 'es' ? 'es-ES' : 'en-US'
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      audioChunksRef.current = []
+      
+      const options = MediaRecorder.isTypeSupported('audio/webm')
+        ? { mimeType: 'audio/webm' }
+        : MediaRecorder.isTypeSupported('audio/mp4')
+        ? { mimeType: 'audio/mp4' }
+        : undefined
 
-      let accumulated = ''
+      const recorder = new MediaRecorder(stream, options)
 
-      recognition.onresult = (event: any) => {
-        let currentChunk = ''
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          currentChunk += event.results[i][0].transcript
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) {
+          audioChunksRef.current.push(e.data)
         }
-        if (currentChunk.trim()) {
-          setDraft((prev) => {
-            const base = accumulated || prev.trim()
-            const full = base ? `${base} ${currentChunk.trim()}` : currentChunk.trim()
-            handleInputChange(full)
-            return full
+      }
+
+      recorder.onstop = async () => {
+        stream.getTracks().forEach((track) => track.stop())
+        const audioBlob = new Blob(audioChunksRef.current, { type: recorder.mimeType || 'audio/webm' })
+        if (audioBlob.size < 100) return
+
+        setIsTranscribing(true)
+        try {
+          const formData = new FormData()
+          formData.append('file', audioBlob, 'audio.webm')
+          formData.append('language', lang === 'es' ? 'es' : 'en')
+
+          const res = await fetch('/api/stt', {
+            method: 'POST',
+            body: formData,
           })
+
+          if (res.ok) {
+            const data = await res.json()
+            if (data?.text) {
+              setDraft((prev) => {
+                const newText = prev ? `${prev.trim()} ${data.text.trim()}` : data.text.trim()
+                handleInputChange(newText)
+                return newText
+              })
+            }
+          } else {
+            console.warn('STT API response not ok:', res.status)
+          }
+        } catch (err) {
+          console.error('STT API request failed:', err)
+        } finally {
+          setIsTranscribing(false)
         }
       }
 
-      recognition.onerror = (event: any) => {
-        console.warn('Speech recognition error:', event.error)
-        if (event.error === 'network') {
-          hasNetworkErrorRef.current = true
-          stopVoiceRecording()
-          alert(
-            lang === 'es'
-              ? 'El servicio de dictado por voz de Chrome no está disponible en este navegador o entorno (Google Speech API bloqueado o sin conexión).'
-              : 'Google Chrome Speech API service is blocked or unavailable in this environment.'
-          )
-          return
-        }
-        if (event.error === 'no-speech') {
-          return
-        }
-        if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-          alert(lang === 'es' ? 'Permiso de micrófono denegado en tu navegador.' : 'Microphone permission denied.')
-          stopVoiceRecording()
-        }
-      }
-
-      recognition.onend = () => {
-        if (hasNetworkErrorRef.current) return
-        setDraft((prev) => {
-          accumulated = prev.trim()
-          return prev
-        })
-        if (speechRecognitionRef.current && isRecording) {
-          try {
-            recognition.start()
-          } catch {}
-        }
-      }
-
-      recognition.start()
-      speechRecognitionRef.current = recognition
+      recorder.start()
+      mediaRecorderRef.current = recorder
       setIsRecording(true)
     } catch (err) {
-      console.error('Error starting speech recognition:', err)
-      alert(lang === 'es' ? 'No se pudo activar el micrófono para el dictado por voz.' : 'Failed to activate microphone.')
+      console.error('Microphone access error:', err)
+      alert(lang === 'es' ? 'No se pudo acceder al micrófono. Por favor permite el acceso en tu navegador.' : 'Microphone access denied.')
     }
   }
 
   const stopVoiceRecording = () => {
-    if (speechRecognitionRef.current) {
+    if (mediaRecorderRef.current && isRecording) {
       try {
-        speechRecognitionRef.current.stop()
+        mediaRecorderRef.current.stop()
       } catch {}
-      speechRecognitionRef.current = null
+      mediaRecorderRef.current = null
     }
     setIsRecording(false)
   }
@@ -2212,18 +2201,23 @@ export function ChatThread({
                 <button
                   type="button"
                   onClick={isRecording ? stopVoiceRecording : startVoiceRecording}
+                  disabled={isTranscribing}
                   className={`flex size-7.5 items-center justify-center rounded-lg transition-all duration-200 shrink-0 self-center ${
-                    isRecording
+                    isTranscribing
+                      ? 'bg-amber-500/20 text-amber-400 animate-pulse'
+                      : isRecording
                       ? 'bg-red-500 text-white shadow-md shadow-red-500/30 animate-pulse'
                       : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
                   }`}
                   title={
-                    isRecording
-                      ? (lang === 'es' ? 'Detener grabación de voz' : 'Stop voice recording')
-                      : (lang === 'es' ? 'Grabar nota de voz con transcripción' : 'Record voice note with transcription')
+                    isTranscribing
+                      ? (lang === 'es' ? 'Transcribiendo audio con API...' : 'Transcribing audio...')
+                      : isRecording
+                      ? (lang === 'es' ? 'Haz clic para detener y transcribir' : 'Click to stop and transcribe')
+                      : (lang === 'es' ? 'Hablar y transcribir al chat (API Gratis)' : 'Speak and transcribe to chat')
                   }
                 >
-                  {isRecording ? <MicOff className="size-4" /> : <Mic className="size-4" />}
+                  {isTranscribing ? <Loader2 className="size-4 animate-spin" /> : isRecording ? <MicOff className="size-4" /> : <Mic className="size-4" />}
                 </button>
               </div>
             </div>

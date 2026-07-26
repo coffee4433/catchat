@@ -10,10 +10,50 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No audio file provided' }, { status: 400 })
     }
 
-    const GROQ_API_KEY = process.env.GROQ_API_KEY || ''
-    const OPENAI_API_KEY = process.env.OPENAI_API_KEY || ''
+    const audioBuffer = await file.arrayBuffer()
 
-    // 1. Try Groq Whisper API (Ultra fast & free tier)
+    // 1. Try Hugging Face Free Inference API (Whisper Large V3 Turbo)
+    try {
+      const hfRes = await fetch('https://api-inference.huggingface.co/models/openai/whisper-large-v3-turbo', {
+        method: 'POST',
+        headers: {
+          'Content-Type': file.type || 'audio/webm',
+        },
+        body: audioBuffer,
+      })
+
+      if (hfRes.ok) {
+        const data = await hfRes.json()
+        if (data && typeof data.text === 'string' && data.text.trim()) {
+          return NextResponse.json({ text: data.text.trim() })
+        }
+      }
+    } catch (e) {
+      console.warn('HF Whisper free API error:', e)
+    }
+
+    // 2. Try Hugging Face secondary free model (Whisper Small)
+    try {
+      const hfRes = await fetch('https://api-inference.huggingface.co/models/openai/whisper-small', {
+        method: 'POST',
+        headers: {
+          'Content-Type': file.type || 'audio/webm',
+        },
+        body: audioBuffer,
+      })
+
+      if (hfRes.ok) {
+        const data = await hfRes.json()
+        if (data && typeof data.text === 'string' && data.text.trim()) {
+          return NextResponse.json({ text: data.text.trim() })
+        }
+      }
+    } catch (e) {
+      console.warn('HF Whisper small fallback error:', e)
+    }
+
+    // 3. Try Groq API if key configured
+    const GROQ_API_KEY = process.env.GROQ_API_KEY || ''
     if (GROQ_API_KEY) {
       try {
         const groqFormData = new FormData()
@@ -23,24 +63,20 @@ export async function POST(request: NextRequest) {
 
         const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
           method: 'POST',
-          headers: {
-            Authorization: `Bearer ${GROQ_API_KEY}`,
-          },
+          headers: { Authorization: `Bearer ${GROQ_API_KEY}` },
           body: groqFormData,
         })
-
         if (res.ok) {
           const data = await res.json()
-          if (data.text) {
-            return NextResponse.json({ text: data.text })
-          }
+          if (data?.text) return NextResponse.json({ text: data.text.trim() })
         }
-      } catch (err) {
-        console.error('Groq STT failed:', err)
+      } catch (e) {
+        console.warn('Groq STT fallback error:', e)
       }
     }
 
-    // 2. Try OpenAI Whisper API
+    // 4. Try OpenAI API if key configured
+    const OPENAI_API_KEY = process.env.OPENAI_API_KEY || ''
     if (OPENAI_API_KEY) {
       try {
         const aiFormData = new FormData()
@@ -50,26 +86,21 @@ export async function POST(request: NextRequest) {
 
         const res = await fetch('https://api.openai.com/v1/audio/transcriptions', {
           method: 'POST',
-          headers: {
-            Authorization: `Bearer ${OPENAI_API_KEY}`,
-          },
+          headers: { Authorization: `Bearer ${OPENAI_API_KEY}` },
           body: aiFormData,
         })
-
         if (res.ok) {
           const data = await res.json()
-          if (data.text) {
-            return NextResponse.json({ text: data.text })
-          }
+          if (data?.text) return NextResponse.json({ text: data.text.trim() })
         }
-      } catch (err) {
-        console.error('OpenAI STT failed:', err)
+      } catch (e) {
+        console.warn('OpenAI STT fallback error:', e)
       }
     }
 
-    return NextResponse.json({ error: 'No STT service configured' }, { status: 501 })
+    return NextResponse.json({ error: 'No transcription available' }, { status: 500 })
   } catch (err: any) {
-    console.error('STT API Error:', err)
-    return NextResponse.json({ error: err?.message || 'Failed to transcribe audio' }, { status: 500 })
+    console.error('STT API error:', err)
+    return NextResponse.json({ error: err?.message || 'Failed to transcribe' }, { status: 500 })
   }
 }
