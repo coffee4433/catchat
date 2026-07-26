@@ -307,11 +307,21 @@ export function ChatThread({
 
         const started = await streamer.start(lang === 'es' ? 'es' : 'en', {
           onTranscript: (text, isFinal) => {
-            const cleanText = text.trim()
+            let cleanText = text.trim()
             if (!cleanText) return
 
+            if (lang === 'es') {
+              cleanText = cleanText
+                .replace(/\btambien\b/gi, 'también')
+                .replace(/\bcancion\b/gi, 'canción')
+                .replace(/\bmas\b/gi, 'más')
+                .replace(/\bestas\b/gi, 'estás')
+                .replace(/\bque tal\b/gi, 'qué tal')
+            }
+
             if (isFinal) {
-              finalizedText = (finalizedText ? finalizedText + ' ' : '') + cleanText
+              const formatted = cleanText.charAt(0).toUpperCase() + cleanText.slice(1)
+              finalizedText = (finalizedText ? finalizedText + ' ' : '') + formatted
               interimText = ''
             } else {
               interimText = cleanText
