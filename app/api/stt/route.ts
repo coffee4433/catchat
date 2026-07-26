@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     const GROQ_API_KEY = process.env.GROQ_API_KEY || ''
     const OPENAI_API_KEY = process.env.OPENAI_API_KEY || ''
 
-    // 1. Try Groq Whisper API (Ultra fast & free tier)
+    // 1. Try Groq Whisper API if key present
     if (GROQ_API_KEY) {
       try {
         const groqFormData = new FormData()
@@ -38,40 +38,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 2. Try Hugging Face API models
-    const hfHeaders: Record<string, string> = {
-      'Content-Type': file.type || 'audio/webm',
-    }
-    if (HF_TOKEN) {
-      hfHeaders.Authorization = `Bearer ${HF_TOKEN}`
-    }
-
-    const hfModels = [
-      'https://api-inference.huggingface.co/models/openai/whisper-large-v3-turbo',
-      'https://api-inference.huggingface.co/models/openai/whisper-small',
-      'https://api-inference.huggingface.co/models/openai/whisper-tiny',
-    ]
-
-    for (const modelUrl of hfModels) {
-      try {
-        const hfRes = await fetch(modelUrl, {
-          method: 'POST',
-          headers: hfHeaders,
-          body: audioBuffer,
-        })
-
-        if (hfRes.ok) {
-          const data = await hfRes.json()
-          if (data && typeof data.text === 'string' && data.text.trim()) {
-            return NextResponse.json({ text: data.text.trim() })
-          }
-        }
-      } catch (e) {
-        console.warn(`HF STT model ${modelUrl} failed:`, e)
-      }
-    }
-
-    // 3. Try OpenAI API if key configured
+    // 2. Try OpenAI API if key present
     if (OPENAI_API_KEY) {
       try {
         const aiFormData = new FormData()
@@ -93,10 +60,43 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Always return clean 200 JSON to prevent 500 Internal Server Errors in Vercel/browser
-    return NextResponse.json({ text: '', warning: 'STT service requires HF_TOKEN, GROQ_API_KEY, or OPENAI_API_KEY environment variable.' })
+    // 3. Try Hugging Face free public models
+    const hfHeaders: Record<string, string> = {
+      'Content-Type': file.type || 'audio/webm',
+    }
+    if (HF_TOKEN) {
+      hfHeaders.Authorization = `Bearer ${HF_TOKEN}`
+    }
+
+    const hfModels = [
+      'https://api-inference.huggingface.co/models/openai/whisper-small',
+      'https://api-inference.huggingface.co/models/openai/whisper-large-v3-turbo',
+      'https://api-inference.huggingface.co/models/facebook/wav2vec2-base-960h',
+    ]
+
+    for (const modelUrl of hfModels) {
+      try {
+        const hfRes = await fetch(modelUrl, {
+          method: 'POST',
+          headers: hfHeaders,
+          body: audioBuffer,
+        })
+
+        if (hfRes.ok) {
+          const data = await hfRes.json()
+          if (data && typeof data.text === 'string' && data.text.trim()) {
+            return NextResponse.json({ text: data.text.trim() })
+          }
+        }
+      } catch (e) {
+        console.warn(`HF STT model ${modelUrl} failed:`, e)
+      }
+    }
+
+    // Return empty text cleanly without showing alert dialogs
+    return NextResponse.json({ text: '' })
   } catch (err: any) {
     console.error('STT API error:', err)
-    return NextResponse.json({ text: '', error: err?.message || 'Failed to transcribe' })
+    return NextResponse.json({ text: '' })
   }
 }
