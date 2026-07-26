@@ -26,7 +26,7 @@ export async function transcribeAudio(
         'automatic-speech-recognition',
         'onnx-community/whisper-tiny',
         {
-          dtype: 'q8',
+          dtype: 'fp32',
           device: 'wasm',
         }
       )
