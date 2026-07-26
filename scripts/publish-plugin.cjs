@@ -51,16 +51,20 @@ console.log(`🚀 Uploading plugin release assets to GitHub...`)
 // 5. Git commit, tag and push
 try {
   const tagName = `plugin-${pluginId}-${pluginVersion}`
-  execSync(`git add plugins/${pluginId}`, { cwd: rootDir, stdio: 'inherit' })
+  const out1 = execSync(`git add plugins/${pluginId}`, { cwd: rootDir, encoding: 'utf8' })
+  if (out1) console.log(out1.trim())
   try {
-    execSync(`git commit -m "Publish plugin ${pluginName} ${pluginVersion}"`, { cwd: rootDir, stdio: 'inherit' })
+    const out2 = execSync(`git commit -m "Publish plugin ${pluginName} ${pluginVersion}"`, { cwd: rootDir, encoding: 'utf8' })
+    if (out2) console.log(out2.trim())
   } catch {
     // If no changes to commit
   }
-  execSync(`git tag -a ${tagName} -m "Plugin release ${pluginName} ${pluginVersion}" -f`, { cwd: rootDir, stdio: 'inherit' })
+  const out3 = execSync(`git tag -a ${tagName} -m "Plugin release ${pluginName} ${pluginVersion}" -f`, { cwd: rootDir, encoding: 'utf8' })
+  if (out3) console.log(out3.trim())
   console.log(`✓ Created git tag: ${tagName}`)
 
-  execSync(`git push origin main --tags -f`, { cwd: rootDir, stdio: 'inherit' })
+  const out4 = execSync(`git push origin main --tags -f`, { cwd: rootDir, encoding: 'utf8' })
+  if (out4) console.log(out4.trim())
   console.log(`✓ Pushed plugin files and tag to GitHub!`)
 
   const ghToken = process.env.GH_TOKEN

@@ -351,10 +351,37 @@ export function CatMusicPlayerProvider({ children }: { children: React.ReactNode
   )
 }
 
+const defaultPlayerContext: PlayerContextType = {
+  playerState: {
+    queue: [],
+    index: 0,
+    isPlaying: false,
+    isBuffering: false,
+    position: 0,
+    duration: 0,
+    volume: 80,
+    muted: false,
+    shuffle: false,
+    repeat: 'off',
+    context: null,
+    error: null,
+  },
+  currentTrack: null,
+  playTrack: () => {},
+  togglePlayPause: () => {},
+  nextTrack: () => {},
+  previousTrack: () => {},
+  seekTo: () => {},
+  setVolume: () => {},
+  toggleMute: () => {},
+  toggleShuffle: () => {},
+  cycleRepeat: () => {},
+  addToQueue: () => {},
+  removeFromQueue: () => {},
+  clearQueue: () => {},
+}
+
 export function useCatMusicPlayer() {
   const ctx = useContext(PlayerContext)
-  if (!ctx) {
-    throw new Error('useCatMusicPlayer must be used within a CatMusicPlayerProvider')
-  }
-  return ctx
+  return ctx || defaultPlayerContext
 }

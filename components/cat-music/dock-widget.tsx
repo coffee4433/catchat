@@ -6,10 +6,13 @@ import { useCatMusicPlayer } from '@/lib/plugins/cat-music/player-context'
 import { useLibrary } from '@/lib/plugins/cat-music/library-context'
 
 export function CatMusicDockWidget({ onOpenCatMusic }: { onOpenCatMusic?: () => void }) {
-  const { currentTrack, playerState, togglePlayPause, nextTrack, previousTrack } = useCatMusicPlayer()
-  const { isFavorite, toggleFavorite } = useLibrary()
+  const player = useCatMusicPlayer()
+  const library = useLibrary()
 
-  if (!currentTrack) return null
+  if (!player || !library || !player.currentTrack) return null
+
+  const { currentTrack, playerState, togglePlayPause, nextTrack, previousTrack } = player
+  const { isFavorite, toggleFavorite } = library
 
   const isPlaying = playerState.isPlaying
   const fav = isFavorite(currentTrack.id)

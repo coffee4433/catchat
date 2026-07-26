@@ -21,6 +21,11 @@ import { formatDuration } from '@/lib/plugins/cat-music/youtube'
 import { QueuePanel } from './queue-panel'
 
 export function CatMusicPlayerBar() {
+  const player = useCatMusicPlayer()
+  const library = useLibrary()
+
+  if (!player || !library) return null
+
   const {
     currentTrack,
     playerState,
@@ -32,9 +37,9 @@ export function CatMusicPlayerBar() {
     toggleMute,
     toggleShuffle,
     cycleRepeat,
-  } = useCatMusicPlayer()
+  } = player
 
-  const { isFavorite, toggleFavorite } = useLibrary()
+  const { isFavorite, toggleFavorite } = library
   const [showQueue, setShowQueue] = useState(false)
 
   if (!currentTrack) return null

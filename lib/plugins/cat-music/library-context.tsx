@@ -227,10 +227,33 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   )
 }
 
+const defaultLibraryContext: LibraryContextType = {
+  favorites: [],
+  playlists: [],
+  history: [],
+  downloads: [],
+  settings: {
+    audioQuality: 'high',
+    autoplay: false,
+    crossfadeSeconds: 0,
+    defaultVolume: 80,
+    explicitAllowed: true,
+    downloadBitrate: 320,
+  },
+  isFavorite: () => false,
+  toggleFavorite: () => {},
+  createPlaylist: () => ({ id: '', name: '', tracks: [], createdAt: '', updatedAt: '' }),
+  deletePlaylist: () => {},
+  addTrackToPlaylist: () => {},
+  removeTrackFromPlaylist: () => {},
+  recordPlay: () => {},
+  clearHistory: () => {},
+  startDownload: () => {},
+  removeDownload: () => {},
+  saveSettings: () => {},
+}
+
 export function useLibrary() {
   const ctx = useContext(LibraryContext)
-  if (!ctx) {
-    throw new Error('useLibrary must be used within a LibraryProvider')
-  }
-  return ctx
+  return ctx || defaultLibraryContext
 }
