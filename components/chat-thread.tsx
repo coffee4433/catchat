@@ -303,20 +303,20 @@ export function ChatThread({
         const streamer = new DeepgramStreamer()
         const baseText = draft ? draft.trim() + ' ' : ''
         let finalizedText = ''
+        let currentInterimText = ''
 
         const started = await streamer.start(lang, {
           onTranscript: (text, isFinal) => {
             if (isFinal) {
               finalizedText += (finalizedText ? ' ' : '') + text
-              const full = (baseText + finalizedText).trim()
-              setDraft(full)
-              handleInputChange(full)
+              currentInterimText = ''
             } else {
-              // Show interim results live
-              const full = (baseText + finalizedText + (finalizedText ? ' ' : '') + text).trim()
-              setDraft(full)
-              handleInputChange(full)
+              currentInterimText = text
             }
+            const combined = (finalizedText + (currentInterimText ? (finalizedText ? ' ' : '') + currentInterimText : '')).trim()
+            const full = (baseText + combined).trim()
+            setDraft(full)
+            handleInputChange(full)
           },
           onError: (error) => {
             console.warn('Deepgram error:', error)
@@ -451,17 +451,8 @@ export function ChatThread({
   }
 
   const stopVoiceRecording = () => {
-    // Stop Deepgram streamer if active — capture any pending interim text
+    // Stop Deepgram streamer if active
     if (deepgramRef.current) {
-      const interimText = deepgramRef.current.getLastInterim()
-      if (interimText) {
-        // Append the last interim text that wasn't finalized
-        setDraft((prev) => {
-          const newText = prev ? `${prev.trim()} ${interimText}` : interimText
-          handleInputChange(newText)
-          return newText
-        })
-      }
       deepgramRef.current.stop()
       deepgramRef.current = null
     }
