@@ -451,8 +451,17 @@ export function ChatThread({
   }
 
   const stopVoiceRecording = () => {
-    // Stop Deepgram streamer if active
+    // Stop Deepgram streamer if active — capture any pending interim text
     if (deepgramRef.current) {
+      const interimText = deepgramRef.current.getLastInterim()
+      if (interimText) {
+        // Append the last interim text that wasn't finalized
+        setDraft((prev) => {
+          const newText = prev ? `${prev.trim()} ${interimText}` : interimText
+          handleInputChange(newText)
+          return newText
+        })
+      }
       deepgramRef.current.stop()
       deepgramRef.current = null
     }
