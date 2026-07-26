@@ -7,5 +7,7 @@
   "category": "media",
   "iconName": "Radio",
   "updatedAt": "2026-07-26T07:16:30.960Z",
-  "githubUrl": "https://github.com/coffee4433/catchat/tree/main/plugins/cat-music"
+  "githubUrl": "https://github.com/coffee4433/catchat/tree/main/plugins/cat-music",
+  "releasedAt": "2026-07-26T07:16:30.961Z",
+  "downloadUrl": "https://raw.githubusercontent.com/coffee4433/catchat/main/plugins/cat-music/manifest.json"
 }
