@@ -2273,7 +2273,25 @@ function renderPlugins(plugins) {
 function refreshPluginSelectOptions(plugins) {
   const sel = $('pluginSelect')
   if (!sel) return
-  sel.innerHTML = plugins.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)} (${escapeHtml(p.id)})</option>`).join('')
+  if (!plugins || !plugins.length) {
+    sel.innerHTML = '<option value="cat-music">CatMusic (cat-music)</option>'
+    return
+  }
+  sel.innerHTML = plugins.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name || p.id)} (${escapeHtml(p.id)})</option>`).join('')
+}
+
+function onPluginSelectChange() {
+  const sel = $('pluginSelect')
+  if (!sel) return
+  const id = sel.value
+  const plugin = allPlugins.find(p => p.id === id)
+  if (plugin) {
+    if ($('pluginIdInput')) $('pluginIdInput').value = plugin.id
+    if ($('pluginNameInput')) $('pluginNameInput').value = plugin.name || plugin.id
+    if ($('pluginVersionInput')) $('pluginVersionInput').value = plugin.version || 'v1.0.0'
+  } else {
+    if ($('pluginIdInput')) $('pluginIdInput').value = id
+  }
 }
 
 function selectPluginToPublish(pluginId) {
@@ -2281,6 +2299,13 @@ function selectPluginToPublish(pluginId) {
   if (sel) {
     sel.value = pluginId
     onPluginSelectChange()
+  } else {
+    const plugin = allPlugins.find(p => p.id === pluginId)
+    if (plugin) {
+      if ($('pluginIdInput')) $('pluginIdInput').value = plugin.id
+      if ($('pluginNameInput')) $('pluginNameInput').value = plugin.name || plugin.id
+      if ($('pluginVersionInput')) $('pluginVersionInput').value = plugin.version || 'v1.0.0'
+    }
   }
   scrollToPublishPlugin()
 }
@@ -2290,6 +2315,44 @@ function scrollToPublishPlugin() {
   const view = $('view-plugins')
   if (card && view) {
     view.scrollTo({ top: card.offsetTop - 20, behavior: 'smooth' })
+  }
+}
+
+async function submitPublishPlugin() {
+  const pluginId = ($('pluginIdInput')?.value || 'cat-music').trim()
+  const pluginName = ($('pluginNameInput')?.value || 'CatMusic').trim()
+  const pluginVersion = ($('pluginVersionInput')?.value || 'v1.0.0').trim()
+
+  const btn = $('pluginPublishBtn')
+  if (btn) btn.disabled = true
+
+  openDrawer()
+  $('statusDot').className = 'status-dot running'
+  $('statusText').textContent = `Publicando plugin ${pluginName} ${pluginVersion}…`
+
+  try {
+    const res = await window.releaseTool.publishPlugin({
+      id: pluginId,
+      name: pluginName,
+      version: pluginVersion,
+    })
+
+    if (res && res.success) {
+      $('statusDot').className = 'status-dot ok'
+      $('statusText').textContent = `¡Plugin ${pluginName} (${pluginVersion}) publicado con éxito en GitHub!`
+      allowCloseDrawer()
+      loadPluginsList()
+    } else {
+      $('statusDot').className = 'status-dot err'
+      $('statusText').textContent = `Error al publicar el plugin ${pluginName}`
+      allowCloseDrawer()
+    }
+  } catch (err) {
+    $('statusDot').className = 'status-dot err'
+    $('statusText').textContent = `Error: ${err.message || err}`
+    allowCloseDrawer()
+  } finally {
+    if (btn) btn.disabled = false
   }
 }
 

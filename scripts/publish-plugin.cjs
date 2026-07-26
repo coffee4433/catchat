@@ -62,6 +62,41 @@ try {
 
   execSync(`git push origin main --tags -f`, { cwd: rootDir, stdio: 'inherit' })
   console.log(`✓ Pushed plugin files and tag to GitHub!`)
+
+  const ghToken = process.env.GH_TOKEN
+  if (ghToken) {
+    try {
+      const https = require('https')
+      const postData = JSON.stringify({
+        tag_name: tagName,
+        name: `Plugin ${pluginName} ${pluginVersion}`,
+        body: manifest.description,
+        draft: false,
+        prerelease: false,
+      })
+      const req = https.request(
+        {
+          hostname: 'api.github.com',
+          path: '/repos/coffee4433/catchat/releases',
+          method: 'POST',
+          headers: {
+            'User-Agent': 'CatChat-ReleaseTool',
+            Authorization: `token ${ghToken}`,
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(postData),
+          },
+        },
+        (res) => {
+          console.log(`✓ GitHub Release created for ${tagName} (status ${res.statusCode})`)
+        }
+      )
+      req.on('error', () => {})
+      req.write(postData)
+      req.end()
+    } catch (e) {
+      console.log(`⚠ GitHub Release API note: ${e.message}`)
+    }
+  }
 } catch (err) {
   console.log(`⚠ Git sync note: ${err.message}`)
 }
