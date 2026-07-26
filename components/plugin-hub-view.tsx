@@ -185,12 +185,11 @@ export function PluginHubView({ onClose }: { onClose?: () => void }) {
               const isInstalling = installingPluginId === plugin.id
               const progress = installProgressMap[plugin.id] || 0
 
-              // Format clean version without double 'vv'
-              const formattedVersion = plugin.version
-                ? plugin.version.startsWith('v')
-                  ? plugin.version
-                  : `v${plugin.version}`
-                : 'v1.0.0'
+              // Display installed version if installed, or remote version if available
+              const rawInstalled = typeof window !== 'undefined' ? localStorage.getItem(`cz-plugin-ver-${plugin.id}`) : null
+              const installedVerFormatted = rawInstalled ? (rawInstalled.startsWith('v') ? rawInstalled : `v${rawInstalled}`) : 'v1.0.0'
+              const remoteVerFormatted = plugin.version ? (plugin.version.startsWith('v') ? plugin.version : `v${plugin.version}`) : 'v1.0.0'
+              const formattedVersion = isInstalled ? installedVerFormatted : remoteVerFormatted
 
               const displayDescription =
                 plugin.id === 'cat-music'

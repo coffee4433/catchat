@@ -78,6 +78,7 @@ export function PluginProvider({ children, user }: { children: React.ReactNode; 
   const [installingPluginId, setInstallingPluginId] = useState<string | null>(null)
   const [installProgressMap, setInstallProgressMap] = useState<Record<string, number>>({})
   const [pluginUpdates, setPluginUpdates] = useState<Record<string, PluginUpdateInfo>>({})
+  const [liveVersionMap, setLiveVersionMap] = useState<Record<string, string>>({})
 
   // Fetch live published plugins from GitHub Releases API to detect available updates
   useEffect(() => {
@@ -86,19 +87,22 @@ export function PluginProvider({ children, user }: { children: React.ReactNode; 
       .then((data) => {
         if (data?.plugins && Array.isArray(data.plugins)) {
           const updatesMap: Record<string, PluginUpdateInfo> = {}
+          const vMap: Record<string, string> = {}
           for (const p of data.plugins) {
-            const installedVer = localStorage.getItem(`cz-plugin-ver-${p.id}`) || '1.0.0'
+            const formattedRemote = p.version ? (p.version.startsWith('v') ? p.version : `v${p.version}`) : 'v1.0.0'
+            vMap[p.id] = formattedRemote
+            const installedVer = (localStorage.getItem(`cz-plugin-ver-${p.id}`) || '1.0.0').replace(/^v/, '')
             const remoteVer = (p.version || '1.0.0').replace(/^v/, '')
-            const cleanInstalledVer = installedVer.replace(/^v/, '')
-            if (installedPluginIds.includes(p.id) && remoteVer !== cleanInstalledVer) {
+            if (installedPluginIds.includes(p.id) && remoteVer !== installedVer) {
               updatesMap[p.id] = {
                 available: true,
-                newVersion: p.version.startsWith('v') ? p.version : `v${p.version}`,
+                newVersion: formattedRemote,
                 name: p.name || p.id,
                 releaseNotes: p.description,
               }
             }
           }
+          setLiveVersionMap(vMap)
           setPluginUpdates(updatesMap)
         }
       })
@@ -147,9 +151,8 @@ export function PluginProvider({ children, user }: { children: React.ReactNode; 
     setInstalledPluginIds((prev) => (prev.includes(id) ? prev : [...prev, id]))
     setEnabledPluginIds((prev) => (prev.includes(id) ? prev : [...prev, id]))
 
-    if (pluginUpdates[id]?.newVersion) {
-      localStorage.setItem(`cz-plugin-ver-${id}`, pluginUpdates[id].newVersion)
-    }
+    const verToSave = pluginUpdates[id]?.newVersion || liveVersionMap[id] || 'v1.0.0'
+    localStorage.setItem(`cz-plugin-ver-${id}`, verToSave)
 
     setPluginUpdates((prev) => {
       const copy = { ...prev }
