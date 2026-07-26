@@ -39,33 +39,42 @@
     .logo-container {
       position: relative;
       margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     @keyframes pulse {
-      0%, 100% { opacity: 0.85; transform: scale(1); }
-      50% { opacity: 1; transform: scale(1.05); }
+      0%, 100% { opacity: 0.92; transform: scale(1) translateZ(0); }
+      50% { opacity: 1; transform: scale(1.04) translateZ(0); }
     }
 
     .logo {
-      width: 100px;
-      height: 100px;
-      animation: pulse 2s infinite ease-in-out;
-      border-radius: 20px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      width: 108px;
+      height: 108px;
+      object-fit: contain;
+      animation: pulse 2.4s infinite ease-in-out;
+      border-radius: 24px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+      image-rendering: -webkit-optimize-contrast;
+      will-change: transform, opacity;
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
+      transform: translateZ(0);
     }
 
     .logo-fallback {
       display: none;
-      width: 100px;
-      height: 100px;
-      border-radius: 20px;
+      width: 108px;
+      height: 108px;
+      border-radius: 24px;
       background: linear-gradient(135deg, #5865F2, #4752C4);
       align-items: center;
       justify-content: center;
       font-size: 48px;
       color: white;
       font-weight: bold;
-      animation: pulse 2s infinite ease-in-out;
+      animation: pulse 2.4s infinite ease-in-out;
     }
 
     /* Magic Border Styles for the Page */
