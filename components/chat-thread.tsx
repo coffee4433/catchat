@@ -318,6 +318,20 @@ export function ChatThread({
 
       recognition.onerror = (e: any) => {
         console.warn('SpeechRecognition error:', e.error)
+        if (e.error === 'network') {
+          if (speechRecognitionRef.current) {
+            try {
+              speechRecognitionRef.current.stop()
+            } catch {}
+            speechRecognitionRef.current = null
+          }
+          setIsRecording(false)
+          alert(
+            lang === 'es'
+              ? 'El servicio de voz de Google Chrome no está disponible en este navegador o entorno (error de red Chrome Speech API).'
+              : 'Google Chrome Speech API service is unavailable in this environment.'
+          )
+        }
       }
 
       recognition.onend = () => {
