@@ -1,44 +1,11 @@
-version: 0.3.29
+version: 0.3.30
 files:
-  - url: https://github.com/coffee4433/catchat/releases/download/v0.3.29/CatChat-Setup-0.3.29.exe
-    sha512: omzlY7xRyqL+hjk2pzqlj5PCCEflezl7ODW+XcLuG2YpBZ0UpuXfUBcKp1MdsVlyyD8Nma7BiskERCn/0SwzhA==
-    size: 324039973
-path: CatChat-Setup-0.3.29.exe
-sha512: omzlY7xRyqL+hjk2pzqlj5PCCEflezl7ODW+XcLuG2YpBZ0UpuXfUBcKp1MdsVlyyD8Nma7BiskERCn/0SwzhA==
-releaseDate: '2026-07-29T05:07:02.417Z'
+  - url: https://github.com/coffee4433/catchat/releases/download/v0.3.30/CatChat-Setup-0.3.30.exe
+    sha512: mgCLwx2/kc/yBBTVlropg1Y7UlaE9AXTPrQ6HO1FssBKlnwFNHuYWrpXbkkxB3tZF1BbVP2ueNxV2/ZTjfMziA==
+    size: 324110019
+path: CatChat-Setup-0.3.30.exe
+sha512: mgCLwx2/kc/yBBTVlropg1Y7UlaE9AXTPrQ6HO1FssBKlnwFNHuYWrpXbkkxB3tZF1BbVP2ueNxV2/ZTjfMziA==
+releaseDate: '2026-07-29T05:36:11.541Z'
 showReleaseModal: true
 releaseNotes: |
-  ## ✨ Novedades Destacadas
-  
-  - [NUEVO] **Plugin Polimarket v0.0.1**: Primera versión publicada del plugin que integra información de predicciones de mercado directamente en CatChat.
-  
-  - [MEJORA] **Transcripción perfecta en español con Deepgram Nova‑2**: Reemplazo total del sistema anterior de dictado por la API REST de Deepgram Nova‑2, logrando una precisión del 100 % en acentos, mayúsculas y continuidad del habla para el español.
-  
-  - [MEJORA] **Streaming en tiempo real con Deepgram**: Ahora la transcripción voz a texto se procesa palabra por palabra mediante WebSocket en vivo, eliminando la espera de finalización completa del audio.
-  
-  ## 🐛 Correcciones y Ajustes
-  
-  - [FIX] **Corrección de la tasa de muestreo**: Se soluciona un desajuste entre la tasa de muestreo del micrófono del dispositivo y la esperada por Deepgram, igualándolas dinámicamente para evitar distorsión.
-  
-  - [FIX] **Evita deriva al idioma inglés**: La transmisión de audio ahora se envía como PCM crudo de 16 kHz, lo que evita que el motor se desplace accidentalmente hacia inglés y previene el truncamiento del stream.
-  
-  - [FIX] **Acumulación continua de la transcripción**: Las palabras habladas se escriben en tiempo real sin interrupciones, solucionando problemas de acumulación y garantizando que no se pierda contenido.
-  
-  - [FIX] **Eliminación de palabras duplicadas**: Se corrige el estado de la transcripción en vivo para que el habla continua no genere repeticiones y el texto fluya de forma natural.
-  
-  - [FIX] **No más cortes prematuros de voz**: Se incrementa el tiempo de endpointing a 3 segundos, se captura el texto intermedio al detener la grabación y se retrasa el cierre del WebSocket para asegurar que se vuelque todo el audio pendiente.
-  
-  ## ⚡ Rendimiento y Optimización
-  
-  - [MEJORA] **Transcripción ilimitada y robusta**: Se añade un temporizador KeepAlive (`ping`) que mantiene la conexión de streaming activa de forma indefinida, sin desconexiones inesperadas.
-  
-  - [MEJORA] **Duración de audio sin límites**: Gracias al nuevo mecanismo de keep-alive, se puede mantener una transcripción continua en sesiones largas sin pérdida de conexión.
-  
-  - [MEJORA] **Corrección automática de acentos y mayúsculas**: El sistema aplica automáticamente reglas ortográficas de español (acentos, capitalización) a la salida, dándole un acabado profesional al texto transcrito.
-  
-  ## 🎨 UI & Experiencia de Usuario
-  
-  - [DISEÑO] **Limpieza total del sistema de dictado antiguo**: Se eliminan por completo todos los restos de integración y código relacionado con la funcionalidad de dictado anterior, simplificando la interfaz y reduciendo posibles conflictos.
-  
-  > [!TIP]
-  > La nueva transcripción en español es ahora extremadamente precisa y fluida. Actívala en cualquier conversación y compártela sin preocuparte por tildes ni mayúsculas.
+  CatChat v0.3.30
