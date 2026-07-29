@@ -1,0 +1,11 @@
+{
+  "id": "polimarket",
+  "name": "Polimarket",
+  "version": "v0.0.1",
+  "author": "coffee4433",
+  "description": "Monitor de apuestas nuevas en Polymarket para deportes y esports, con alertas en tiempo real.",
+  "category": "productivity",
+  "iconName": "TrendingUp",
+  "updatedAt": "2026-07-29T04:52:26.494Z",
+  "githubUrl": "https://github.com/coffee4433/catchat/tree/main/plugins/polimarket"
+}
