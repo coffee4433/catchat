@@ -1,0 +1,19 @@
+{
+  "name": "CatChat",
+  "short_name": "CatChat",
+  "description": "Team collaboration messenger with threads, channels and calls",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0d0e14",
+  "theme_color": "#0d0e14",
+  "categories": ["social", "productivity"],
+  "icons": [
+    { "src": "/placeholder-logo.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/placeholder-logo.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/placeholder-logo.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/placeholder-logo.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "screenshots": [],
+  "prefer_related_applications": false
+}

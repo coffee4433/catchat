@@ -1,0 +1,2458 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CatChat Release Studio</title>
+<style>
+  /* ==================================================================
+     CatChat Release Studio — Professional light theme
+     ================================================================== */
+  :root {
+    --bg: #0b0f17;
+    --surface: #121824;
+    --surface-2: #182030;
+    --surface-3: #1f293d;
+    --border: #26334d;
+    --border-strong: #334466;
+    --fg: #f3f4f6;
+    --fg-secondary: #9ca3af;
+    --muted: #6b7280;
+    --faint: #4b5563;
+    --accent: #3b82f6;
+    --accent-hover: #2563eb;
+    --accent-soft: rgba(59, 130, 246, 0.15);
+    --accent-border: rgba(59, 130, 246, 0.35);
+    --green: #10b981;
+    --green-soft: rgba(16, 185, 129, 0.15);
+    --green-border: rgba(16, 185, 129, 0.35);
+    --red: #ef4444;
+    --red-soft: rgba(239, 68, 68, 0.15);
+    --red-border: rgba(239, 68, 68, 0.35);
+    --amber: #f59e0b;
+    --amber-soft: rgba(245, 158, 11, 0.15);
+    --mono: 'JetBrains Mono', 'SF Mono', 'Cascadia Code', Consolas, monospace;
+    --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.7);
+    --radius: 10px;
+  }
+
+  html.light {
+    --bg: #f4f5f7;
+    --surface: #ffffff;
+    --surface-2: #f9fafb;
+    --surface-3: #f1f3f5;
+    --border: #e5e8ec;
+    --border-strong: #d3d8de;
+    --fg: #16181d;
+    --fg-secondary: #4b5563;
+    --muted: #6b7280;
+    --faint: #9aa1ab;
+    --accent: #1a56db;
+    --accent-hover: #1547b8;
+    --accent-soft: #eef3fd;
+    --accent-border: #c4d4f5;
+    --green: #067647;
+    --green-soft: #ecfdf3;
+    --green-border: #abefc6;
+    --red: #b42318;
+    --red-soft: #fef3f2;
+    --red-border: #fecdca;
+    --amber: #b54708;
+    --amber-soft: #fffaeb;
+    --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05);
+    --shadow-md: 0 4px 12px rgba(16, 24, 40, 0.08), 0 1px 2px rgba(16, 24, 40, 0.04);
+    --shadow-lg: 0 12px 32px rgba(16, 24, 40, 0.12);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  ::selection { background: #cfe0fb; }
+
+  html, body {
+    height: 100%;
+    background: transparent;
+    font-family: var(--sans);
+    color: var(--fg);
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    font-size: 14px;
+  }
+
+  .window {
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    flex-direction: column;
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--bg);
+    border: 1px solid var(--border-strong);
+    box-shadow: 0 24px 64px rgba(16, 24, 40, 0.28);
+  }
+
+  /* ------------------------------------------------------------------
+     Titlebar
+     ------------------------------------------------------------------ */
+  .titlebar {
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 14px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    -webkit-app-region: drag;
+    flex-shrink: 0;
+  }
+  .titlebar-brand {
+    display: flex; align-items: center; gap: 9px;
+    font-size: 12.5px; font-weight: 600; color: var(--fg-secondary);
+  }
+  .titlebar-brand .logo {
+    width: 24px; height: 24px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--accent); color: #fff;
+    font-size: 11px; font-weight: 800; letter-spacing: -0.5px;
+    overflow: hidden;
+  }
+  .titlebar-brand .logo img { width: 100%; height: 100%; object-fit: contain; }
+  .titlebar-brand .sep { color: var(--faint); font-weight: 400; }
+  .titlebar-brand .page-name { color: var(--fg); }
+
+  .titlebar-actions { display: flex; gap: 6px; -webkit-app-region: no-drag; }
+  .win-btn {
+    width: 28px; height: 28px; border-radius: 7px;
+    border: none; background: transparent; color: var(--muted);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s, color 0.15s;
+  }
+  .win-btn:hover { background: var(--red-soft); color: var(--red); }
+  .win-btn svg { width: 13px; height: 13px; }
+
+  /* ------------------------------------------------------------------
+     Layout: nav rail + main
+     ------------------------------------------------------------------ */
+  .app-body { flex: 1; display: flex; min-height: 0; }
+
+  .nav-rail {
+    width: 216px; flex-shrink: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    padding: 14px 10px;
+    gap: 2px;
+  }
+  .nav-label {
+    font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.9px; color: var(--faint);
+    padding: 8px 10px 6px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    height: 36px; padding: 0 10px; border-radius: 8px;
+    border: none; background: transparent;
+    font-family: var(--sans); font-size: 13px; font-weight: 500;
+    color: var(--fg-secondary); cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+    text-align: left; width: 100%;
+  }
+  .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+  .nav-item:hover { background: var(--surface-3); color: var(--fg); }
+  .nav-item.active {
+    background: var(--accent-soft); color: var(--accent); font-weight: 600;
+  }
+  .nav-item .nav-dot {
+    margin-left: auto; width: 7px; height: 7px; border-radius: 50%;
+    background: var(--accent); display: none;
+  }
+  .nav-item.running .nav-dot { display: block; animation: pulse 1.2s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  .nav-footer {
+    margin-top: auto; padding: 12px 10px 2px;
+    border-top: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 11px; color: var(--faint);
+  }
+  .ver-pill {
+    font-family: var(--mono); font-size: 11px; font-weight: 600;
+    background: var(--surface-3); border: 1px solid var(--border);
+    border-radius: 999px; padding: 2px 9px; color: var(--fg-secondary);
+  }
+
+  .main {
+    flex: 1; min-width: 0;
+    display: flex; flex-direction: column;
+    overflow: hidden; position: relative;
+  }
+
+  .view {
+    display: none; flex: 1; min-height: 0;
+    flex-direction: column; overflow-y: auto; scroll-behavior: smooth;
+    padding: 30px 36px 120px;
+  }
+  .view.active { display: flex; }
+  .view-inner { width: 100%; max-width: 780px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+
+  .view, .chat-feed, .task-logs, .task-feed {
+    scrollbar-width: thin;
+    scrollbar-color: #cdd3da transparent;
+  }
+  .view::-webkit-scrollbar, .chat-feed::-webkit-scrollbar { width: 12px; }
+  .view::-webkit-scrollbar-thumb, .chat-feed::-webkit-scrollbar-thumb {
+    background: #cdd3da; border-radius: 8px;
+    border: 3px solid transparent; background-clip: padding-box;
+  }
+
+  /* ------------------------------------------------------------------
+     Common components
+     ------------------------------------------------------------------ */
+  .page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+  .page-head h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.4px; }
+  .page-head p { font-size: 13px; color: var(--muted); margin-top: 4px; line-height: 1.5; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+  }
+  .card-header {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+  .card-title {
+    font-size: 13px; font-weight: 600; color: var(--fg);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .card-title svg { width: 15px; height: 15px; color: var(--muted); }
+  .card-body { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field-label { font-size: 12.5px; font-weight: 600; color: var(--fg-secondary); }
+  .field-hint { font-size: 11.5px; color: var(--faint); line-height: 1.45; }
+
+  input[type="text"], input[type="password"], textarea, select {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    color: var(--fg);
+    font-family: var(--sans);
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  input[type="text"], input[type="password"], select { height: 38px; padding: 0 12px; font-size: 13.5px; }
+  textarea { padding: 10px 12px; font-size: 13px; resize: vertical; line-height: 1.55; }
+  input:hover, textarea:hover, select:hover { border-color: #b8bfc9; }
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(26, 86, 219, 0.12);
+  }
+  input:disabled, textarea:disabled { opacity: 0.5; background: var(--surface-3); }
+  input::placeholder, textarea::placeholder { color: var(--faint); }
+
+  .btn {
+    height: 36px; padding: 0 14px; border-radius: 8px;
+    border: 1px solid var(--border-strong);
+    background: var(--surface); color: var(--fg);
+    font-family: var(--sans); font-size: 13px; font-weight: 600;
+    cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    transition: background 0.12s, border-color 0.12s;
+    white-space: nowrap;
+    box-shadow: var(--shadow-sm);
+  }
+  .btn:hover { background: var(--surface-2); border-color: #b8bfc9; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn svg { width: 14px; height: 14px; }
+
+  .btn-primary {
+    background: var(--accent); border-color: var(--accent); color: #fff;
+  }
+  .btn-primary:hover:not(:disabled) { background: var(--accent-hover); border-color: var(--accent-hover); }
+
+  .btn-lg { height: 42px; padding: 0 20px; font-size: 13.5px; border-radius: 9px; }
+  .btn-sm { height: 30px; padding: 0 10px; font-size: 12px; border-radius: 7px; }
+  .btn-ghost { border-color: transparent; box-shadow: none; background: transparent; color: var(--fg-secondary); }
+  .btn-ghost:hover { background: var(--surface-3); border-color: transparent; }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11.5px; font-weight: 600;
+    padding: 3px 10px; border-radius: 999px;
+  }
+  .badge svg { width: 11px; height: 11px; }
+  .badge-ok { background: var(--green-soft); color: var(--green); border: 1px solid var(--green-border); }
+  .badge-empty { background: var(--surface-3); color: var(--muted); border: 1px solid var(--border); }
+  .badge-accent { background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent-border); }
+
+  .chip {
+    font-family: var(--mono); font-size: 11.5px; font-weight: 600;
+    padding: 3px 10px; border-radius: 6px;
+  }
+  .chip-old { background: var(--surface-3); border: 1px solid var(--border); color: var(--muted); }
+  .chip-new { background: var(--accent-soft); border: 1px solid var(--accent-border); color: var(--accent); }
+
+  .divider { height: 1px; background: var(--border); }
+
+  /* ------------------------------------------------------------------
+     Release view
+     ------------------------------------------------------------------ */
+  .setup-note {
+    background: var(--surface);
+    border: 1px dashed var(--border-strong);
+    border-radius: 12px;
+    padding: 40px 32px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 13.5px;
+    line-height: 1.6;
+    display: none;
+    flex-direction: column; align-items: center; gap: 14px;
+  }
+  .setup-note.visible { display: flex; }
+  .setup-note svg { width: 32px; height: 32px; color: var(--faint); }
+
+  #version { font-family: var(--mono); font-weight: 600; letter-spacing: 0.3px; max-width: 180px; }
+
+  .version-row { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+  .version-diff {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; color: var(--muted);
+    padding-bottom: 9px;
+  }
+  .version-diff:empty { display: none; }
+  .version-diff .arrow { color: var(--faint); }
+
+  .tmpl-toolbar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .tmpl-btn {
+    height: 26px; padding: 0 10px; border-radius: 999px;
+    background: var(--surface); border: 1px solid var(--border-strong);
+    color: var(--fg-secondary); font-size: 11.5px; font-weight: 600;
+    cursor: pointer; transition: all 0.12s;
+    display: inline-flex; align-items: center; gap: 5px;
+  }
+  .tmpl-btn svg { width: 11px; height: 11px; }
+  .tmpl-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+
+  .notes-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+
+  .publish-bar {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    flex-wrap: wrap;
+  }
+  .modal-toggle {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 12.5px; font-weight: 500; color: var(--fg-secondary);
+    cursor: pointer; user-select: none;
+  }
+  .modal-toggle input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px; cursor: pointer; }
+
+  /* ------------------------------------------------------------------
+     Activity drawer (global pipeline)
+     ------------------------------------------------------------------ */
+  .activity-drawer {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border-strong);
+    box-shadow: 0 -8px 24px rgba(16, 24, 40, 0.08);
+    transform: translateY(100%);
+    transition: transform 0.28s ease;
+    max-height: 72%;
+    display: flex; flex-direction: column;
+    z-index: 40;
+  }
+  .activity-drawer.open { transform: translateY(0); }
+  .activity-drawer.minimized {
+    max-height: 52px !important;
+    overflow: hidden;
+    box-shadow: 0 -4px 18px rgba(0, 0, 0, 0.35);
+  }
+  .activity-drawer.minimized .drawer-body { display: none !important; }
+  .activity-drawer.minimized .drawer-header { border-bottom: none; cursor: pointer; }
+
+  .drawer-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 22px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    user-select: none;
+  }
+  .drawer-header-actions { display: flex; align-items: center; gap: 8px; }
+  .drawer-title { display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: var(--faint); }
+  .status-dot.running { background: var(--accent); animation: pulse 1.2s ease-in-out infinite; }
+  .status-dot.ok { background: #12b76a; }
+  .status-dot.err { background: #f04438; }
+
+  .drawer-body { overflow-y: auto; padding: 18px 22px; display: flex; flex-direction: column; gap: 16px; }
+
+  .steps { display: flex; align-items: flex-start; }
+  .step {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 7px;
+    position: relative; padding-top: 2px;
+  }
+  .step::before {
+    content: ''; position: absolute; top: 16px;
+    left: calc(-50% + 17px); right: calc(50% + 17px);
+    height: 2px; background: var(--border); border-radius: 2px;
+    transition: background 0.3s;
+  }
+  .step:first-child::before { display: none; }
+  .step.done::before, .step.active::before { background: var(--accent); }
+
+  .step-circle {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--surface); border: 2px solid var(--border-strong);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--faint); transition: all 0.3s; z-index: 1;
+  }
+  .step-circle svg { width: 13px; height: 13px; }
+  .step.active .step-circle { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+  .step.done .step-circle { border-color: #12b76a; background: var(--green-soft); color: var(--green); }
+  .step.error .step-circle { border-color: #f04438; background: var(--red-soft); color: var(--red); }
+
+  .step-name { font-size: 11px; font-weight: 600; color: var(--faint); text-align: center; transition: color 0.3s; }
+  .step.active .step-name { color: var(--accent); }
+  .step.done .step-name { color: var(--green); }
+  .step.error .step-name { color: var(--red); }
+
+  .spinner {
+    width: 13px; height: 13px;
+    border: 2px solid rgba(26, 86, 219, 0.25);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Terminal / task feed */
+  .terminal {
+    background: #0f1117;
+    border: 1px solid #1e2230;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .terminal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 9px 14px;
+    background: #151823;
+    border-bottom: 1px solid #1e2230;
+    cursor: pointer; user-select: none;
+  }
+  .terminal-title {
+    font-family: var(--mono); font-size: 11.5px; color: #8b95ad;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .term-glyph { width: 7px; height: 7px; border-radius: 50%; background: #4b5268; }
+  .term-glyph.running { background: #6ea8fe; animation: pulse 1.2s ease-in-out infinite; }
+  .term-glyph.ok { background: #32d583; }
+  .term-glyph.err { background: #f97066; }
+  .line-count {
+    font-family: var(--mono); font-size: 10px; color: #5d6478;
+    background: #0f1117; border: 1px solid #262b3d;
+    padding: 1px 8px; border-radius: 999px;
+  }
+  .chevron { width: 14px; height: 14px; color: #5d6478; transition: transform 0.25s ease; }
+  .terminal.collapsed .chevron { transform: rotate(-90deg); }
+  .terminal-body { max-height: 320px; transition: max-height 0.3s ease; overflow: hidden; }
+  .terminal.collapsed .terminal-body { max-height: 0; }
+
+  .task-feed {
+    max-height: 320px; overflow-y: auto;
+    padding: 12px 16px; display: flex; flex-direction: column; gap: 4px;
+  }
+  .task-feed::-webkit-scrollbar { width: 10px; }
+  .task-feed::-webkit-scrollbar-thumb { background: #262b3d; border-radius: 6px; border: 2px solid transparent; background-clip: padding-box; }
+
+  .task { display: flex; flex-direction: column; gap: 6px; padding: 7px 0 9px; animation: task-in 0.25s ease; }
+  @keyframes task-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  .task-row { display: flex; align-items: center; gap: 10px; }
+  .task-marker { width: 15px; height: 15px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: #6ea8fe; }
+  .task-marker .dot-run { width: 8px; height: 8px; border-radius: 50%; background: #6ea8fe; animation: pulse 1s ease-in-out infinite; }
+  .task.done .task-marker { color: #32d583; }
+  .task.error .task-marker { color: #f97066; }
+  .task-marker svg { width: 13px; height: 13px; }
+  .task-label { font-family: var(--mono); font-size: 12px; font-weight: 600; color: #dfe4f0; flex: 1; min-width: 0; }
+  .task.done .task-label { color: #8b95ad; }
+  .task-meta { font-family: var(--mono); font-size: 10px; color: #5d6478; flex-shrink: 0; }
+  .task.done .task-meta { color: #32d583; }
+  .task.error .task-meta { color: #f97066; }
+  .task-progress { height: 3px; border-radius: 999px; background: #1e2230; overflow: hidden; margin-left: 25px; }
+  .task-progress .fill { height: 100%; border-radius: 999px; background: #6ea8fe; width: 0%; transition: width 0.4s ease; }
+  .task.running .task-progress .fill { width: 40%; animation: sweep 1.3s ease-in-out infinite; }
+  @keyframes sweep { 0% { margin-left: -40%; } 100% { margin-left: 100%; } }
+  .task.done .task-progress .fill { width: 100%; background: #32d583; animation: none; margin-left: 0; }
+  .task.error .task-progress .fill { width: 100%; background: #f97066; animation: none; margin-left: 0; }
+  .task-logs {
+    margin-left: 25px; border-left: 2px solid #262b3d;
+    padding: 3px 0 2px 11px;
+    font-family: var(--mono); font-size: 10.5px; line-height: 1.7;
+    color: #8b95ad; white-space: pre-wrap; word-break: break-word;
+    max-height: 150px; overflow-y: auto;
+  }
+  .task-logs:empty { display: none; }
+  .task-logs .ln-ok { color: #32d583; }
+  .task-logs .ln-err { color: #f97066; }
+  .feed-empty { font-family: var(--mono); font-size: 11px; color: #5d6478; padding: 4px 0; }
+  .feed-empty .caret { animation: blink-caret 1s step-end infinite; }
+  @keyframes blink-caret { 50% { opacity: 0; } }
+
+  .result-bar {
+    display: none; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 12px 16px; border-radius: 10px;
+    font-size: 13px; font-weight: 600;
+  }
+  .result-bar.visible { display: flex; }
+  .result-bar.success { background: var(--green-soft); border: 1px solid var(--green-border); color: var(--green); }
+  .result-bar.failure { background: var(--red-soft); border: 1px solid var(--red-border); color: var(--red); }
+
+  /* ------------------------------------------------------------------
+     AI Assistant view
+     ------------------------------------------------------------------ */
+  .view-ai-layout {
+    display: none; flex: 1; min-height: 0;
+    flex-direction: column;
+  }
+  .view-ai-layout.active { display: flex; }
+
+  .ai-header {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 18px 28px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+  .ai-header-title h2 { font-size: 15px; font-weight: 700; letter-spacing: -0.2px; }
+  .ai-header-title p { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  .chat-feed {
+    flex: 1; overflow-y: auto;
+    padding: 24px 28px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .chat-feed-inner { width: 100%; max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+
+  .chat-msg { display: flex; gap: 11px; max-width: 92%; }
+  .chat-msg.user { align-self: flex-end; flex-direction: row-reverse; }
+  .chat-msg.assistant { align-self: flex-start; }
+
+  .msg-avatar {
+    width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10.5px; font-weight: 700;
+  }
+  .msg-avatar.ai { background: var(--fg); color: #fff; }
+  .msg-avatar.you { background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent-border); }
+
+  .msg-content { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .msg-bubble {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 10px 14px; border-radius: 12px;
+    font-size: 13px; line-height: 1.6; color: var(--fg);
+    white-space: pre-wrap; word-break: break-word;
+    box-shadow: var(--shadow-sm);
+  }
+  .chat-msg.user .msg-bubble {
+    background: var(--accent); color: #fff; border-color: var(--accent);
+  }
+
+  /* Thinking indicator */
+  .thinking-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    display: flex; flex-direction: column; gap: 8px;
+    box-shadow: var(--shadow-sm);
+  }
+  .thinking-row { display: flex; align-items: center; gap: 10px; }
+  .thinking-dots { display: flex; gap: 4px; }
+  .thinking-dots span {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent);
+    animation: think-bounce 1.2s ease-in-out infinite;
+  }
+  .thinking-dots span:nth-child(2) { animation-delay: 0.15s; }
+  .thinking-dots span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes think-bounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.4; } 30% { transform: translateY(-4px); opacity: 1; } }
+  .thinking-label { font-size: 12.5px; font-weight: 600; color: var(--fg-secondary); }
+  .thinking-timer { font-family: var(--mono); font-size: 11px; color: var(--faint); margin-left: auto; }
+  .thinking-steps { display: flex; flex-direction: column; gap: 4px; padding-left: 2px; }
+  .thinking-step {
+    font-size: 11.5px; color: var(--faint);
+    display: flex; align-items: center; gap: 7px;
+    opacity: 0; transform: translateY(3px);
+    transition: opacity 0.3s, transform 0.3s;
+  }
+  .thinking-step.shown { opacity: 1; transform: none; }
+  .thinking-step svg { width: 11px; height: 11px; color: var(--green); flex-shrink: 0; }
+
+  /* Diff card */
+  .diff-card {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+  }
+  .diff-card-header {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 9px 14px;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--border);
+  }
+  .diff-file {
+    font-family: var(--mono); font-size: 11.5px; font-weight: 600; color: var(--fg-secondary);
+    display: flex; align-items: center; gap: 7px;
+  }
+  .diff-file svg { width: 13px; height: 13px; color: var(--muted); }
+  .diff-stats { display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 11px; font-weight: 700; }
+  .diff-stats .add { color: var(--green); }
+  .diff-stats .del { color: var(--red); }
+  .diff-body {
+    font-family: var(--mono); font-size: 11.5px; line-height: 1.7;
+    max-height: 260px; overflow-y: auto;
+  }
+  .diff-line { display: flex; white-space: pre-wrap; word-break: break-word; }
+  .diff-gutter {
+    width: 26px; flex-shrink: 0; text-align: center; user-select: none;
+    color: var(--faint); font-weight: 700;
+  }
+  .diff-text { flex: 1; padding-right: 12px; }
+  .diff-line.add { background: var(--green-soft); color: var(--green); }
+  .diff-line.add .diff-gutter { color: var(--green); }
+  .diff-line.del { background: var(--red-soft); color: var(--red); }
+  .diff-line.del .diff-gutter { color: var(--red); }
+  .diff-line.ctx { color: var(--fg-secondary); }
+  .diff-actions {
+    display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+    padding: 10px 14px;
+    border-top: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+
+  .ai-composer {
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    padding: 12px 28px 16px;
+    flex-shrink: 0;
+  }
+  .ai-composer-inner { width: 100%; max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 9px; }
+  .ai-suggestions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .ai-input-row {
+    display: flex; gap: 8px; align-items: flex-end;
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: 12px;
+    padding: 8px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .ai-input-row:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(26, 86, 219, 0.12); }
+  #aiPromptInput {
+    flex: 1; border: none; box-shadow: none; background: transparent;
+    font-size: 13px; padding: 6px 8px; height: auto;
+    resize: none; max-height: 120px; line-height: 1.5;
+  }
+  #aiPromptInput:focus { box-shadow: none; }
+  .ai-send-btn {
+    width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
+    background: var(--accent); border: none; color: #fff; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.12s;
+  }
+  .ai-send-btn:hover:not(:disabled) { background: var(--accent-hover); }
+  .ai-send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .ai-send-btn svg { width: 15px; height: 15px; }
+
+  .ai-error {
+    font-size: 12.5px; color: var(--red);
+    background: var(--red-soft); border: 1px solid var(--red-border);
+    padding: 9px 12px; border-radius: 9px;
+  }
+
+  /* ------------------------------------------------------------------
+     Settings view
+     ------------------------------------------------------------------ */
+  .settings-row {
+    display: grid; grid-template-columns: 240px 1fr; gap: 24px;
+    padding: 20px;
+  }
+  .settings-row + .settings-row { border-top: 1px solid var(--border); }
+  .settings-row-info h3 { font-size: 13.5px; font-weight: 600; }
+  .settings-row-info p { font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.5; }
+  .settings-row-control { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+
+  .project-row { display: flex; align-items: center; gap: 12px; }
+  .p-icon {
+    width: 38px; height: 38px; border-radius: 9px; flex-shrink: 0;
+    background: var(--accent-soft); border: 1px solid var(--accent-border);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--accent);
+  }
+  .p-icon svg { width: 17px; height: 17px; }
+  .project-meta { min-width: 0; flex: 1; }
+  .project-name { font-size: 13.5px; font-weight: 600; }
+  .project-dir {
+    font-size: 11px; color: var(--muted); font-family: var(--mono);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    margin-top: 2px;
+  }
+  .error-text { font-size: 12px; color: var(--red); }
+
+  /* ------------------------------------------------------------------
+     Releases & Plugins View — Search, Modern Cards & Badges
+     ------------------------------------------------------------------ */
+  .search-bar-wrapper {
+    position: sticky; top: 0; z-index: 40;
+    padding: 10px 0 16px 0;
+    background: linear-gradient(180deg, var(--bg) 82%, rgba(11, 15, 23, 0) 100%);
+    backdrop-filter: blur(12px);
+    margin-bottom: 6px;
+  }
+  .search-box {
+    position: relative; max-width: 620px; margin: 0 auto;
+    display: flex; align-items: center;
+    background: var(--surface-2); border: 1px solid var(--border-strong);
+    border-radius: 14px; padding: 4px 14px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .search-box:focus-within {
+    border-color: var(--accent);
+    background: var(--surface);
+    box-shadow: 0 0 0 3px var(--accent-soft), 0 16px 40px rgba(0, 0, 0, 0.5);
+  }
+  .search-box svg.search-icon {
+    width: 17px; height: 17px; color: var(--accent); flex-shrink: 0; margin-right: 10px;
+  }
+  .search-input {
+    flex: 1; padding: 10px 0;
+    background: transparent; border: none;
+    color: var(--fg); font-size: 13.5px; font-weight: 500;
+    outline: none; min-width: 0;
+  }
+  .search-input::placeholder { color: var(--muted); }
+  .search-count-pill {
+    font-family: var(--mono); font-size: 11px; font-weight: 700;
+    padding: 3px 10px; border-radius: 8px;
+    background: var(--surface-3); color: var(--fg-secondary); border: 1px solid var(--border);
+    flex-shrink: 0; margin-left: 10px; white-space: nowrap;
+  }
+
+  .grid-cards {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 18px;
+  }
+  .mod-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    display: flex; flex-direction: column; gap: 14px;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+    position: relative; overflow: hidden;
+  }
+  .mod-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent-border);
+    box-shadow: var(--shadow-md);
+  }
+  .mod-card-header {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  .mod-card-icon {
+    width: 46px; height: 46px; border-radius: 14px; flex-shrink: 0;
+    background: var(--surface-2); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden; color: var(--accent);
+  }
+  .mod-card-icon img { width: 100%; height: 100%; object-fit: cover; }
+  .mod-card-body { display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 0; }
+  .mod-card-title { font-size: 15px; font-weight: 700; color: var(--fg); display: flex; align-items: center; gap: 8px; }
+  .mod-card-desc { font-size: 12.5px; color: var(--muted); line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+  .mod-card-footer {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding-top: 14px; border-top: 1px solid var(--border); margin-top: auto;
+  }
+  .badge-tag {
+    font-family: var(--mono); font-size: 11px; font-weight: 700;
+    padding: 3px 10px; border-radius: 999px;
+    background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent-border);
+  }
+  .badge-outline {
+    font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 6px;
+    background: var(--surface-2); color: var(--fg-secondary); border: 1px solid var(--border);
+  }
+  .btn-danger-soft {
+    background: var(--red-soft); color: var(--red); border: 1px solid var(--red-border);
+    border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer;
+    transition: background 0.15s, transform 0.1s; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-danger-soft:hover { background: var(--red); color: #fff; transform: scale(1.02); }
+
+  /* Modal Overlay */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px);
+    display: none; align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: var(--surface); border: 1px solid var(--border-strong);
+    border-radius: 16px; width: 100%; max-width: 440px; padding: 24px;
+    box-shadow: var(--shadow-lg); display: flex; flex-direction: column; gap: 16px;
+  }
+  .modal-title { font-size: 17px; font-weight: 700; color: var(--fg); }
+  .modal-desc { font-size: 13px; color: var(--muted); line-height: 1.5; }
+  .modal-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+
+  @media (max-width: 720px) {
+    .settings-row { grid-template-columns: 1fr; gap: 10px; }
+    .nav-rail { width: 60px; }
+    .nav-item span, .nav-label, .nav-footer { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="window">
+
+  <!-- Titlebar -->
+  <header class="titlebar">
+    <div class="titlebar-brand">
+      <div class="logo"><img src="./icon.png" alt="" onerror="this.remove();this.parentNode.textContent='CC'"></div>
+      CatChat <span class="sep">/</span> <span class="page-name">Release Studio</span>
+    </div>
+    <div class="titlebar-actions">
+      <button class="win-btn" onclick="toggleTheme()" title="Cambiar Tema (Oscuro / Claro)" aria-label="Cambiar Tema">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+      <button class="win-btn" onclick="window.close()" aria-label="Cerrar ventana">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="app-body">
+
+    <!-- Navigation rail -->
+    <nav class="nav-rail" aria-label="Navegación principal">
+      <span class="nav-label">Publicación</span>
+      <button class="nav-item active" data-view="release" onclick="navTo('release')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/></svg>
+        <span>Nueva release</span>
+        <span class="nav-dot"></span>
+      </button>
+      <button class="nav-item" data-view="releases" onclick="navTo('releases')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span>Releases / Updates</span>
+        <span class="nav-dot"></span>
+      </button>
+      <button class="nav-item" data-view="plugins" onclick="navTo('plugins')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-5"/><path d="M9 8V2h6v6"/><path d="M5 8h14a1 1 0 0 1 1 1v3a7 7 0 0 1-7 7h-2a7 7 0 0 1-7-7V9a1 1 0 0 1 1-1z"/></svg>
+        <span>Plugins</span>
+        <span class="nav-dot"></span>
+      </button>
+
+      <span class="nav-label" style="margin-top:10px">Herramientas</span>
+      <button class="nav-item" data-view="ai" onclick="navTo('ai')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M2 14h2M20 14h2M15 13v2M9 13v2"/></svg>
+        <span>Asistente IA</span>
+        <span class="nav-dot"></span>
+      </button>
+
+      <span class="nav-label" style="margin-top:10px">General</span>
+      <button class="nav-item" data-view="settings" onclick="navTo('settings')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+        <span>Ajustes</span>
+      </button>
+
+      <div class="nav-footer">
+        <span>Versión</span>
+        <span class="ver-pill" id="currentVer">—</span>
+      </div>
+    </nav>
+
+    <!-- Main -->
+    <main class="main">
+
+      <!-- ======================= RELEASE VIEW ======================= -->
+      <section class="view active" id="view-release" aria-label="Nueva release">
+        <div class="view-inner">
+          <div class="page-head">
+            <div>
+              <h1>Nueva release</h1>
+              <p>Compila el instalador, sube los assets a GitHub y publica el commit de la release.</p>
+            </div>
+          </div>
+
+          <div class="setup-note visible" id="setupNote">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            <div>Selecciona la carpeta del proyecto para empezar.<br>Puedes configurarla en <strong>Ajustes</strong>.</div>
+            <button class="btn" onclick="navTo('settings')">Ir a Ajustes</button>
+          </div>
+
+          <div class="card" id="releaseCard" style="display:none">
+            <div class="card-header">
+              <span class="card-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>
+                Versión
+              </span>
+            </div>
+            <div class="card-body">
+              <div class="version-row">
+                <div class="field">
+                  <span class="field-label">Nueva versión</span>
+                  <input id="version" type="text" placeholder="1.2.3" spellcheck="false">
+                </div>
+                <div class="version-diff" id="versionDiff"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" id="notesCard" style="display:none">
+            <div class="card-header">
+              <span class="card-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+                Notas de la versión
+              </span>
+              <button type="button" class="btn btn-sm" onclick="navTo('ai')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M2 14h2M20 14h2M15 13v2M9 13v2"/></svg>
+                Generar con IA
+              </button>
+            </div>
+            <div class="card-body">
+              <div class="notes-header">
+                <span class="field-hint">Plantillas rápidas:</span>
+                <div class="tmpl-toolbar">
+                  <button type="button" class="tmpl-btn" onclick="insertTemplate('✨ ')">Novedades</button>
+                  <button type="button" class="tmpl-btn" onclick="insertTemplate('🐛 ')">Correcciones</button>
+                  <button type="button" class="tmpl-btn" onclick="insertTemplate('⚡ ')">Rendimiento</button>
+                  <button type="button" class="tmpl-btn" onclick="insertTemplate('🎨 ')">Interfaz</button>
+                </div>
+              </div>
+              <textarea id="notes" rows="5" placeholder="Describe los cambios de esta versión…"></textarea>
+              <div class="publish-bar">
+                <label class="modal-toggle" title="Si está marcado, CatChat mostrará una ventana con las novedades al abrir esta versión">
+                  <input type="checkbox" id="showModalCheck" checked>
+                  <span>Mostrar novedades al abrir CatChat</span>
+                </label>
+                <button class="btn btn-primary btn-lg" id="publishBtn" onclick="publish()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/></svg>
+                  <span id="publishLabel">Publicar release</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================= RELEASES VIEW ======================= -->
+      <section class="view" id="view-releases" aria-label="Releases y Repositorio">
+        <div class="view-inner" style="max-width:1000px">
+          <div class="page-head">
+            <div>
+              <h1>Releases y Repositorio</h1>
+              <p>Historial completo de versiones y actualizaciones publicadas en GitHub CatChat.</p>
+            </div>
+            <button type="button" class="btn btn-sm" onclick="loadGitHubReleases()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              Refrescar
+            </button>
+          </div>
+
+          <div class="search-bar-wrapper">
+            <div class="search-box">
+              <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" id="releaseSearchInput" class="search-input" placeholder="Buscar actualización por versión, título o notas..." oninput="filterReleases()">
+              <span class="search-count-pill" id="releasesCountBadge">0 versiones</span>
+            </div>
+          </div>
+
+          <div class="grid-cards" id="releasesListGrid">
+            <!-- Dynamic release cards with rounded corners -->
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================= PLUGINS VIEW ======================= -->
+      <section class="view" id="view-plugins" aria-label="Plugins">
+        <div class="view-inner" style="max-width:1000px">
+          <div class="page-head">
+            <div>
+              <h1>Plugins del Repositorio</h1>
+              <p>Administra, busca, empaqueta o elimina plugins de CatChat.</p>
+            </div>
+            <button type="button" class="btn btn-primary btn-sm" onclick="scrollToPublishPlugin()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Publicar Plugin
+            </button>
+          </div>
+
+          <div class="search-bar-wrapper">
+            <div class="search-box">
+              <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" id="pluginSearchInput" class="search-input" placeholder="Buscar plugin por nombre, id o descripción..." oninput="filterPlugins()">
+              <span class="search-count-pill" id="pluginsCountBadge">0 plugins</span>
+            </div>
+          </div>
+
+          <div class="grid-cards" id="pluginsListGrid">
+            <!-- Dynamic plugin cards with rounded corners -->
+          </div>
+
+          <div class="card" id="pluginPublishCard" style="margin-top: 10px;">
+            <div class="card-header">
+              <span class="card-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-5"/><path d="M9 8V2h6v6"/><path d="M5 8h14a1 1 0 0 1 1 1v3a7 7 0 0 1-7 7h-2a7 7 0 0 1-7-7V9a1 1 0 0 1 1-1z"/></svg>
+                Publicador de Plugins
+              </span>
+              <button type="button" class="btn btn-sm" onclick="pickPluginsFolder()">Cambiar carpeta</button>
+            </div>
+            <div class="card-body">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+                <div class="field">
+                  <span class="field-label">Plugin detectado</span>
+                  <select id="pluginSelect" onchange="onPluginSelectChange()">
+                    <option value="cat-music">CatMusic (cat-music)</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <span class="field-label">ID del plugin</span>
+                  <input type="text" id="pluginIdInput" value="cat-music" spellcheck="false" style="font-family:var(--mono)">
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+                <div class="field">
+                  <span class="field-label">Nombre</span>
+                  <input type="text" id="pluginNameInput" value="CatMusic">
+                </div>
+                <div class="field">
+                  <span class="field-label">Versión</span>
+                  <input type="text" id="pluginVersionInput" value="v1.0.0" spellcheck="false" style="font-family:var(--mono)">
+                </div>
+              </div>
+              <div class="divider"></div>
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <span class="project-dir" id="pluginsFolderLabel">lib/plugins (por defecto)</span>
+                <button type="button" class="btn btn-primary btn-lg" id="pluginPublishBtn" onclick="submitPublishPlugin()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                  Publicar en GitHub Releases
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================= AI ASSISTANT VIEW ======================= -->
+      <section class="view-ai-layout" id="view-ai" aria-label="Asistente IA">
+        <div class="ai-header">
+          <div class="ai-header-title">
+            <h2>Asistente de notas de versión</h2>
+            <p>Redacta y refina tus release notes con DeepSeek AI</p>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="badge badge-accent" id="aiModelBadge">DeepSeek</span>
+            <button type="button" class="btn btn-sm" onclick="resetAiChat()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+              Nueva sesión
+            </button>
+          </div>
+        </div>
+
+        <div class="chat-feed" id="aiChatFeed">
+          <div class="chat-feed-inner" id="aiChatFeedInner"></div>
+        </div>
+
+        <div class="ai-composer">
+          <div class="ai-composer-inner">
+            <div class="ai-error" id="aiError" style="display:none"></div>
+            <div class="ai-suggestions">
+              <button type="button" class="tmpl-btn" onclick="fetchGitCommits()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/></svg>
+                Auto-detectar commits de Git
+              </button>
+              <button type="button" class="tmpl-btn" onclick="applyThemePreset('cyberpunk')">Estilo Cyberpunk</button>
+              <button type="button" class="tmpl-btn" onclick="applyThemePreset('emerald')">Estilo Esmeralda</button>
+              <button type="button" class="tmpl-btn" onclick="applyThemePreset('sunset')">Estilo Sunset</button>
+              <button type="button" class="tmpl-btn" onclick="applyThemePreset('midnight')">Estilo Midnight</button>
+            </div>
+            <div class="ai-input-row">
+              <textarea id="aiPromptInput" rows="1" placeholder="Describe los cambios de esta versión o pide un estilo…"></textarea>
+              <button type="button" class="ai-send-btn" id="aiSubmitBtn" onclick="sendAiChatMessage()" aria-label="Enviar mensaje">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================= SETTINGS VIEW ======================= -->
+      <section class="view" id="view-settings" aria-label="Ajustes">
+        <div class="view-inner">
+          <div class="page-head">
+            <div>
+              <h1>Ajustes</h1>
+              <p>Configura el proyecto, las credenciales de GitHub y la clave de DeepSeek AI.</p>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <h3>Proyecto</h3>
+                <p>Carpeta raíz de CatChat con el package.json de la app.</p>
+              </div>
+              <div class="settings-row-control">
+                <div class="project-row" id="projectInfo" style="display:none">
+                  <div class="p-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                  </div>
+                  <div class="project-meta">
+                    <div class="project-name">CatChat</div>
+                    <div class="project-dir" id="projectPath"></div>
+                  </div>
+                  <span class="ver-pill" id="settingsVer">—</span>
+                </div>
+                <div>
+                  <button class="btn" id="selectBtn" onclick="selectProject()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                    <span id="selectBtnLabel">Seleccionar carpeta del proyecto</span>
+                  </button>
+                </div>
+                <span class="error-text" id="projectError" style="display:none"></span>
+              </div>
+            </div>
+
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <h3>GitHub</h3>
+                <p>Token personal con permisos de repositorio para crear releases y subir assets.</p>
+              </div>
+              <div class="settings-row-control">
+                <div class="field">
+                  <span class="field-label">Personal access token</span>
+                  <input id="tokenInput" type="password" placeholder="ghp_••••••••••••" autocomplete="off" style="max-width:340px">
+                </div>
+                <span class="badge badge-empty" id="tokenStatus" style="align-self:flex-start">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+                  Sin token guardado
+                </span>
+              </div>
+            </div>
+
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <h3>DeepSeek AI</h3>
+                <p>Clave de API para el asistente de notas de versión.</p>
+              </div>
+              <div class="settings-row-control">
+                <div class="field">
+                  <span class="field-label">API key</span>
+                  <input id="deepseekInput" type="password" placeholder="sk-••••••••••••" autocomplete="off" style="max-width:340px">
+                </div>
+                <span class="badge badge-empty" id="deepseekStatus" style="align-self:flex-start">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+                  Sin clave guardada
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================= ACTIVITY DRAWER (pipeline) ======================= -->
+      <div class="activity-drawer" id="activityDrawer" role="region" aria-label="Actividad de publicación">
+        <div class="drawer-header" onclick="if(document.getElementById('activityDrawer').classList.contains('minimized')) toggleDrawerMinimize(event)">
+          <div class="drawer-title">
+            <span class="status-dot running" id="statusDot"></span>
+            <span id="statusText">Publicando…</span>
+          </div>
+          <div class="drawer-header-actions">
+            <button class="btn btn-sm btn-ghost" id="drawerMinimizeBtn" onclick="toggleDrawerMinimize(event)" title="Minimizar panel" aria-label="Minimizar panel">
+              <svg id="drawerMinimizeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:14px;height:14px"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              <span id="drawerMinimizeLabel">Minimizar</span>
+            </button>
+            <button class="btn btn-sm btn-ghost" id="drawerCloseBtn" onclick="closeDrawer(event)" style="display:none">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:14px;height:14px"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              Cerrar
+            </button>
+          </div>
+        </div>
+        <div class="drawer-body">
+          <div class="steps" id="steps">
+            <div class="step" data-step="prepare">
+              <div class="step-circle">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+              </div>
+              <span class="step-name">Preparar</span>
+            </div>
+            <div class="step" data-step="build">
+              <div class="step-circle">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"/></svg>
+              </div>
+              <span class="step-name">Compilar</span>
+            </div>
+            <div class="step" data-step="upload">
+              <div class="step-circle">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+              </div>
+              <span class="step-name">Subir assets</span>
+            </div>
+            <div class="step" data-step="publish">
+              <div class="step-circle">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/><path d="M16 8L2 22M17.5 15H9"/></svg>
+              </div>
+              <span class="step-name">Publicar</span>
+            </div>
+            <div class="step" data-step="git">
+              <div class="step-circle">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/></svg>
+              </div>
+              <span class="step-name">Commit y push</span>
+            </div>
+          </div>
+
+          <div class="terminal" id="terminal">
+            <div class="terminal-header" onclick="toggleTerminal()" role="button" aria-expanded="true" tabindex="0" id="terminalHeader">
+              <div class="terminal-title">
+                <span class="term-glyph" id="termGlyph"></span>
+                <span id="termTitle">release pipeline</span>
+                <span class="line-count" id="lineCount">0 líneas</span>
+              </div>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+            </div>
+            <div class="terminal-body">
+              <div class="task-feed" id="taskFeed">
+                <div class="feed-empty">esperando salida<span class="caret">▍</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="result-bar" id="resultBar">
+            <span id="resultText"></span>
+            <button class="btn btn-sm" onclick="resetAll()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+              Publicar otra
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script>
+// ---------------------------------------------------------------------
+// Bridge API (window.releaseTool from Electron preload) with a demo
+// fallback so the UI can be previewed in a normal browser.
+// ---------------------------------------------------------------------
+const api = window.releaseTool || createDemoApi()
+
+const $ = (id) => document.getElementById(id)
+const versionInput = $('version')
+const notesInput = $('notes')
+const versionDiff = $('versionDiff')
+const taskFeed = $('taskFeed')
+const termGlyph = $('termGlyph')
+const termTitle = $('termTitle')
+const statusDot = $('statusDot')
+const statusText = $('statusText')
+const publishBtn = $('publishBtn')
+const publishLabel = $('publishLabel')
+const resultBar = $('resultBar')
+const resultText = $('resultText')
+const lineCount = $('lineCount')
+const terminal = $('terminal')
+const tokenInput = $('tokenInput')
+const tokenStatus = $('tokenStatus')
+const activityDrawer = $('activityDrawer')
+
+const STEP_KEYS = ['prepare', 'build', 'upload', 'publish', 'git']
+const STEP_LABELS = {
+  prepare: 'Preparando release',
+  build: 'Compilando instalador',
+  upload: 'Subiendo assets',
+  publish: 'Publicando release en GitHub',
+  git: 'Commit y push',
+}
+const stepIcons = {}
+let current = ''
+let running = false
+let pipelineMode = 'release'
+let pluginPublishMeta = { id: '', name: '', version: '' }
+let lines = 0
+let listenersAttached = false
+
+// ---------------------------------------------------------------------
+// Navigation
+// ---------------------------------------------------------------------
+function navTo(view) {
+  document.querySelectorAll('.nav-item').forEach((el) => {
+    el.classList.toggle('active', el.dataset.view === view)
+  })
+  document.querySelectorAll('.view, .view-ai-layout').forEach((el) => {
+    el.classList.toggle('active', el.id === 'view-' + view)
+  })
+  if (view === 'releases') {
+    loadGitHubReleases()
+  } else if (view === 'plugins') {
+    loadPluginsList()
+  } else if (view === 'ai') {
+    setTimeout(() => $('aiPromptInput').focus(), 60)
+  }
+}
+
+// ---------------------------------------------------------------------
+// Activity drawer
+// ---------------------------------------------------------------------
+function openDrawer() {
+  activityDrawer.classList.add('open')
+  activityDrawer.classList.remove('minimized')
+  const icon = $('drawerMinimizeIcon')
+  const label = $('drawerMinimizeLabel')
+  const btn = $('drawerMinimizeBtn')
+  if (icon) icon.innerHTML = '<line x1="5" y1="12" x2="19" y2="12"/>'
+  if (label) label.textContent = 'Minimizar'
+  if (btn) btn.title = 'Minimizar panel'
+  $('drawerCloseBtn').style.display = 'none'
+}
+
+function toggleDrawerMinimize(e) {
+  if (e) e.stopPropagation()
+  const isMin = activityDrawer.classList.toggle('minimized')
+  const icon = $('drawerMinimizeIcon')
+  const label = $('drawerMinimizeLabel')
+  const btn = $('drawerMinimizeBtn')
+  if (btn) btn.title = isMin ? 'Expandir panel' : 'Minimizar panel'
+  if (label) label.textContent = isMin ? 'Expandir' : 'Minimizar'
+  if (icon) {
+    icon.innerHTML = isMin
+      ? '<polyline points="18 15 12 9 6 15"/>'
+      : '<line x1="5" y1="12" x2="19" y2="12"/>'
+  }
+}
+
+function allowCloseDrawer() {
+  $('drawerCloseBtn').style.display = 'inline-flex'
+}
+
+function closeDrawer(e) {
+  if (e) e.stopPropagation()
+  activityDrawer.classList.remove('open')
+  activityDrawer.classList.remove('minimized')
+}
+
+// ---------------------------------------------------------------------
+// Task feed (terminal)
+// ---------------------------------------------------------------------
+const tasks = {}
+let activeTask = null
+
+const RUN_DOT = '<span class="dot-run"></span>'
+const CHECK_SM = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>'
+const CROSS_SM = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>'
+
+function fmtElapsed(ms) {
+  const s = ms / 1000
+  return s < 60 ? s.toFixed(1) + 's' : Math.floor(s / 60) + 'm ' + Math.round(s % 60) + 's'
+}
+
+function createTask(key) {
+  if (tasks[key]) return tasks[key]
+  const empty = taskFeed.querySelector('.feed-empty')
+  if (empty) empty.remove()
+
+  const el = document.createElement('div')
+  el.className = 'task running'
+  el.innerHTML =
+    '<div class="task-row">' +
+      '<span class="task-marker">' + RUN_DOT + '</span>' +
+      '<span class="task-label">' + STEP_LABELS[key] + '</span>' +
+      '<span class="task-meta">0.0s</span>' +
+    '</div>' +
+    '<div class="task-progress"><div class="fill"></div></div>' +
+    '<div class="task-logs"></div>'
+  taskFeed.appendChild(el)
+
+  const task = {
+    el,
+    marker: el.querySelector('.task-marker'),
+    meta: el.querySelector('.task-meta'),
+    logs: el.querySelector('.task-logs'),
+    startedAt: Date.now(),
+    state: 'running',
+    timer: setInterval(() => {
+      task.meta.textContent = fmtElapsed(Date.now() - task.startedAt)
+    }, 100),
+  }
+  tasks[key] = task
+  activeTask = key
+  taskFeed.scrollTop = taskFeed.scrollHeight
+  return task
+}
+
+function finishTask(key, state) {
+  const task = tasks[key]
+  if (!task || task.state === 'done') return
+  task.state = state
+  clearInterval(task.timer)
+  task.el.classList.remove('running')
+  task.el.classList.add(state)
+  task.marker.innerHTML = state === 'done' ? CHECK_SM : CROSS_SM
+  task.meta.textContent = (state === 'done' ? '✓ ' : '✕ ') + fmtElapsed(Date.now() - task.startedAt)
+  if (activeTask === key) activeTask = null
+}
+
+function taskLog(chunk) {
+  const key = activeTask || Object.keys(tasks).pop()
+  if (!key) return
+  const container = tasks[key].logs
+  const span = document.createElement('span')
+  if (chunk.includes('✓')) span.className = 'ln-ok'
+  else if (chunk.includes('✕') || /error/i.test(chunk)) span.className = 'ln-err'
+  span.textContent = chunk
+  container.appendChild(span)
+  container.scrollTop = container.scrollHeight
+  taskFeed.scrollTop = taskFeed.scrollHeight
+}
+
+function resetFeed() {
+  Object.values(tasks).forEach((t) => clearInterval(t.timer))
+  Object.keys(tasks).forEach((k) => delete tasks[k])
+  activeTask = null
+  taskFeed.innerHTML = '<div class="feed-empty">esperando salida<span class="caret">▍</span></div>'
+}
+
+STEP_KEYS.forEach((key) => {
+  const circle = document.querySelector('[data-step="' + key + '"] .step-circle')
+  stepIcons[key] = circle.innerHTML
+})
+
+const CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>'
+
+function setStep(key, state) {
+  const el = document.querySelector('[data-step="' + key + '"]')
+  if (!el) return
+  if (el.classList.contains('done') && state !== 'done') return
+
+  el.classList.remove('active', 'done', 'error')
+  const circle = el.querySelector('.step-circle')
+
+  if (state === 'active') {
+    el.classList.add('active')
+    circle.innerHTML = '<div class="spinner"></div>'
+    createTask(key)
+  } else if (state === 'done') {
+    el.classList.add('done')
+    circle.innerHTML = CHECK_SVG
+    if (tasks[key]) finishTask(key, 'done')
+  } else if (state === 'error') {
+    el.classList.add('error')
+    circle.innerHTML = stepIcons[key]
+    if (tasks[key]) finishTask(key, 'error')
+  } else {
+    circle.innerHTML = stepIcons[key]
+  }
+}
+
+function resetSteps() {
+  STEP_KEYS.forEach((key) => {
+    const el = document.querySelector('[data-step="' + key + '"]')
+    el.classList.remove('active', 'done', 'error')
+    el.querySelector('.step-circle').innerHTML = stepIcons[key]
+  })
+}
+
+function detectPhase(chunk) {
+  const lower = chunk.toLowerCase()
+  if (lower.includes('packaging and publishing plugin') || lower.includes('plugin manifest created')) {
+    setStep('prepare', 'active')
+  }
+  if (lower.includes('plugin manifest created') || lower.includes('plugin release saved')) {
+    setStep('prepare', 'done'); setStep('build', 'active')
+  }
+  if (lower.includes('building installer and packaging artifact')) {
+    setStep('prepare', 'done'); setStep('build', 'active')
+  }
+  if (lower.includes('uploading plugin release assets')) {
+    setStep('build', 'done'); setStep('upload', 'active')
+  }
+  if (lower.includes('github release created')) {
+    setStep('upload', 'done'); setStep('publish', 'active')
+  }
+  if (lower.includes('created git tag')) {
+    setStep('publish', 'done'); setStep('git', 'active')
+  }
+  if (lower.includes('pushed plugin files') || lower.includes('pushed to git and published plugin')) {
+    setStep('git', 'done')
+  }
+  if ((lower.includes('building') || lower.includes('electron-builder') || lower.includes('packaging')) && !lower.includes('plugin')) {
+    setStep('prepare', 'done'); setStep('build', 'active')
+  }
+  if (lower.includes('building block map')) setStep('build', 'done')
+  if (lower.includes('uploading')) { setStep('build', 'done'); setStep('upload', 'active') }
+  if (lower.includes('published:')) { setStep('upload', 'done'); setStep('publish', 'active') }
+  if (lower.includes('pushing') || lower.includes('committing')) { setStep('publish', 'done'); setStep('git', 'active') }
+  if (lower.includes('pushed')) { setStep('publish', 'done'); setStep('git', 'done') }
+}
+
+function appendLog(chunk) {
+  taskLog(chunk)
+  lines += (chunk.match(/\n/g) || []).length
+  lineCount.textContent = lines + ' líneas'
+}
+
+function toggleTerminal() {
+  terminal.classList.toggle('collapsed')
+  $('terminalHeader').setAttribute('aria-expanded', String(!terminal.classList.contains('collapsed')))
+}
+
+$('terminalHeader').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleTerminal() }
+})
+
+// ---------------------------------------------------------------------
+// Init
+// ---------------------------------------------------------------------
+async function init() {
+  const cfg = await api.getConfig()
+
+  if (cfg.hasToken) markTokenSaved()
+  if (cfg.hasDeepseekKey) markDeepseekSaved()
+
+  tokenInput.addEventListener('change', () => {
+    const val = tokenInput.value.trim()
+    if (val) {
+      api.saveToken(val)
+      tokenInput.value = ''
+      markTokenSaved()
+    }
+  })
+
+  const deepseekInput = $('deepseekInput')
+  deepseekInput.addEventListener('change', () => {
+    const val = deepseekInput.value.trim()
+    if (val) {
+      api.saveDeepSeekKey(val)
+      deepseekInput.value = ''
+      markDeepseekSaved()
+    }
+  })
+
+  if (cfg.projectPath) showProject(cfg.projectPath)
+
+  const ver = await api.getVersion()
+  if (ver) setVersion(ver)
+
+  resetAiChat()
+}
+
+function markTokenSaved() {
+  tokenInput.placeholder = 'Token guardado'
+  tokenStatus.className = 'badge badge-ok'
+  tokenStatus.innerHTML = CHECK_SM + '<span>Token guardado</span>'
+  tokenStatus.style.alignSelf = 'flex-start'
+}
+
+function markDeepseekSaved() {
+  const deepseekInput = $('deepseekInput')
+  const deepseekStatus = $('deepseekStatus')
+  deepseekInput.placeholder = 'Clave guardada'
+  deepseekStatus.className = 'badge badge-ok'
+  deepseekStatus.innerHTML = CHECK_SM + '<span>Clave guardada</span>'
+  deepseekStatus.style.alignSelf = 'flex-start'
+}
+
+function showProject(dir) {
+  $('projectInfo').style.display = 'flex'
+  $('projectPath').textContent = dir
+  $('selectBtnLabel').textContent = 'Cambiar carpeta'
+  $('projectError').style.display = 'none'
+}
+
+function setVersion(ver) {
+  current = ver
+  $('currentVer').textContent = 'v' + ver
+  $('settingsVer').textContent = 'v' + ver
+  $('setupNote').classList.remove('visible')
+  $('releaseCard').style.display = 'block'
+  $('notesCard').style.display = 'block'
+  notesInput.value = ''
+}
+
+async function selectProject() {
+  const result = await api.selectProject()
+  if (result && !result.error) {
+    showProject(result.path)
+    setVersion(result.version)
+  } else if (result && result.error) {
+    $('projectError').textContent = result.error
+    $('projectError').style.display = 'block'
+  }
+}
+
+versionInput.addEventListener('input', () => {
+  const val = versionInput.value.trim()
+  if (/^\d+\.\d+\.\d+$/.test(val) && val !== current) {
+    versionDiff.innerHTML =
+      '<span class="chip chip-old">v' + current + '</span>' +
+      '<svg class="arrow" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>' +
+      '<span class="chip chip-new">v' + val + '</span>'
+  } else {
+    versionDiff.innerHTML = ''
+  }
+})
+
+versionInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.isComposing && e.keyCode !== 229) publish()
+})
+
+function insertTemplate(prefix) {
+  const val = notesInput.value
+  notesInput.value = !val ? prefix : val + (val.endsWith('\n') ? '' : '\n') + prefix
+  notesInput.focus()
+  notesInput.selectionStart = notesInput.selectionEnd = notesInput.value.length
+}
+
+// ---------------------------------------------------------------------
+// AI Assistant: chat + thinking indicator + diff view
+// ---------------------------------------------------------------------
+let chatMessages = []
+
+const AI_WELCOME = 'Hola, soy tu asistente de notas de versión. Cuéntame los cambios que realizaste o pulsa "Auto-detectar commits de Git" y redactaré las notas en Markdown. Cuando te proponga un texto verás un diff con los cambios respecto a tus notas actuales.'
+
+function resetAiChat() {
+  chatMessages = []
+  const feed = $('aiChatFeedInner')
+  feed.innerHTML = ''
+  renderChatMessage('assistant', AI_WELCOME)
+  $('aiError').style.display = 'none'
+}
+
+function scrollChat() {
+  const feed = $('aiChatFeed')
+  feed.scrollTop = feed.scrollHeight
+}
+
+function renderChatMessage(role, text) {
+  const feed = $('aiChatFeedInner')
+  const msgDiv = document.createElement('div')
+  msgDiv.className = 'chat-msg ' + role
+
+  const avatar = document.createElement('div')
+  avatar.className = 'msg-avatar ' + (role === 'user' ? 'you' : 'ai')
+  avatar.textContent = role === 'user' ? 'TÚ' : 'IA'
+
+  const content = document.createElement('div')
+  content.className = 'msg-content'
+
+  const bubble = document.createElement('div')
+  bubble.className = 'msg-bubble'
+  bubble.textContent = text
+  content.appendChild(bubble)
+
+  msgDiv.appendChild(avatar)
+  msgDiv.appendChild(content)
+  feed.appendChild(msgDiv)
+  scrollChat()
+  return { msgDiv, content }
+}
+
+// --- Thinking indicator -------------------------------------------------
+const THINKING_STEPS = [
+  'Analizando el contexto de la conversación…',
+  'Revisando los cambios descritos…',
+  'Redactando notas en Markdown…',
+  'Puliendo formato y estilo…',
+]
+
+function renderThinking() {
+  const feed = $('aiChatFeedInner')
+  const msgDiv = document.createElement('div')
+  msgDiv.className = 'chat-msg assistant'
+
+  const avatar = document.createElement('div')
+  avatar.className = 'msg-avatar ai'
+  avatar.textContent = 'IA'
+
+  const card = document.createElement('div')
+  card.className = 'thinking-card'
+  card.innerHTML =
+    '<div class="thinking-row">' +
+      '<div class="thinking-dots"><span></span><span></span><span></span></div>' +
+      '<span class="thinking-label">DeepSeek está pensando</span>' +
+      '<span class="thinking-timer">0.0s</span>' +
+    '</div>' +
+    '<div class="thinking-steps"></div>'
+
+  msgDiv.appendChild(avatar)
+  msgDiv.appendChild(card)
+  feed.appendChild(msgDiv)
+  scrollChat()
+
+  const startedAt = Date.now()
+  const timerEl = card.querySelector('.thinking-timer')
+  const stepsEl = card.querySelector('.thinking-steps')
+  const timer = setInterval(() => {
+    timerEl.textContent = fmtElapsed(Date.now() - startedAt)
+  }, 100)
+
+  const stepTimers = THINKING_STEPS.map((label, i) =>
+    setTimeout(() => {
+      const s = document.createElement('div')
+      s.className = 'thinking-step'
+      s.innerHTML = CHECK_SM + '<span>' + label + '</span>'
+      stepsEl.appendChild(s)
+      requestAnimationFrame(() => s.classList.add('shown'))
+      scrollChat()
+    }, 700 + i * 1400)
+  )
+
+  return {
+    remove() {
+      clearInterval(timer)
+      stepTimers.forEach(clearTimeout)
+      msgDiv.remove()
+    },
+    elapsed() { return fmtElapsed(Date.now() - startedAt) },
+  }
+}
+
+// --- Line diff (LCS) ----------------------------------------------------
+function diffLines(oldText, newText) {
+  const a = oldText ? oldText.split('\n') : []
+  const b = newText ? newText.split('\n') : []
+  const n = a.length, m = b.length
+  const dp = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0))
+  for (let i = n - 1; i >= 0; i--) {
+    for (let j = m - 1; j >= 0; j--) {
+      dp[i][j] = a[i] === b[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1])
+    }
+  }
+  const out = []
+  let i = 0, j = 0
+  while (i < n && j < m) {
+    if (a[i] === b[j]) { out.push({ type: 'ctx', text: a[i] }); i++; j++ }
+    else if (dp[i + 1][j] >= dp[i][j + 1]) { out.push({ type: 'del', text: a[i] }); i++ }
+    else { out.push({ type: 'add', text: b[j] }); j++ }
+  }
+  while (i < n) { out.push({ type: 'del', text: a[i] }); i++ }
+  while (j < m) { out.push({ type: 'add', text: b[j] }); j++ }
+  return out
+}
+
+function renderDiffCard(container, proposedText) {
+  const currentNotes = notesInput.value
+  const rows = diffLines(currentNotes, proposedText)
+  const adds = rows.filter((r) => r.type === 'add').length
+  const dels = rows.filter((r) => r.type === 'del').length
+
+  const card = document.createElement('div')
+  card.className = 'diff-card'
+
+  const header = document.createElement('div')
+  header.className = 'diff-card-header'
+  header.innerHTML =
+    '<span class="diff-file">' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>' +
+      'notas-de-version.md</span>' +
+    '<span class="diff-stats"><span class="add">+' + adds + '</span><span class="del">−' + dels + '</span></span>'
+
+  const body = document.createElement('div')
+  body.className = 'diff-body'
+  rows.forEach((row) => {
+    const line = document.createElement('div')
+    line.className = 'diff-line ' + row.type
+    const gutter = document.createElement('span')
+    gutter.className = 'diff-gutter'
+    gutter.textContent = row.type === 'add' ? '+' : row.type === 'del' ? '−' : ' '
+    const text = document.createElement('span')
+    text.className = 'diff-text'
+    text.textContent = row.text || ' '
+    line.appendChild(gutter)
+    line.appendChild(text)
+    body.appendChild(line)
+  })
+
+  const actions = document.createElement('div')
+  actions.className = 'diff-actions'
+
+  const discard = document.createElement('button')
+  discard.type = 'button'
+  discard.className = 'btn btn-sm'
+  discard.textContent = 'Descartar'
+  discard.onclick = () => card.remove()
+
+  const apply = document.createElement('button')
+  apply.type = 'button'
+  apply.className = 'btn btn-sm btn-primary'
+  apply.innerHTML = CHECK_SM + ' Aplicar a las notas'
+  apply.onclick = () => {
+    notesInput.value = proposedText
+    apply.disabled = true
+    discard.disabled = true
+    apply.innerHTML = CHECK_SM + ' Aplicado'
+    navTo('release')
+  }
+
+  actions.appendChild(discard)
+  actions.appendChild(apply)
+
+  card.appendChild(header)
+  card.appendChild(body)
+  card.appendChild(actions)
+  container.appendChild(card)
+  scrollChat()
+}
+
+async function fetchGitCommits() {
+  try {
+    const commits = await api.getGitCommits()
+    if (commits && commits.length > 0) {
+      $('aiPromptInput').value = 'Extraje estos commits de Git:\n' + commits.join('\n')
+      $('aiPromptInput').focus()
+      autoGrowInput()
+    } else {
+      showAiError('No se encontraron commits de Git en el proyecto.')
+    }
+  } catch (e) {
+    showAiError('Error al obtener commits: ' + e.message)
+  }
+}
+
+function showAiError(msg) {
+  const el = $('aiError')
+  el.textContent = msg
+  el.style.display = 'block'
+}
+
+async function sendAiChatMessage() {
+  const input = $('aiPromptInput')
+  const text = input.value.trim()
+  if (!text) return
+
+  $('aiError').style.display = 'none'
+  input.value = ''
+  input.style.height = 'auto'
+
+  chatMessages.push({ role: 'user', content: text })
+  renderChatMessage('user', text)
+
+  const thinking = renderThinking()
+  const submitBtn = $('aiSubmitBtn')
+  submitBtn.disabled = true
+
+  try {
+    const reply = await api.chatAiNotes(chatMessages)
+    chatMessages.push({ role: 'assistant', content: reply })
+
+    thinking.remove()
+    const { content } = renderChatMessage('assistant', reply)
+    renderDiffCard(content, reply)
+  } catch (e) {
+    thinking.remove()
+    showAiError(e.message || 'Error al conectar con DeepSeek AI.')
+  } finally {
+    submitBtn.disabled = false
+    input.focus()
+  }
+}
+
+function applyThemePreset(preset) {
+  $('aiPromptInput').value = 'Aplica el estilo visual ' + preset + ' a las notas de lanzamiento con colores y diseño acorde.'
+  sendAiChatMessage()
+}
+
+const aiPrompt = $('aiPromptInput')
+function autoGrowInput() {
+  aiPrompt.style.height = 'auto'
+  aiPrompt.style.height = Math.min(aiPrompt.scrollHeight, 120) + 'px'
+}
+aiPrompt.addEventListener('input', autoGrowInput)
+aiPrompt.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229) {
+    e.preventDefault()
+    sendAiChatMessage()
+  }
+})
+
+// ---------------------------------------------------------------------
+// Publish (release pipeline)
+// ---------------------------------------------------------------------
+function attachListeners() {
+  if (listenersAttached) return
+  listenersAttached = true
+
+  api.onOutput((chunk) => {
+    appendLog(chunk)
+    detectPhase(chunk)
+  })
+
+  if (typeof api.onStep === 'function') {
+    api.onStep(({ step, state }) => setStep(step, state))
+  }
+
+  api.onDone((success) => {
+    running = false
+    allowCloseDrawer()
+
+    if (pipelineMode === 'plugin') {
+      const btn = $('pluginPublishBtn')
+      if (btn) btn.disabled = false
+      document.querySelector('[data-view="plugins"]')?.classList.remove('running')
+
+      if (success) {
+        STEP_KEYS.forEach((k) => setStep(k, 'done'))
+        termGlyph.className = 'term-glyph ok'
+        termTitle.textContent = 'plugin pipeline — completado'
+        statusDot.className = 'status-dot ok'
+        statusText.textContent = `Plugin ${pluginPublishMeta.name} ${pluginPublishMeta.version} publicado`
+        resultBar.className = 'result-bar visible success'
+        resultText.textContent = `${pluginPublishMeta.name} ${pluginPublishMeta.version} está disponible en GitHub`
+        loadPluginsList()
+      } else {
+        const active = document.querySelector('.step.active')
+        if (active) setStep(active.dataset.step, 'error')
+        if (activeTask) finishTask(activeTask, 'error')
+        termGlyph.className = 'term-glyph err'
+        termTitle.textContent = 'plugin pipeline — fallido'
+        statusDot.className = 'status-dot err'
+        statusText.textContent = `Error al publicar el plugin ${pluginPublishMeta.name}`
+        resultBar.className = 'result-bar visible failure'
+        resultText.textContent = 'Algo salió mal — revisa la salida del terminal'
+        terminal.classList.remove('collapsed')
+      }
+      return
+    }
+
+    publishBtn.disabled = false
+    publishLabel.textContent = 'Publicar release'
+    versionInput.disabled = false
+    notesInput.disabled = false
+    document.querySelector('[data-view="release"]').classList.remove('running')
+
+    if (success) {
+      STEP_KEYS.forEach((k) => setStep(k, 'done'))
+      termGlyph.className = 'term-glyph ok'
+      termTitle.textContent = 'release pipeline — completado'
+      statusDot.className = 'status-dot ok'
+      statusText.textContent = 'Publicada v' + versionInput.value.trim()
+      resultBar.className = 'result-bar visible success'
+      resultText.textContent = 'v' + versionInput.value.trim() + ' está disponible en GitHub'
+      current = versionInput.value.trim()
+      $('currentVer').textContent = 'v' + current
+      $('settingsVer').textContent = 'v' + current
+    } else {
+      const active = document.querySelector('.step.active')
+      if (active) setStep(active.dataset.step, 'error')
+      if (activeTask) finishTask(activeTask, 'error')
+      termGlyph.className = 'term-glyph err'
+      termTitle.textContent = 'release pipeline — fallido'
+      statusDot.className = 'status-dot err'
+      statusText.textContent = 'La release ha fallado'
+      resultBar.className = 'result-bar visible failure'
+      resultText.textContent = 'Algo salió mal — revisa la salida del terminal'
+      terminal.classList.remove('collapsed')
+    }
+  })
+}
+
+function startPipeline(title, mode = 'release') {
+  pipelineMode = mode
+  resetFeed()
+  lines = 0
+  lineCount.textContent = '0 líneas'
+  resetSteps()
+  setStep('prepare', 'active')
+
+  resultBar.className = 'result-bar'
+  terminal.classList.remove('collapsed')
+  termGlyph.className = 'term-glyph running'
+  termTitle.textContent = title + ' — en ejecución'
+  statusDot.className = 'status-dot running'
+  openDrawer()
+}
+
+function publish() {
+  const ver = versionInput.value.trim()
+  if (!/^\d+\.\d+\.\d+$/.test(ver) || running) return
+
+  attachListeners()
+
+  running = true
+  pipelineMode = 'release'
+  publishBtn.disabled = true
+  publishLabel.textContent = 'Publicando…'
+  versionInput.disabled = true
+  notesInput.disabled = true
+  document.querySelector('[data-view="release"]').classList.add('running')
+
+  startPipeline('release pipeline')
+  statusText.textContent = 'Publicando v' + ver + '…'
+
+  const showModal = Boolean($('showModalCheck').checked)
+  api.release(ver, notesInput.value.trim(), showModal).catch(() => {
+    running = false
+    publishBtn.disabled = false
+    publishLabel.textContent = 'Publicar release'
+    versionInput.disabled = false
+    notesInput.disabled = false
+    document.querySelector('[data-view="release"]').classList.remove('running')
+    statusDot.className = 'status-dot err'
+    statusText.textContent = 'La release no pudo iniciarse'
+    allowCloseDrawer()
+  })
+}
+
+// ---------------------------------------------------------------------
+// Plugins
+// ---------------------------------------------------------------------
+let customPluginsFolderPath = null
+
+async function refreshPluginsList() {
+  const plugins = await api.getPlugins(customPluginsFolderPath)
+  const select = $('pluginSelect')
+  select.innerHTML = ''
+  if (plugins && plugins.length > 0) {
+    plugins.forEach((p) => {
+      const opt = document.createElement('option')
+      opt.value = p.id
+      opt.textContent = p.name + ' (' + p.id + ')'
+      select.appendChild(opt)
+    })
+    select.value = plugins[0].id
+    onPluginSelectChange()
+  } else {
+    const opt = document.createElement('option')
+    opt.value = 'cat-music'
+    opt.textContent = 'CatMusic (cat-music)'
+    select.appendChild(opt)
+  }
+}
+
+async function pickPluginsFolder() {
+  const folder = await api.selectPluginsFolder()
+  if (folder) {
+    customPluginsFolderPath = folder
+    $('pluginsFolderLabel').textContent = folder
+    await refreshPluginsList()
+  }
+}
+
+function onPluginSelectChange() {
+  const sel = $('pluginSelect')
+  if (!sel) return
+  const id = sel.value
+  const plugin = allPlugins.find(p => p.id === id)
+  if (plugin) {
+    if ($('pluginIdInput')) $('pluginIdInput').value = plugin.id
+    if ($('pluginNameInput')) $('pluginNameInput').value = plugin.name || plugin.id
+    if ($('pluginVersionInput')) $('pluginVersionInput').value = plugin.version || 'v1.0.0'
+  } else {
+    if ($('pluginIdInput')) $('pluginIdInput').value = id
+    if ($('pluginNameInput')) $('pluginNameInput').value = id === 'cat-music' ? 'CatMusic' : id.charAt(0).toUpperCase() + id.slice(1)
+  }
+}
+
+async function submitPublishPlugin() {
+  if (running) return
+
+  const pluginId = ($('pluginIdInput')?.value || 'cat-music').trim()
+  const pluginName = ($('pluginNameInput')?.value || 'CatMusic').trim()
+  const pluginVersion = ($('pluginVersionInput')?.value || 'v1.0.0').trim()
+  pluginPublishMeta = { id: pluginId, name: pluginName, version: pluginVersion }
+
+  const btn = $('pluginPublishBtn')
+  if (btn) btn.disabled = true
+
+  attachListeners()
+
+  running = true
+  document.querySelector('[data-view="plugins"]')?.classList.add('running')
+  startPipeline('plugin pipeline', 'plugin')
+  statusText.textContent = `Publicando plugin ${pluginName} ${pluginVersion}…`
+
+  api.publishPlugin({ id: pluginId, name: pluginName, version: pluginVersion }).catch((err) => {
+    running = false
+    if (btn) btn.disabled = false
+    document.querySelector('[data-view="plugins"]')?.classList.remove('running')
+    statusDot.className = 'status-dot err'
+    statusText.textContent = 'Error: ' + (err.message || err)
+    allowCloseDrawer()
+  })
+}
+
+function resetAll() {
+  running = false
+  versionInput.value = ''
+  notesInput.value = ''
+  versionDiff.innerHTML = ''
+  resetFeed()
+  lines = 0
+  lineCount.textContent = '0 líneas'
+  termGlyph.className = 'term-glyph'
+  termTitle.textContent = 'release pipeline'
+  resetSteps()
+  resultBar.className = 'result-bar'
+  publishBtn.disabled = false
+  publishLabel.textContent = 'Publicar release'
+  versionInput.disabled = false
+  notesInput.disabled = false
+  closeDrawer()
+  navTo('release')
+  versionInput.focus()
+}
+
+// ---------------------------------------------------------------------
+// Demo API — only used when window.releaseTool is unavailable
+// (lets you preview the UI in a normal browser)
+// ---------------------------------------------------------------------
+function createDemoApi() {
+  let outputCb = null
+  let stepCb = null
+  let doneCb = null
+  const delay = (ms) => new Promise((r) => setTimeout(r, ms))
+
+  return {
+    getConfig: async () => ({ hasToken: true, hasDeepseekKey: true, projectPath: 'C:\\Users\\dev\\Proyectos\\CatChat' }),
+    getVersion: async () => '1.4.2',
+    saveToken: () => {},
+    saveDeepSeekKey: () => {},
+    selectProject: async () => ({ path: 'C:\\Users\\dev\\Proyectos\\CatChat', version: '1.4.2' }),
+    getGitCommits: async () => [
+      'feat: nuevo reproductor de audio integrado',
+      'fix: corregido crash al abrir ajustes',
+      'perf: carga inicial un 40% más rápida',
+    ],
+    chatAiNotes: async () => {
+      await delay(4200)
+      return '## Novedades de la versión\n\n### Añadido\n- Nuevo reproductor de audio integrado\n- Atajos de teclado personalizables\n\n### Corregido\n- Crash al abrir la ventana de ajustes\n- Parpadeo del tema oscuro al iniciar\n\n### Rendimiento\n- Carga inicial un 40% más rápida'
+    },
+    getPlugins: async () => [{ id: 'cat-music', name: 'CatMusic' }],
+    selectPluginsFolder: async () => 'C:\\Users\\dev\\Proyectos\\CatChat\\lib\\plugins',
+    onOutput: (cb) => { outputCb = cb },
+    onStep: (cb) => { stepCb = cb },
+    onDone: (cb) => { doneCb = cb },
+    release: async () => {
+      const emit = (s, st) => stepCb && stepCb({ step: s, state: st })
+      const log = (t) => outputCb && outputCb(t + '\n')
+      await delay(400); log('• preparando entorno de release')
+      await delay(900); log('✓ package.json actualizado'); emit('prepare', 'done'); emit('build', 'active')
+      await delay(500); log('• electron-builder v25.1.8')
+      await delay(1200); log('• packaging platform=win32 arch=x64')
+      await delay(1600); log('✓ building block map'); emit('build', 'done'); emit('upload', 'active')
+      await delay(700); log('• uploading CatChat-Setup.exe (84.2 MB)')
+      await delay(1500); log('✓ asset subido'); emit('upload', 'done'); emit('publish', 'active')
+      await delay(800); log('✓ published: GitHub release creada'); emit('publish', 'done'); emit('git', 'active')
+      await delay(600); log('• committing & pushing')
+      await delay(900); log('✓ pushed to origin/main'); emit('git', 'done')
+      await delay(300); doneCb && doneCb(true)
+    },
+    publishPlugin: async () => {
+      const emit = (s, st) => stepCb && stepCb({ step: s, state: st })
+      const log = (t) => outputCb && outputCb(t + '\n')
+      await delay(400); log('📦 Packaging and publishing plugin [polimarket]...'); emit('prepare', 'active')
+      await delay(700); log('✓ Plugin manifest created: plugins/polimarket/manifest.json'); emit('prepare', 'done'); emit('build', 'active')
+      await delay(600); log('✓ Plugin release saved: plugins/polimarket/releases/v0.0.1.json')
+      await delay(500); log('✓ Building installer and packaging artifact...')
+      await delay(800); log('🚀 Uploading plugin release assets to GitHub...'); emit('build', 'done'); emit('upload', 'active')
+      await delay(900); log('✓ Created git tag: plugin-polimarket-v0.0.1'); emit('upload', 'done'); emit('publish', 'active')
+      await delay(700); log('✓ GitHub Release created for plugin-polimarket-v0.0.1'); emit('publish', 'done'); emit('git', 'active')
+      await delay(600); log('✓ Pushed plugin files and tag to GitHub!')
+      await delay(400); log('✓ Pushed to git and published plugin!'); emit('git', 'done')
+      await delay(200); doneCb && doneCb(true)
+      return { success: true }
+    },
+  }
+}
+
+// ---------------------------------------------------------------------
+// GitHub Releases & Plugins Management
+// ---------------------------------------------------------------------
+let allReleases = []
+let allPlugins = []
+let pendingDeleteAction = null
+
+async function loadGitHubReleases() {
+  const grid = $('releasesListGrid')
+  if (!grid) return
+  grid.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:20px;grid-column:1/-1">Cargando versiones desde GitHub...</div>'
+  
+  try {
+    const list = await window.releaseTool.getGitHubReleases()
+    allReleases = Array.isArray(list) ? list : []
+    renderReleases(allReleases)
+  } catch (e) {
+    grid.innerHTML = '<div style="color:var(--red);font-size:13px;padding:20px;grid-column:1/-1">Error al obtener releases de GitHub: ' + (e.message || e) + '</div>'
+  }
+}
+
+function filterReleases() {
+  const query = ($('releaseSearchInput')?.value || '').toLowerCase().trim()
+  if (!query) {
+    renderReleases(allReleases)
+    return
+  }
+  const filtered = allReleases.filter(r => 
+    (r.tagName && r.tagName.toLowerCase().includes(query)) ||
+    (r.name && r.name.toLowerCase().includes(query)) ||
+    (r.body && r.body.toLowerCase().includes(query)) ||
+    (r.author?.login && r.author.login.toLowerCase().includes(query))
+  )
+  renderReleases(filtered)
+}
+
+function renderReleases(releases) {
+  const grid = $('releasesListGrid')
+  const badge = $('releasesCountBadge')
+  if (!grid) return
+  if (badge) badge.textContent = `${releases.length} versiones`
+
+  if (!releases.length) {
+    grid.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:40px 20px;grid-column:1/-1;text-align:center">No se encontraron versiones que coincidan con la búsqueda.</div>'
+    return
+  }
+
+  grid.innerHTML = releases.map(r => {
+    const dateStr = r.publishedAt ? new Date(r.publishedAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Borrador'
+    const bodyText = (r.body || 'Sin descripción').slice(0, 180) + ((r.body || '').length > 180 ? '...' : '')
+    const assetsCount = (r.assets || []).length
+    return `
+      <div class="mod-card">
+        <div class="mod-card-header">
+          <div style="display:flex;align-items:center;gap:10px;min-width:0">
+            <span class="badge-tag">${escapeHtml(r.tagName || 'v0.0.0')}</span>
+            ${r.prerelease ? '<span class="badge-outline" style="color:var(--amber);border-color:var(--amber-soft)">Pre-release</span>' : ''}
+          </div>
+          <span style="font-size:11.5px;color:var(--muted)">${dateStr}</span>
+        </div>
+        <div class="mod-card-body">
+          <div class="mod-card-title">${escapeHtml(r.name || r.tagName)}</div>
+          <div class="mod-card-desc">${escapeHtml(bodyText)}</div>
+        </div>
+        <div class="mod-card-footer">
+          <div style="display:flex;align-items:center;gap:8px">
+            ${r.author?.avatarUrl ? `<img src="${escapeHtml(r.author.avatarUrl)}" style="width:20px;height:20px;border-radius:50%">` : ''}
+            <span style="font-size:11.5px;color:var(--muted);font-weight:600">${escapeHtml(r.author?.login || 'CatChat')}</span>
+            ${assetsCount ? `<span class="badge-outline">${assetsCount} descargas</span>` : ''}
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            ${r.htmlUrl ? `<a href="${escapeHtml(r.htmlUrl)}" target="_blank" class="btn btn-sm" title="Ver en GitHub" style="text-decoration:none;display:inline-flex;align-items:center;padding:5px 8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>` : ''}
+            <button type="button" class="btn-danger-soft" onclick="confirmDeleteRelease(${r.id}, '${escapeHtml(r.tagName)}', '${escapeHtml(r.name || r.tagName)}')" title="Eliminar Release">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    `
+  }).join('')
+}
+
+async function loadPluginsList() {
+  const grid = $('pluginsListGrid')
+  if (!grid) return
+  grid.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:20px;grid-column:1/-1">Cargando plugins del repositorio...</div>'
+
+  try {
+    const list = await window.releaseTool.getPlugins()
+    allPlugins = Array.isArray(list) ? list : []
+    renderPlugins(allPlugins)
+    refreshPluginSelectOptions(allPlugins)
+  } catch (e) {
+    grid.innerHTML = '<div style="color:var(--red);font-size:13px;padding:20px;grid-column:1/-1">Error al obtener plugins: ' + (e.message || e) + '</div>'
+  }
+}
+
+function filterPlugins() {
+  const query = ($('pluginSearchInput')?.value || '').toLowerCase().trim()
+  if (!query) {
+    renderPlugins(allPlugins)
+    return
+  }
+  const filtered = allPlugins.filter(p =>
+    (p.id && p.id.toLowerCase().includes(query)) ||
+    (p.name && p.name.toLowerCase().includes(query)) ||
+    (p.description && p.description.toLowerCase().includes(query))
+  )
+  renderPlugins(filtered)
+}
+
+function renderPlugins(plugins) {
+  const grid = $('pluginsListGrid')
+  const badge = $('pluginsCountBadge')
+  if (!grid) return
+  if (badge) badge.textContent = `${plugins.length} plugins`
+
+  if (!plugins.length) {
+    grid.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:40px 20px;grid-column:1/-1;text-align:center">No se encontraron plugins en el repositorio.</div>'
+    return
+  }
+
+  grid.innerHTML = plugins.map(p => `
+    <div class="mod-card">
+      <div class="mod-card-header">
+        <div class="mod-card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px"><path d="M12 22v-5"/><path d="M9 8V2h6v6"/><path d="M5 8h14a1 1 0 0 1 1 1v3a7 7 0 0 1-7 7h-2a7 7 0 0 1-7-7V9a1 1 0 0 1 1-1z"/></svg>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+          <span class="badge-tag">${escapeHtml(p.version || 'v1.0.0')}</span>
+          <div style="display:flex;gap:4px">
+            ${p.isLocal ? '<span class="badge-outline" style="color:var(--green);border-color:var(--green-soft)">Local</span>' : ''}
+            ${p.isPublished ? '<span class="badge-outline" style="color:var(--accent);border-color:var(--accent-soft)">Publicado</span>' : ''}
+          </div>
+        </div>
+      </div>
+      <div class="mod-card-body">
+        <div class="mod-card-title">${escapeHtml(p.name || p.id)}</div>
+        <div class="mod-card-desc">${escapeHtml(p.description || 'Plugin de CatChat')}</div>
+      </div>
+      <div class="mod-card-footer">
+        <span style="font-size:11.5px;color:var(--muted);font-family:var(--mono)">id: ${escapeHtml(p.id)}</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          <button type="button" class="btn btn-sm" onclick="selectPluginToPublish('${escapeHtml(p.id)}')" title="Publicar/Actualizar">
+            Publicar
+          </button>
+          <button type="button" class="btn-danger-soft" onclick="confirmDeletePlugin('${escapeHtml(p.id)}', '${escapeHtml(p.name || p.id)}')" title="Eliminar Plugin">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  `).join('')
+}
+
+function refreshPluginSelectOptions(plugins) {
+  const sel = $('pluginSelect')
+  if (!sel) return
+  if (!plugins || !plugins.length) {
+    sel.innerHTML = '<option value="cat-music">CatMusic (cat-music)</option>'
+    return
+  }
+  sel.innerHTML = plugins.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name || p.id)} (${escapeHtml(p.id)})</option>`).join('')
+}
+
+function selectPluginToPublish(pluginId) {
+  const sel = $('pluginSelect')
+  if (sel) {
+    sel.value = pluginId
+    onPluginSelectChange()
+  } else {
+    const plugin = allPlugins.find(p => p.id === pluginId)
+    if (plugin) {
+      if ($('pluginIdInput')) $('pluginIdInput').value = plugin.id
+      if ($('pluginNameInput')) $('pluginNameInput').value = plugin.name || plugin.id
+      if ($('pluginVersionInput')) $('pluginVersionInput').value = plugin.version || 'v1.0.0'
+    }
+  }
+  scrollToPublishPlugin()
+}
+
+function scrollToPublishPlugin() {
+  const card = $('pluginPublishCard')
+  const view = $('view-plugins')
+  if (card && view) {
+    view.scrollTo({ top: card.offsetTop - 20, behavior: 'smooth' })
+  }
+}
+
+function escapeHtml(str) {
+  if (!str) return ''
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
+
+// ---------------------------------------------------------------------
+// Confirmation Modal for Deletion
+// ---------------------------------------------------------------------
+function confirmDeleteRelease(releaseId, tagName, name) {
+  pendingDeleteAction = { type: 'release', releaseId, tagName, name }
+  $('deleteModalTitle').textContent = `Eliminar versión ${tagName}`
+  $('deleteModalDesc').textContent = `¿Estás seguro de que deseas eliminar permanentemente la release "${name}" (${tagName}) de GitHub? Esta acción eliminará el tag de Git y el asset de instalación.`
+  $('deleteConfirmModal').classList.add('open')
+}
+
+function confirmDeletePlugin(pluginId, name) {
+  pendingDeleteAction = { type: 'plugin', pluginId, name }
+  $('deleteModalTitle').textContent = `Eliminar plugin ${name}`
+  $('deleteModalDesc').textContent = `¿Estás seguro de que deseas eliminar el plugin "${name}" (ID: ${pluginId})? Se eliminará la carpeta del proyecto local y/o cualquier release asociada en GitHub.`
+  $('deleteConfirmModal').classList.add('open')
+}
+
+function closeDeleteModal() {
+  pendingDeleteAction = null
+  $('deleteConfirmModal').classList.remove('open')
+}
+
+async function executeDeleteAction() {
+  if (!pendingDeleteAction) return
+  const action = pendingDeleteAction
+  const confirmBtn = $('deleteModalConfirmBtn')
+  confirmBtn.disabled = true
+  confirmBtn.textContent = 'Eliminando...'
+
+  try {
+    if (action.type === 'release') {
+      await window.releaseTool.deleteGitHubRelease(action.releaseId, action.tagName)
+      closeDeleteModal()
+      loadGitHubReleases()
+    } else if (action.type === 'plugin') {
+      await window.releaseTool.deletePlugin(action.pluginId)
+      closeDeleteModal()
+      loadPluginsList()
+    }
+  } catch (e) {
+    alert('Error durante la eliminación: ' + (e.message || e))
+  } finally {
+    confirmBtn.disabled = false
+    confirmBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> Eliminar permanentemente'
+  }
+}
+
+function toggleTheme() {
+  const isLight = document.documentElement.classList.toggle('light');
+  try { localStorage.setItem('release-tool-theme', isLight ? 'light' : 'dark'); } catch {}
+}
+
+try {
+  if (localStorage.getItem('release-tool-theme') === 'light') {
+    document.documentElement.classList.add('light');
+  }
+} catch {}
+
+init()
+loadGitHubReleases()
+loadPluginsList()
+</script>
+
+  <!-- Modal de Confirmación de Eliminación -->
+  <div class="modal-overlay" id="deleteConfirmModal">
+    <div class="modal-box">
+      <h3 class="modal-title" id="deleteModalTitle">Confirmar eliminación</h3>
+      <p class="modal-desc" id="deleteModalDesc">¿Estás seguro de que deseas realizar esta eliminación?</p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-sm" onclick="closeDeleteModal()">Cancelar</button>
+        <button type="button" class="btn-danger-soft" id="deleteModalConfirmBtn" onclick="executeDeleteAction()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          Eliminar permanentemente
+        </button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

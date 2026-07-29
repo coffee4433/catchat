@@ -1,0 +1,19 @@
+# v0 runtime files
+__v0_runtime_loader.js
+__v0_devtools.tsx
+__v0_jsx-dev-runtime.ts
+
+# Common ignores
+node_modules
+.next/
+.env*.local
+.DS_Store
+dist/
+release-tool/dist/
+*.tsbuildinfo
+scratch/
+cat-music-player.zip
+1785236215*-player-script.js
+android/.gradle/
+android/release.keystore
+android/local.properties

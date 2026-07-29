@@ -1,0 +1,35 @@
+const { contextBridge, ipcRenderer } = require('electron')
+
+contextBridge.exposeInMainWorld('releaseTool', {
+  getVersion: () => ipcRenderer.invoke('get:version'),
+  selectProject: () => ipcRenderer.invoke('select:project'),
+  saveToken: (token) => ipcRenderer.invoke('save:token', token),
+  saveDeepSeekKey: (key) => ipcRenderer.invoke('save:deepseek-key', key),
+  getConfig: () => ipcRenderer.invoke('get:config'),
+  getGitCommits: () => ipcRenderer.invoke('get:git-commits'),
+  generateAiNotes: (prompt) => ipcRenderer.invoke('generate:ai-notes', prompt),
+  chatAiNotes: (messages) => ipcRenderer.invoke('chat:ai-notes', messages),
+  editReleaseNotesComponent: (code) => ipcRenderer.invoke('edit:release-notes-component', code),
+  getPlugins: (customDir) => ipcRenderer.invoke('get:plugins', customDir),
+  selectPluginsFolder: () => ipcRenderer.invoke('select:plugins-folder'),
+  publishPlugin: (pluginData) => ipcRenderer.invoke('publish:plugin', pluginData),
+  deletePlugin: (pluginId) => ipcRenderer.invoke('delete:plugin', pluginId),
+  getGitHubReleases: () => ipcRenderer.invoke('get:github-releases'),
+  deleteGitHubRelease: (releaseId, tagName) => ipcRenderer.invoke('delete:github-release', { releaseId, tagName }),
+  release: (version, notes, showModal) => ipcRenderer.invoke('release', version, notes, showModal),
+  onOutput: (cb) => {
+    const fn = (_e, chunk) => cb(chunk)
+    ipcRenderer.on('release:output', fn)
+    return () => ipcRenderer.removeListener('release:output', fn)
+  },
+  onStep: (cb) => {
+    const fn = (_e, data) => cb(data)
+    ipcRenderer.on('release:step', fn)
+    return () => ipcRenderer.removeListener('release:step', fn)
+  },
+  onDone: (cb) => {
+    const fn = (_e, success) => cb(success)
+    ipcRenderer.on('release:done', fn)
+    return () => ipcRenderer.removeListener('release:done', fn)
+  },
+})
