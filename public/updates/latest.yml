@@ -1,11 +1,27 @@
-version: 0.3.30
+version: 0.3.31
 files:
-  - url: https://github.com/coffee4433/catchat/releases/download/v0.3.30/CatChat-Setup-0.3.30.exe
-    sha512: mgCLwx2/kc/yBBTVlropg1Y7UlaE9AXTPrQ6HO1FssBKlnwFNHuYWrpXbkkxB3tZF1BbVP2ueNxV2/ZTjfMziA==
-    size: 324110019
-path: CatChat-Setup-0.3.30.exe
-sha512: mgCLwx2/kc/yBBTVlropg1Y7UlaE9AXTPrQ6HO1FssBKlnwFNHuYWrpXbkkxB3tZF1BbVP2ueNxV2/ZTjfMziA==
-releaseDate: '2026-07-29T05:36:11.541Z'
+  - url: https://github.com/coffee4433/catchat/releases/download/v0.3.31/CatChat-Setup-0.3.31.exe
+    sha512: UdRmVyfIrKPEve5Jixxonu+W8CLMjYkTCoppB0jNyJbV0fakZhXKKfwpMzuj8A7WTnparLmvbXENKscyX5Bu8Q==
+    size: 324013084
+path: CatChat-Setup-0.3.31.exe
+sha512: UdRmVyfIrKPEve5Jixxonu+W8CLMjYkTCoppB0jNyJbV0fakZhXKKfwpMzuj8A7WTnparLmvbXENKscyX5Bu8Q==
+releaseDate: '2026-07-29T08:34:28.006Z'
 showReleaseModal: true
 releaseNotes: |
-  CatChat v0.3.30
+  ## ✨ Novedades Destacadas
+  - [NUEVO] **Plugin Polimarket v0.0.1** – Integración oficial con Polimarket para consultar mercados y precios directamente desde CatChat.
+  - [MEJORA] **Transcripción de voz 100% precisa en español** – Ahora utilizamos **Deepgram Nova‑2** (API REST) para un dictado impecable, con:
+    - Acentos y mayúsculas correctos en cada palabra.
+    - Continuidad total en mensajes largos, sin cortes artificiales.
+  
+  > [!IMPORTANT]
+  > La transcripción ha sido completamente reescrita para eliminar los antiguos problemas de precisión. ¡Tu voz se convierte en texto exactamente como hablas!
+  
+  ## 🐛 Correcciones y Ajustes
+  - [MEJORA] **Eliminación completa** de la integración anterior de dictado por voz y limpieza de todo el código relacionado. Esto garantiza que no queden dependencias obsoletas ni conflictos internos.
+  
+  ## ⚡ Rendimiento y Optimización
+  - [MEJORA] El procesamiento de audio ahora usa el endpoint REST optimizado de **Deepgram Nova‑2**, reduciendo la latencia y el consumo de recursos durante la transcripción.
+  
+  ## 🎨 UI & Experiencia de Usuario
+  - La experiencia de dictado se mantiene transparente para el usuario: simplemente grabas tu voz y el texto aparece con la máxima fidelidad. La interfaz permanece sin cambios visibles para conservar la fluidez de uso.
