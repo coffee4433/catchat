@@ -6,8 +6,8 @@
   "description": "Plugin oficial CatMusic para CatChat con listas de reproducción y reproducción en vivo.",
   "category": "media",
   "iconName": "Radio",
-  "updatedAt": "2026-07-29T22:07:16.091Z",
+  "updatedAt": "2026-07-29T22:09:42.315Z",
   "githubUrl": "https://github.com/coffee4433/catchat/tree/main/plugins/cat-music",
-  "releasedAt": "2026-07-29T22:07:16.092Z",
+  "releasedAt": "2026-07-29T22:09:42.316Z",
   "downloadUrl": "https://raw.githubusercontent.com/coffee4433/catchat/main/plugins/cat-music/manifest.json"
 }
