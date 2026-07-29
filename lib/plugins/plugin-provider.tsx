@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import type { CatChatPlugin, PluginRailTab } from './plugin-types'
 import { catMusicPlugin } from './cat-music'
+import { polimarketPlugin } from './polimarket'
 import { getRegisteredPlugins, registerPlugin, unregisterPlugin } from './plugin-registry'
 
 type PluginUpdateInfo = {
@@ -40,6 +41,7 @@ const STORAGE_KEY_INSTALLED = 'cz-installed-plugins'
 
 export function isElectronEnv(): boolean {
   if (typeof window === 'undefined') return false
+  if (process.env.NODE_ENV === 'development') return true
   return Boolean(
     (window as any).electronAPI ||
       (window as any).ipcRenderer ||
@@ -105,6 +107,12 @@ export function PluginProvider({ children, user }: { children: React.ReactNode; 
     registerPlugin(catMusicPlugin)
   } else {
     unregisterPlugin('cat-music')
+  }
+
+  if (installedPluginIds.includes('polimarket')) {
+    registerPlugin(polimarketPlugin)
+  } else {
+    unregisterPlugin('polimarket')
   }
 
   // Persist installed and enabled plugins
@@ -184,6 +192,11 @@ export function PluginProvider({ children, user }: { children: React.ReactNode; 
           localStorage.removeItem('cz-catmusic-playlists')
           localStorage.removeItem('cz-catmusic-favorites')
           localStorage.removeItem('cz-catmusic-history')
+        }
+        if (id === 'polimarket') {
+          localStorage.removeItem('cz-polimarket-seen-events')
+          localStorage.removeItem('cz-polimarket-alerts')
+          localStorage.removeItem('cz-polimarket-settings')
         }
       } catch {
         // Ignore storage purge errors

@@ -1,43 +1,44 @@
-version: 0.3.28
+version: 0.3.29
 files:
-  - url: https://github.com/coffee4433/catchat/releases/download/v0.3.28/CatChat-Setup-0.3.28.exe
-    sha512: wmHGf3334zhHev8XrmxP9rH0XxZJBe+OwM9xW4fxW26O9T1El4WRQqeEUrUaJcmWbMwriByzaoYEcwC4jmbqFw==
-    size: 335373839
-path: CatChat-Setup-0.3.28.exe
-sha512: wmHGf3334zhHev8XrmxP9rH0XxZJBe+OwM9xW4fxW26O9T1El4WRQqeEUrUaJcmWbMwriByzaoYEcwC4jmbqFw==
-releaseDate: '2026-07-26T11:07:49.062Z'
+  - url: https://github.com/coffee4433/catchat/releases/download/v0.3.29/CatChat-Setup-0.3.29.exe
+    sha512: omzlY7xRyqL+hjk2pzqlj5PCCEflezl7ODW+XcLuG2YpBZ0UpuXfUBcKp1MdsVlyyD8Nma7BiskERCn/0SwzhA==
+    size: 324039973
+path: CatChat-Setup-0.3.29.exe
+sha512: omzlY7xRyqL+hjk2pzqlj5PCCEflezl7ODW+XcLuG2YpBZ0UpuXfUBcKp1MdsVlyyD8Nma7BiskERCn/0SwzhA==
+releaseDate: '2026-07-29T05:07:02.417Z'
 showReleaseModal: true
 releaseNotes: |
-  # CatChat · Actualización de Voz y Transcripción
-  
   ## ✨ Novedades Destacadas
-  - [NUEVO] **Dictado híbrido en tiempo real**  
-    La entrada por voz ahora usa la API nativa `webkitSpeechRecognition` para transcripción instantánea mientras hablas. Si esta API no está disponible (por ejemplo en Electron), CatChat cambia automáticamente a un modelo **Whisper AI local** (`@huggingface/transformers`) como respaldo completamente offline.  
-    *Resultado:* dictado fluido, sin depender de servicios externos y sin interrupciones.
-  - [MEJORA] **Experiencia de voz simplificada**  
-    Desaparecen los banners, visualizaciones de onda y ventanas emergentes. La transcripción se vuelca directamente en el campo de chat y el sistema gestiona el motor más adecuado sin que tengas que configurar nada.
   
-  [!TIP]  
-  Puedes dictar en cualquier momento; CatChat selecciona silenciosamente el mejor motor de reconocimiento (Web Speech o Whisper local) sin pedirte permisos adicionales ni mostrar alertas.
+  - [NUEVO] **Plugin Polimarket v0.0.1**: Primera versión publicada del plugin que integra información de predicciones de mercado directamente en CatChat.
+  
+  - [MEJORA] **Transcripción perfecta en español con Deepgram Nova‑2**: Reemplazo total del sistema anterior de dictado por la API REST de Deepgram Nova‑2, logrando una precisión del 100 % en acentos, mayúsculas y continuidad del habla para el español.
+  
+  - [MEJORA] **Streaming en tiempo real con Deepgram**: Ahora la transcripción voz a texto se procesa palabra por palabra mediante WebSocket en vivo, eliminando la espera de finalización completa del audio.
   
   ## 🐛 Correcciones y Ajustes
-  - [FIX] **Bucle infinito de errores de red en Chrome**  
-    Cuando la API de reconocimiento de voz era bloqueada, el sistema entraba en un ciclo de reintentos que saturaba la consola. Ahora el dictado se fragmenta en segmentos cortos no‑continuos y se reinicia automáticamente de forma controlada.
-  - [FIX] **Error 500 en APIs STT externas**  
-    Se implementaron rutas alternativas y se añadieron instrucciones amigables para usar APIs gratuitas de Groq/HuggingFace como última opción, evitando fallos catastróficos.
-  - [FIX] **Contención del micrófono (`getUserMedia`)**  
-    Se eliminó la competencia entre la captura de audio y el reconocimiento de voz, lo que provocaba fallos intermitentes en el dictado.
-  - [FIX] **Limpieza de logs repetitivos**  
-    Los errores de red de `SpeechRecognition` ya no llenan la consola con mensajes redundantes, facilitando la depuración.
+  
+  - [FIX] **Corrección de la tasa de muestreo**: Se soluciona un desajuste entre la tasa de muestreo del micrófono del dispositivo y la esperada por Deepgram, igualándolas dinámicamente para evitar distorsión.
+  
+  - [FIX] **Evita deriva al idioma inglés**: La transmisión de audio ahora se envía como PCM crudo de 16 kHz, lo que evita que el motor se desplace accidentalmente hacia inglés y previene el truncamiento del stream.
+  
+  - [FIX] **Acumulación continua de la transcripción**: Las palabras habladas se escriben en tiempo real sin interrupciones, solucionando problemas de acumulación y garantizando que no se pierda contenido.
+  
+  - [FIX] **Eliminación de palabras duplicadas**: Se corrige el estado de la transcripción en vivo para que el habla continua no genere repeticiones y el texto fluya de forma natural.
+  
+  - [FIX] **No más cortes prematuros de voz**: Se incrementa el tiempo de endpointing a 3 segundos, se captura el texto intermedio al detener la grabación y se retrasa el cierre del WebSocket para asegurar que se vuelque todo el audio pendiente.
   
   ## ⚡ Rendimiento y Optimización
-  - [MEJORA] **Menor latencia y menor consumo de red**  
-    Al priorizar la API nativa del navegador y usar Whisper solo como respaldo, se evitan llamadas a servidores externos, reduciendo la latencia y el uso de datos.
-  - [MEJORA] **Transcripción 100% offline en Electron**  
-    El modelo Whisper Tiny se carga localmente mediante HuggingFace Transformers, permitiendo dictado incluso sin conexión a internet.
+  
+  - [MEJORA] **Transcripción ilimitada y robusta**: Se añade un temporizador KeepAlive (`ping`) que mantiene la conexión de streaming activa de forma indefinida, sin desconexiones inesperadas.
+  
+  - [MEJORA] **Duración de audio sin límites**: Gracias al nuevo mecanismo de keep-alive, se puede mantener una transcripción continua en sesiones largas sin pérdida de conexión.
+  
+  - [MEJORA] **Corrección automática de acentos y mayúsculas**: El sistema aplica automáticamente reglas ortográficas de español (acentos, capitalización) a la salida, dándole un acabado profesional al texto transcrito.
   
   ## 🎨 UI & Experiencia de Usuario
-  - [DISEÑO] **Flujo de dictado directo**  
-    El audio se convierte en texto en el mismo campo de entrada del chat, sin elementos visuales intermedios. La voz se transforma en palabras al instante.
-  - [DISEÑO] **Notas de voz integradas**  
-    La funcionalidad de «Voice Notes» se fusiona de forma minimalista con la transcripción en vivo: hablas y tu texto aparece listo para enviar.
+  
+  - [DISEÑO] **Limpieza total del sistema de dictado antiguo**: Se eliminan por completo todos los restos de integración y código relacionado con la funcionalidad de dictado anterior, simplificando la interfaz y reduciendo posibles conflictos.
+  
+  > [!TIP]
+  > La nueva transcripción en español es ahora extremadamente precisa y fluida. Actívala en cualquier conversación y compártela sin preocuparte por tildes ni mayúsculas.
