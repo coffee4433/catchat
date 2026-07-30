@@ -1,11 +1,31 @@
-version: 0.3.37
+version: 0.3.38
 files:
-  - url: https://github.com/coffee4433/catchat/releases/download/v0.3.37/CatChat-Setup-0.3.37.exe
-    sha512: Kegwi9iesrgT7fYVKolFKUNzy4Z54jvOKbZf/YMFDJAfyhFaa4kyT2ODd1CeBDq0Ey7QimVS2aTforKXZ9WTZQ==
-    size: 324658868
-path: CatChat-Setup-0.3.37.exe
-sha512: Kegwi9iesrgT7fYVKolFKUNzy4Z54jvOKbZf/YMFDJAfyhFaa4kyT2ODd1CeBDq0Ey7QimVS2aTforKXZ9WTZQ==
-releaseDate: '2026-07-30T06:21:05.067Z'
+  - url: https://github.com/coffee4433/catchat/releases/download/v0.3.38/CatChat-Setup-0.3.38.exe
+    sha512: KUPgwYlsXuPZEtdqnRzmlpbc2IzkKmwgSVxkhSffgrkh6Q8oeQzTb1NJ0szXhEceDPFkE5jvBakY7GIGEor2yQ==
+    size: 324887119
+path: CatChat-Setup-0.3.38.exe
+sha512: KUPgwYlsXuPZEtdqnRzmlpbc2IzkKmwgSVxkhSffgrkh6Q8oeQzTb1NJ0szXhEceDPFkE5jvBakY7GIGEor2yQ==
+releaseDate: '2026-07-30T06:29:01.842Z'
 showReleaseModal: true
 releaseNotes: |
-  CatChat v0.3.37
+  ## ✨ Novedades Destacadas
+  
+  > [!NOTE]  
+  > ¡El plugin **CatMusic v0.0.6** ya está disponible! Trae la reproducción de música directamente a los canales de voz de CatChat con comandos slash, controles avanzados y un panel interactivo.
+  
+  - [NUEVO] **Comandos Slash (`/play`, `/skip`, `/pause`, `/queue`, `/nowplaying`)** para gestionar la música sin recordar prefijos.
+  - [NUEVO] **Soporte para YouTube y SoundCloud** como fuentes de audio, con búsqueda automática de canciones.
+  - [NUEVO] **Sistema de cola inteligente** con capacidad de añadir, eliminar y reordenar canciones desde un menú desplegable.
+  - [NUEVO] **Panel de reproducción interactivo** que muestra la portada, título, artista y barra de progreso en tiempo real.
+  - [NUEVO] **Control de volumen por usuario** (`/volume`) para ajustar la experiencia a tu gusto sin afectar a los demás.
+  - [NUEVO] **Modo DJ** configurable por rol, restringiendo los comandos de control a moderadores o roles asignados.
+  
+  ## 🎨 UI & Experiencia de Usuario
+  
+  - [DISEÑO] Los mensajes de estado de reproducción ahora se actualizan automáticamente, mostrando el progreso de la canción y reacciones para control rápido (▶️, ⏸️, ⏭️).
+  - [DISEÑO] Integración con **emojis personalizados de CatChat** para los botones del reproductor, manteniendo la identidad visual del ecosistema.
+  
+  ## ⚡ Rendimiento y Optimización
+  
+  - [MEJORA] La conexión al canal de voz se reanuda automáticamente tras desconexiones breves, evitando interrupciones inesperadas.
+  - [MEJORA] Caché de búsquedas recientes para reducir el tiempo de respuesta al repetir canciones.
