@@ -276,6 +276,48 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      position: relative;
+    }
+
+    /* Gusanos animados recorriendo el borde del logo */
+    .logo-border-worms {
+      position: absolute;
+      inset: -1px;
+      border-radius: 20px;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .logo-border-worms-mask {
+      position: absolute;
+      inset: 0;
+      border-radius: 20px;
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      padding: 2px;
+      overflow: hidden;
+    }
+
+    .logo-border-beams {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 340px;
+      height: 340px;
+      transform: translate(-50%, -50%);
+      background: conic-gradient(
+        from 0deg,
+        transparent 0%, transparent 7%, var(--border-worm-trans) 13%, var(--border-worm) 15.5%, #ffffff 16.66%,
+        transparent 16.66%, transparent 23.66%, var(--border-worm-trans) 29.66%, var(--border-worm) 32.16%, #ffffff 33.33%,
+        transparent 33.33%, transparent 40.33%, var(--border-worm-trans) 46.33%, var(--border-worm) 48.83%, #ffffff 50%,
+        transparent 50%, transparent 57%, var(--border-worm-trans) 63%, var(--border-worm) 65.5%, #ffffff 66.66%,
+        transparent 66.66%, transparent 73.66%, var(--border-worm-trans) 79.66%, var(--border-worm) 82.16%, #ffffff 83.33%,
+        transparent 83.33%, transparent 90.33%, var(--border-worm-trans) 96.33%, var(--border-worm) 98.83%, #ffffff 100%
+      );
+      animation: magic-spin 3.6s linear infinite;
     }
 
     .logo {
@@ -283,6 +325,8 @@
       height: 96px;
       object-fit: contain;
       border-radius: 20px;
+      position: relative;
+      z-index: 2;
       box-shadow:
         0 0 0 1px rgba(255, 255, 255, 0.1),
         0 16px 40px rgba(0, 0, 0, 0.45);
@@ -301,6 +345,8 @@
       color: var(--fg);
       font-weight: 700;
       box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+      position: relative;
+      z-index: 2;
     }
 
     .title {
@@ -309,12 +355,15 @@
       color: var(--fg);
       letter-spacing: -0.02em;
     }
-  </style>
+  
+canvas.grid-canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+
+</style>
 </head>
 <body>
   <div class="ambient" aria-hidden="true">
     <div class="grid-wrap">
-      <div class="grid-bg"></div>
+      <canvas class="grid-canvas" id="gridCanvas"></canvas>
       <div class="grid-worms grid-worms-h"></div>
       <div class="grid-worms grid-worms-h grid-worms-h-2"></div>
       <div class="grid-worms grid-worms-v"></div>
@@ -333,6 +382,11 @@
 
   <div class="content-wrapper">
     <div class="logo-container">
+      <div class="logo-border-worms" aria-hidden="true">
+        <div class="logo-border-worms-mask">
+          <div class="logo-border-beams"></div>
+        </div>
+      </div>
       <img
         class="logo"
         src="./icon.png"
@@ -343,5 +397,35 @@
     </div>
     <div class="title">CatChat</div>
   </div>
-</body>
+
+<script>
+const c=document.getElementById('gridCanvas'),x=c.getContext('2d');
+function r(){c.width=innerWidth;c.height=innerHeight}
+addEventListener('resize',r);r();
+function f(t){
+x.clearRect(0,0,c.width,c.height);
+const s=30,d=Math.hypot(c.width,c.height),p=(t*0.18)%(d+300)-150;
+for(let X=0;X<=c.width;X+=s){
+ let proj=X;
+ let dist=proj-p;
+ let a=Math.max(0,1-Math.abs(dist)/220);
+ let g=x.createLinearGradient(0,0,0,c.height);
+ g.addColorStop(0,`rgba(${255},${180+60*a},${40+180*a},${0.08+0.9*a})`);
+ g.addColorStop(.5,`rgba(255,255,255,${a})`);
+ g.addColorStop(1,`rgba(${255},${180+60*a},${40+180*a},${0.08+0.9*a})`);
+ x.strokeStyle=g;x.lineWidth=1;x.beginPath();x.moveTo(X,0);x.lineTo(X,c.height);x.stroke();
+}
+for(let Y=0;Y<=c.height;Y+=s){
+ let proj=Y;
+ let dist=proj-p;
+ let a=Math.max(0,1-Math.abs(dist)/220);
+ let g=x.createLinearGradient(0,0,c.width,0);
+ g.addColorStop(0,`rgba(${255},${180+60*a},${40+180*a},${0.08+0.9*a})`);
+ g.addColorStop(.5,`rgba(255,255,255,${a})`);
+ g.addColorStop(1,`rgba(${255},${180+60*a},${40+180*a},${0.08+0.9*a})`);
+ x.strokeStyle=g;x.lineWidth=1;x.beginPath();x.moveTo(0,Y);x.lineTo(c.width,Y);x.stroke();
+}
+requestAnimationFrame(f)}
+requestAnimationFrame(f);
+</script></body>
 </html>
