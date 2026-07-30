@@ -82,7 +82,14 @@ function sendBrowserNotification(alert: PolymarketAlert) {
   }
 }
 
-export function PolimarketRootProvider({ children }: { children: ReactNode; user?: unknown }) {
+export function PolimarketRootProvider({
+  children,
+  active = true,
+}: {
+  children: ReactNode
+  user?: unknown
+  active?: boolean
+}) {
   const [settings, setSettings] = useState<PolymarketSettings>(DEFAULT_SETTINGS)
   const [alerts, setAlerts] = useState<PolymarketAlert[]>([])
   const [latestEvents, setLatestEvents] = useState<Record<PolymarketCategory, PolymarketEvent[]>>({
@@ -211,12 +218,12 @@ export function PolimarketRootProvider({ children }: { children: ReactNode; user
   }, [processEvents])
 
   useEffect(() => {
-    if (!settings.monitoring) return
+    if (!active || !settings.monitoring) return
 
     refreshNow()
     const timer = setInterval(refreshNow, settings.pollIntervalMs)
     return () => clearInterval(timer)
-  }, [refreshNow, settings.monitoring, settings.pollIntervalMs])
+  }, [active, refreshNow, settings.monitoring, settings.pollIntervalMs])
 
   const markAlertRead = useCallback(
     (id: string) => {

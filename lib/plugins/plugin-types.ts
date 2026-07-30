@@ -32,7 +32,7 @@ export type CatChatPlugin = {
   /** Lower values appear first in the sidebar rail (after CatChat). */
   railOrder?: number
   railTabs?: PluginRailTab[]
-  rootProvider?: React.ComponentType<{ children: ReactNode; user: any }>
+  rootProvider?: React.ComponentType<{ children: ReactNode; user?: any; active?: boolean }>
   onEnable?: () => void
   onDisable?: () => void
 }

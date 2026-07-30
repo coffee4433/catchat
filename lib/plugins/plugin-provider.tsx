@@ -1,16 +1,18 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import type { CatChatPlugin, PluginRailTab } from './plugin-types'
 import { catMusicPlugin } from './cat-music'
 import { polimarketPlugin } from './polimarket'
 import { getRegisteredPlugins, registerPlugin, unregisterPlugin } from './plugin-registry'
+import { getPluginInstaller } from './plugin-installer-client'
 
 type PluginUpdateInfo = {
   available: boolean
   newVersion: string
   name: string
   releaseNotes?: string
+  downloadUrl?: string
 }
 
 type PluginContextType = {
@@ -27,6 +29,7 @@ type PluginContextType = {
   installPlugin: (id: string, isUpdate?: boolean) => Promise<void>
   updatePlugin: (id: string) => Promise<void>
   dismissPluginUpdate: (id: string) => void
+  refreshPluginUpdates: () => Promise<void>
   uninstallPlugin: (id: string) => void
   enablePlugin: (id: string) => void
   disablePlugin: (id: string) => void
@@ -38,6 +41,12 @@ const PluginContext = createContext<PluginContextType | null>(null)
 
 const STORAGE_KEY_ENABLED = 'cz-enabled-plugins'
 const STORAGE_KEY_INSTALLED = 'cz-installed-plugins'
+const PLUGIN_UPDATE_POLL_MS = 30_000
+
+const STABLE_ROOT_PROVIDERS = [
+  { id: 'cat-music' as const, Provider: catMusicPlugin.rootProvider! },
+  { id: 'polimarket' as const, Provider: polimarketPlugin.rootProvider! },
+]
 
 export function isElectronEnv(): boolean {
   if (typeof window === 'undefined') return false
@@ -72,35 +81,53 @@ export function PluginProvider({ children, user }: { children: React.ReactNode; 
   const [installProgressMap, setInstallProgressMap] = useState<Record<string, number>>({})
   const [pluginUpdates, setPluginUpdates] = useState<Record<string, PluginUpdateInfo>>({})
   const [liveVersionMap, setLiveVersionMap] = useState<Record<string, string>>({})
+  const [liveDownloadMap, setLiveDownloadMap] = useState<Record<string, string>>({})
 
-  // Fetch live published plugins from GitHub Releases API to detect available updates
-  useEffect(() => {
-    fetch('/api/plugins')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data?.plugins && Array.isArray(data.plugins)) {
-          const updatesMap: Record<string, PluginUpdateInfo> = {}
-          const vMap: Record<string, string> = {}
-          for (const p of data.plugins) {
-            const formattedRemote = p.version ? (p.version.startsWith('v') ? p.version : `v${p.version}`) : 'v1.0.0'
-            vMap[p.id] = formattedRemote
-            const installedVer = (localStorage.getItem(`cz-plugin-ver-${p.id}`) || '1.0.0').replace(/^v/, '')
-            const remoteVer = (p.version || '1.0.0').replace(/^v/, '')
-            if (installedPluginIds.includes(p.id) && remoteVer !== installedVer) {
-              updatesMap[p.id] = {
-                available: true,
-                newVersion: formattedRemote,
-                name: p.name || p.id,
-                releaseNotes: p.description,
-              }
+  const refreshPluginUpdates = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/plugins?_=${Date.now()}`, { cache: 'no-store' })
+      const data = await res.json()
+      if (data?.plugins && Array.isArray(data.plugins)) {
+        const updatesMap: Record<string, PluginUpdateInfo> = {}
+        const vMap: Record<string, string> = {}
+        const dMap: Record<string, string> = {}
+        for (const p of data.plugins) {
+          const formattedRemote = p.version ? (p.version.startsWith('v') ? p.version : `v${p.version}`) : 'v1.0.0'
+          vMap[p.id] = formattedRemote
+          if (p.downloadUrl) dMap[p.id] = p.downloadUrl
+          const installedVer = (localStorage.getItem(`cz-plugin-ver-${p.id}`) || '1.0.0').replace(/^v/, '')
+          const remoteVer = (p.version || '1.0.0').replace(/^v/, '')
+          if (installedPluginIds.includes(p.id) && remoteVer !== installedVer) {
+            updatesMap[p.id] = {
+              available: true,
+              newVersion: formattedRemote,
+              name: p.name || p.id,
+              releaseNotes: p.description,
+              downloadUrl: p.downloadUrl,
             }
           }
-          setLiveVersionMap(vMap)
-          setPluginUpdates(updatesMap)
         }
-      })
-      .catch(() => {})
+        setLiveVersionMap(vMap)
+        setLiveDownloadMap(dMap)
+        setPluginUpdates(updatesMap)
+      }
+    } catch {
+      // Ignore network errors; next poll will retry
+    }
   }, [installedPluginIds])
+
+  // Poll GitHub Releases API to detect plugin updates in near real-time
+  useEffect(() => {
+    refreshPluginUpdates()
+    const id = setInterval(refreshPluginUpdates, PLUGIN_UPDATE_POLL_MS)
+    return () => clearInterval(id)
+  }, [refreshPluginUpdates])
+
+  useEffect(() => {
+    const onFocus = () => refreshPluginUpdates()
+    window.addEventListener('focus', onFocus)
+    return () => window.removeEventListener('focus', onFocus)
+  }, [refreshPluginUpdates])
 
   // Synchronously ensure registeredPlugins matches installedPluginIds
   if (installedPluginIds.includes('cat-music')) {
@@ -136,33 +163,56 @@ export function PluginProvider({ children, user }: { children: React.ReactNode; 
   const getPluginUpdateInfo = (id: string) => pluginUpdates[id] || null
 
   const installPlugin = async (id: string, isUpdate = false) => {
-    if (!isElectronEnv()) return
+    const installer = getPluginInstaller()
+    if (!installer) return
     if (installingPluginId === id || (isPluginInstalled(id) && !isUpdate)) return
-    setInstallingPluginId(id)
-    setInstallProgressMap((prev) => ({ ...prev, [id]: 10 }))
 
-    // Simulate animated download & extraction from GitHub plugin registry
-    for (let progress = 20; progress <= 100; progress += 20) {
-      await new Promise((r) => setTimeout(r, 250))
-      setInstallProgressMap((prev) => ({ ...prev, [id]: progress }))
+    const targetVersion = pluginUpdates[id]?.newVersion || liveVersionMap[id] || 'v1.0.0'
+    const downloadUrl = pluginUpdates[id]?.downloadUrl || liveDownloadMap[id]
+    if (!downloadUrl) {
+      console.error(`[PluginProvider] No download URL for plugin "${id}"`)
+      return
     }
 
-    setInstalledPluginIds((prev) => (prev.includes(id) ? prev : [...prev, id]))
-    setEnabledPluginIds((prev) => (prev.includes(id) ? prev : [...prev, id]))
+    setInstallingPluginId(id)
+    setInstallProgressMap((prev) => ({ ...prev, [id]: 0 }))
 
-    const verToSave = pluginUpdates[id]?.newVersion || liveVersionMap[id] || 'v1.0.0'
-    localStorage.setItem(`cz-plugin-ver-${id}`, verToSave)
-
-    setPluginUpdates((prev) => {
-      const copy = { ...prev }
-      delete copy[id]
-      return copy
+    const unsubProgress = installer.onDownloadProgress((progress) => {
+      if (progress.pluginId !== id) return
+      setInstallProgressMap((prev) => ({ ...prev, [id]: progress.percent }))
     })
 
-    setInstallingPluginId(null)
+    try {
+      await installer.install({
+        pluginId: id,
+        version: targetVersion,
+        downloadUrl,
+      })
 
-    const plugin = registered.find((p) => p.metadata.id === id)
-    plugin?.onEnable?.()
+      setInstalledPluginIds((prev) => (prev.includes(id) ? prev : [...prev, id]))
+      setEnabledPluginIds((prev) => (prev.includes(id) ? prev : [...prev, id]))
+      localStorage.setItem(`cz-plugin-ver-${id}`, targetVersion)
+
+      setPluginUpdates((prev) => {
+        const copy = { ...prev }
+        delete copy[id]
+        return copy
+      })
+
+      const plugin = registered.find((p) => p.metadata.id === id)
+      plugin?.onEnable?.()
+      await refreshPluginUpdates()
+    } catch (err) {
+      console.error(`[PluginProvider] Failed to install plugin "${id}":`, err)
+    } finally {
+      unsubProgress()
+      setInstallingPluginId(null)
+      setInstallProgressMap((prev) => {
+        const copy = { ...prev }
+        delete copy[id]
+        return copy
+      })
+    }
   }
 
   const updatePlugin = async (id: string) => {
@@ -250,15 +300,16 @@ export function PluginProvider({ children, user }: { children: React.ReactNode; 
     })
   }
 
-  // Nest root providers of ALL registered plugins STABLY so React component tree never unmounts
+  // Nest root providers in a fixed order so React never remounts children when plugins change
   let wrappedContent = <>{children}</>
 
-  registered.forEach((plugin) => {
-    if (plugin.rootProvider) {
-      const Provider = plugin.rootProvider
-      wrappedContent = <Provider user={user}>{wrappedContent}</Provider>
-    }
-  })
+  for (const { id, Provider } of [...STABLE_ROOT_PROVIDERS].reverse()) {
+    wrappedContent = (
+      <Provider key={id} user={user} active={installedPluginIds.includes(id)}>
+        {wrappedContent}
+      </Provider>
+    )
+  }
 
   return (
     <PluginContext.Provider
@@ -276,6 +327,7 @@ export function PluginProvider({ children, user }: { children: React.ReactNode; 
         installPlugin,
         updatePlugin,
         dismissPluginUpdate,
+        refreshPluginUpdates,
         uninstallPlugin,
         enablePlugin,
         disablePlugin,

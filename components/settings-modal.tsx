@@ -77,6 +77,7 @@ export function SettingsModal({
   const [active, setActive] = useState<Section>('account')
   const [sidebarSearch, setSidebarSearch] = useState('')
   const contentRef = useRef<HTMLDivElement>(null)
+  const prevOpenRef = useRef(false)
 
   // Sub-navigation items for "Cuenta" (Account) section
   const accountSubItems = [
@@ -118,9 +119,12 @@ export function SettingsModal({
       : items
 
   useEffect(() => {
+    if (open && !prevOpenRef.current) {
+      setActive('account')
+      setSidebarSearch('')
+    }
+    prevOpenRef.current = open
     if (!open) return
-    setActive('account')
-    setSidebarSearch('')
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
     }

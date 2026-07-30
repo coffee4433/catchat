@@ -2,6 +2,7 @@ const fs = require('fs')
 const path = require('path')
 const { execSync } = require('child_process')
 const https = require('https')
+const AdmZip = require('adm-zip')
 
 const rootDir = path.resolve(__dirname, '..')
 const pluginId = process.env.PLUGIN_ID || 'cat-music'
@@ -91,7 +92,7 @@ function createGitHubRelease({ tagName, name, body, token }) {
         })
         res.on('end', () => {
           if (res.statusCode >= 200 && res.statusCode < 300) {
-            resolve({ statusCode: res.statusCode, data })
+            resolve({ statusCode: res.statusCode, data: JSON.parse(data) })
             return
           }
           reject(new Error(`GitHub Release API respondió ${res.statusCode}: ${data}`))
@@ -103,6 +104,53 @@ function createGitHubRelease({ tagName, name, body, token }) {
     req.write(postData)
     req.end()
   })
+}
+
+function uploadGitHubReleaseAsset({ releaseId, filePath, fileName, token }) {
+  return new Promise((resolve, reject) => {
+    const fileBuffer = fs.readFileSync(filePath)
+    const req = https.request(
+      {
+        hostname: 'uploads.github.com',
+        path: `/repos/coffee4433/catchat/releases/${releaseId}/assets?name=${encodeURIComponent(fileName)}`,
+        method: 'POST',
+        headers: {
+          'User-Agent': 'CatChat-ReleaseTool',
+          Authorization: `token ${token}`,
+          'Content-Type': 'application/zip',
+          'Content-Length': fileBuffer.length,
+        },
+      },
+      (res) => {
+        let data = ''
+        res.on('data', (chunk) => {
+          data += chunk
+        })
+        res.on('end', () => {
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            resolve(JSON.parse(data))
+            return
+          }
+          reject(new Error(`GitHub asset upload respondió ${res.statusCode}: ${data}`))
+        })
+      },
+    )
+
+    req.on('error', reject)
+    req.write(fileBuffer)
+    req.end()
+  })
+}
+
+function packagePluginZip(pluginRepoDir, pluginId, pluginVersion) {
+  const zipName = `${pluginId}-${pluginVersion}.zip`
+  const zipPath = path.join(rootDir, 'dist', 'plugins', zipName)
+  fs.mkdirSync(path.dirname(zipPath), { recursive: true })
+
+  const zip = new AdmZip()
+  zip.addLocalFolder(pluginRepoDir, pluginId)
+  zip.writeZip(zipPath)
+  return { zipPath, zipName }
 }
 
 console.log(`\n📦 Packaging and publishing plugin [${pluginId}] into repository plugins/ structure...`)
@@ -139,8 +187,11 @@ console.log(`✓ Plugin manifest created: plugins/${pluginId}/manifest.json`)
 const releaseData = {
   ...manifest,
   releasedAt: new Date().toISOString(),
-  downloadUrl: `https://raw.githubusercontent.com/coffee4433/catchat/main/plugins/${pluginId}/manifest.json`,
+  downloadUrl: `https://github.com/coffee4433/catchat/releases/download/plugin-${pluginId}-${pluginVersion}/${pluginId}-${pluginVersion}.zip`,
 }
+
+const { zipPath, zipName } = packagePluginZip(pluginRepoDir, pluginId, pluginVersion)
+console.log(`✓ Plugin zip packaged: dist/plugins/${zipName}`)
 
 const releasePath = path.join(releasesDir, `${pluginVersion}.json`)
 fs.writeFileSync(releasePath, JSON.stringify(releaseData, null, 2), 'utf8')
@@ -216,6 +267,19 @@ async function publishToGitHub(manifest) {
     token: ghToken,
   })
   console.log(`✓ GitHub Release created for ${tagName} (status ${result.statusCode})`)
+
+  try {
+    const asset = await uploadGitHubReleaseAsset({
+      releaseId: result.data.id,
+      filePath: zipPath,
+      fileName: zipName,
+      token: ghToken,
+    })
+    console.log(`✓ Plugin zip uploaded: ${asset.name} (${asset.browser_download_url})`)
+  } catch (err) {
+    console.error(`⚠ No se pudo subir el zip del plugin: ${err.message}`)
+  }
+
   console.log('✓ Pushed to git and published plugin!')
 }
 

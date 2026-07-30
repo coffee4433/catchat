@@ -209,13 +209,14 @@ export function UserDock({
   onOpenCatMusic?: () => void
 }) {
   const { t, lang } = useLanguage()
-  const { isPluginEnabled, pluginUpdates, updatePlugin, dismissPluginUpdate } = usePlugins()
+  const { isPluginEnabled, pluginUpdates, updatePlugin, dismissPluginUpdate, installingPluginId, installProgressMap } = usePlugins()
   const router = useRouter()
   const [signingOut, setSigningOut] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
   const dockRef = useRef<HTMLDivElement>(null)
   const downloadingRef = useRef(false)
   const updateSeenRef = useRef(false)
+  const pluginUpdateSeenRef = useRef(false)
 
   const [update, setUpdate] = useState<UpdateState>({ phase: 'idle' })
   const [appVersion, setAppVersion] = useState<string | null>(
@@ -320,11 +321,23 @@ export function UserDock({
   const activePluginUpdateId = Object.keys(pluginUpdates || {})[0]
   const activePluginUpdate = activePluginUpdateId ? pluginUpdates[activePluginUpdateId] : null
   const hasPluginUpdate = Boolean(activePluginUpdate)
+  const isPluginUpdating = Boolean(activePluginUpdateId && installingPluginId === activePluginUpdateId)
+  const pluginUpdateProgress = activePluginUpdateId ? (installProgressMap[activePluginUpdateId] || 0) : 0
 
   const { activeCall } = useCallContext()
   const hasActiveCall = Boolean(activeCall)
   const hasUpdate = update.phase !== 'idle'
   const glowActive = showMenu || hasUpdate || hasPluginUpdate || hasActiveCall
+
+  useEffect(() => {
+    if (hasPluginUpdate && !pluginUpdateSeenRef.current) {
+      pluginUpdateSeenRef.current = true
+      setShowMenu(true)
+    }
+    if (!hasPluginUpdate) {
+      pluginUpdateSeenRef.current = false
+    }
+  }, [hasPluginUpdate])
 
   const wasPlayingBeforeCallRef = useRef(false)
 
@@ -582,12 +595,29 @@ export function UserDock({
                           </p>
                         )}
                       </div>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); activePluginUpdateId && updatePlugin(activePluginUpdateId) }}
-                        className="w-full flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-emerald-500 transition-all active:scale-[0.98] shadow-lg shadow-emerald-600/25"
-                      >
-                        <Download className="size-3.5" /> {lang === 'es' ? 'Actualizar Plugin' : 'Update Plugin'}
-                      </button>
+                      {isPluginUpdating ? (
+                        <div className="space-y-2.5">
+                          <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                            <span>{lang === 'es' ? 'Descargando actualización…' : 'Downloading update…'}</span>
+                            <span>{pluginUpdateProgress}%</span>
+                          </div>
+                          <div className="h-2 rounded-full bg-secondary overflow-hidden">
+                            <motion.div
+                              className="h-full rounded-full bg-emerald-500"
+                              initial={{ width: 0 }}
+                              animate={{ width: `${pluginUpdateProgress}%` }}
+                              transition={{ duration: 0.3, ease: 'easeOut' }}
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); activePluginUpdateId && updatePlugin(activePluginUpdateId) }}
+                          className="w-full flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-emerald-500 transition-all active:scale-[0.98] shadow-lg shadow-emerald-600/25"
+                        >
+                          <Download className="size-3.5" /> {lang === 'es' ? 'Actualizar Plugin' : 'Update Plugin'}
+                        </button>
+                      )}
                     </div>
                   </div>
                 ) : (

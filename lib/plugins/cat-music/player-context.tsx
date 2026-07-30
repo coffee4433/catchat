@@ -26,7 +26,13 @@ type PlayerContextType = {
 
 const PlayerContext = createContext<PlayerContextType | null>(null)
 
-export function CatMusicPlayerProvider({ children }: { children: React.ReactNode }) {
+export function CatMusicPlayerProvider({
+  children,
+  active = true,
+}: {
+  children: React.ReactNode
+  active?: boolean
+}) {
   const playerState = useSyncExternalStore(
     catMusicStore.subscribe,
     catMusicStore.getSnapshot,
@@ -41,6 +47,7 @@ export function CatMusicPlayerProvider({ children }: { children: React.ReactNode
 
   // Initialize YT Player once inside isolated hidden container outside React VDOM
   useEffect(() => {
+    if (!active) return
     let mounted = true
 
     loadYouTubeIframeApi().then((YT) => {
@@ -112,10 +119,11 @@ export function CatMusicPlayerProvider({ children }: { children: React.ReactNode
     return () => {
       mounted = false
     }
-  }, [])
+  }, [active, currentTrack])
 
   // Position ticker via rAF (throttled to avoid frame drops)
   useEffect(() => {
+    if (!active) return
     let lastTick = 0
 
     const tick = (now: number) => {
@@ -144,23 +152,22 @@ export function CatMusicPlayerProvider({ children }: { children: React.ReactNode
     return () => {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current)
     }
-  }, [playerState.isPlaying, currentTrack])
+  }, [active, playerState.isPlaying, currentTrack])
 
   // Sync MediaSession API for OS media controls
   useEffect(() => {
-    if (typeof window !== 'undefined' && 'mediaSession' in navigator && currentTrack) {
-      navigator.mediaSession.metadata = new MediaMetadata({
-        title: currentTrack.title,
-        artist: currentTrack.artist,
-        album: currentTrack.album || 'CatMusic',
-        artwork: [{ src: currentTrack.artworkUrl, sizes: '512x512', type: 'image/jpeg' }],
-      })
-      navigator.mediaSession.setActionHandler('play', () => togglePlayPause())
-      navigator.mediaSession.setActionHandler('pause', () => togglePlayPause())
-      navigator.mediaSession.setActionHandler('previoustrack', () => previousTrack())
-      navigator.mediaSession.setActionHandler('nexttrack', () => nextTrack())
-    }
-  }, [currentTrack])
+    if (!active || typeof window === 'undefined' || !('mediaSession' in navigator) || !currentTrack) return
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: currentTrack.title,
+      artist: currentTrack.artist,
+      album: currentTrack.album || 'CatMusic',
+      artwork: [{ src: currentTrack.artworkUrl, sizes: '512x512', type: 'image/jpeg' }],
+    })
+    navigator.mediaSession.setActionHandler('play', () => togglePlayPause())
+    navigator.mediaSession.setActionHandler('pause', () => togglePlayPause())
+    navigator.mediaSession.setActionHandler('previoustrack', () => previousTrack())
+    navigator.mediaSession.setActionHandler('nexttrack', () => nextTrack())
+  }, [active, currentTrack])
 
   const handleTrackEnded = () => {
     const s = catMusicStore.getSnapshot()

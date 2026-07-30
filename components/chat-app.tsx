@@ -24,22 +24,16 @@ export type Conversation = ConversationListItem
 function ChatAppInner({
   user,
   initialConversations,
+  onOpenSettings,
 }: {
   user: AppUser
   initialConversations: ConversationListItem[]
+  onOpenSettings: () => void
 }) {
   const [activeView, setActiveView] = useState<string>('chat')
   const [searchOpen, setSearchOpen] = useState(false)
   const [newChatOpen, setNewChatOpen] = useState(false)
-  const [settingsOpen, setSettingsOpen] = useState(false)
   const [infoOpen, setInfoOpen] = useState(true)
-  const [theme, setTheme] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('cz-theme')
-      if (saved && themes.some((t) => t.id === saved)) return saved
-    }
-    return 'light'
-  })
   const [activeConversationId, setActiveConversationId] = useState<number | null>(
     initialConversations[0]?.id ?? null,
   )
@@ -85,16 +79,6 @@ function ChatAppInner({
 
   const closeSearch = useCallback(() => setSearchOpen(false), [])
   const closeNewChat = useCallback(() => setNewChatOpen(false), [])
-  const closeSettings = useCallback(() => setSettingsOpen(false), [])
-
-  useEffect(() => {
-    const t = themes.find((x) => x.id === theme)
-    const root = document.documentElement
-    root.setAttribute('data-theme', theme)
-    root.classList.toggle('dark', Boolean(t?.dark))
-    root.classList.toggle('light', !t?.dark)
-    localStorage.setItem('cz-theme', theme)
-  }, [theme])
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -169,7 +153,7 @@ function ChatAppInner({
                 : 'rounded-3xl border border-border/40 bg-card/40 backdrop-blur-xl'
             }`}
           >
-            <PluginViewComponent user={user} onOpenSettings={() => setSettingsOpen(true)} />
+            <PluginViewComponent user={user} onOpenSettings={onOpenSettings} />
           </div>
         )}
 
@@ -197,16 +181,9 @@ function ChatAppInner({
             mutateConversations()
           }}
         />
-        <SettingsModal
-          open={settingsOpen}
-          onClose={closeSettings}
-          theme={theme}
-          onThemeChange={setTheme}
-          user={user}
-        />
         <ReleaseNotesModal />
         <UserDock
-          onOpenSettings={() => setSettingsOpen(true)}
+          onOpenSettings={onOpenSettings}
           user={user}
           activeView={activeView}
           onOpenCatMusic={() => setActiveView('cat-music')}
@@ -217,9 +194,34 @@ function ChatAppInner({
 }
 
 export function ChatApp(props: { user: AppUser; initialConversations: ConversationListItem[] }) {
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [theme, setTheme] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('cz-theme')
+      if (saved && themes.some((t) => t.id === saved)) return saved
+    }
+    return 'light'
+  })
+
+  useEffect(() => {
+    const t = themes.find((x) => x.id === theme)
+    const root = document.documentElement
+    root.setAttribute('data-theme', theme)
+    root.classList.toggle('dark', Boolean(t?.dark))
+    root.classList.toggle('light', !t?.dark)
+    localStorage.setItem('cz-theme', theme)
+  }, [theme])
+
   return (
     <PluginProvider user={props.user}>
-      <ChatAppInner {...props} />
+      <ChatAppInner {...props} onOpenSettings={() => setSettingsOpen(true)} />
+      <SettingsModal
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        theme={theme}
+        onThemeChange={setTheme}
+        user={props.user}
+      />
     </PluginProvider>
   )
 }

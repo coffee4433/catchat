@@ -4,6 +4,7 @@ const fs = require('fs')
 const http = require('http')
 const { autoUpdater } = require('electron-updater')
 const { registerCommandRunnerIPC } = require('./electron/commandRunner')
+const { registerPluginInstallerIPC } = require('./electron/pluginInstaller')
 
 
 // This helps the embedded Next server find `DATABASE_URL` and other runtime vars.
@@ -165,6 +166,7 @@ function createWindow() {
 
   // Register command runner IPC handlers
   registerCommandRunnerIPC(mainWindow)
+  registerPluginInstallerIPC(mainWindow)
 
   // Auto-grant media permissions for local origin
   mainWindow.webContents.session.setPermissionRequestHandler(

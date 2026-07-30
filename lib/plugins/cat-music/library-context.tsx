@@ -35,7 +35,13 @@ const DEFAULT_SETTINGS: CatMusicSettings = {
 
 const DEFAULT_PLAYLISTS: Playlist[] = []
 
-export function LibraryProvider({ children }: { children: React.ReactNode }) {
+export function LibraryProvider({
+  children,
+  active = true,
+}: {
+  children: React.ReactNode
+  active?: boolean
+}) {
   const [favorites, setFavorites] = useState<Track[]>(() => [])
   const [playlists, setPlaylists] = useState<Playlist[]>(DEFAULT_PLAYLISTS)
   const [history, setHistory] = useState<PlayHistoryEntry[]>([])
@@ -43,7 +49,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   const loadedRef = useRef(false)
 
   useEffect(() => {
-    if (typeof window === 'undefined') return
+    if (!active || typeof window === 'undefined') return
     try {
       const saved = localStorage.getItem(STORAGE_KEY)
       if (saved) {
@@ -60,11 +66,11 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
       }
     } catch {}
     loadedRef.current = true
-  }, [])
+  }, [active])
 
   // Sync from Supabase on mount (after local load)
   useEffect(() => {
-    if (typeof window === 'undefined' || !loadedRef.current) return
+    if (!active || typeof window === 'undefined' || !loadedRef.current) return
     loadCatMusicLibrary()
       .then((remote) => {
         if (remote.favorites && remote.favorites.length > 0) {
@@ -95,7 +101,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         }
       })
       .catch(() => {})
-  }, [])
+  }, [active])
 
   // Save to Supabase (debounced)
   const supabaseSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -122,11 +128,11 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   settingsRef.current = settings
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !loadedRef.current) return
+    if (!active || typeof window === 'undefined' || !loadedRef.current) return
     const snapshot = { favorites, playlists, history, settings }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot))
     saveToSupabase()
-  }, [favorites, playlists, history, settings, saveToSupabase])
+  }, [active, favorites, playlists, history, settings, saveToSupabase])
 
   const isFavorite = (trackId: string) => favorites.some((t) => t.id === trackId)
 

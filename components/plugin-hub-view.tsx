@@ -15,7 +15,8 @@ import {
   Trash2,
   Zap,
 } from 'lucide-react'
-import { isElectronEnv, usePlugins } from '@/lib/plugins/plugin-provider'
+import { usePlugins } from '@/lib/plugins/plugin-provider'
+import { getPluginInstaller } from '@/lib/plugins/plugin-installer-client'
 import { useLanguage } from '@/lib/i18n'
 
 export type StorePluginItem = {
@@ -63,9 +64,11 @@ export function PluginHubView({ onClose }: { onClose?: () => void }) {
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [hubPlugins, setHubPlugins] = useState<StorePluginItem[]>(AVAILABLE_HUB_PLUGINS)
   const [mounted, setMounted] = useState(false)
+  const [canInstallPlugins, setCanInstallPlugins] = useState(false)
 
   useEffect(() => {
     setMounted(true)
+    setCanInstallPlugins(Boolean(getPluginInstaller()))
   }, [])
 
   const {
@@ -89,16 +92,27 @@ export function PluginHubView({ onClose }: { onClose?: () => void }) {
     { id: 'utility', label: lang === 'es' ? 'Utilidades' : 'Utilities', icon: Command },
   ] as const
 
-  // Fetch live published plugins from GitHub Releases API
+  // Fetch live published plugins from GitHub Releases API (polled for near real-time updates)
   React.useEffect(() => {
-    fetch('/api/plugins')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data?.plugins && Array.isArray(data.plugins)) {
-          setHubPlugins(data.plugins)
-        }
-      })
-      .catch(() => {})
+    const loadPlugins = () => {
+      fetch(`/api/plugins?_=${Date.now()}`, { cache: 'no-store' })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data?.plugins && Array.isArray(data.plugins)) {
+            setHubPlugins(data.plugins)
+          }
+        })
+        .catch(() => {})
+    }
+
+    loadPlugins()
+    const id = setInterval(loadPlugins, 30_000)
+    const onFocus = () => loadPlugins()
+    window.addEventListener('focus', onFocus)
+    return () => {
+      clearInterval(id)
+      window.removeEventListener('focus', onFocus)
+    }
   }, [])
 
   const filteredPlugins = hubPlugins.filter((p) => {
@@ -112,7 +126,7 @@ export function PluginHubView({ onClose }: { onClose?: () => void }) {
     return matchesSearch && matchesCategory
   })
 
-  const isElectron = isElectronEnv()
+  const isElectron = canInstallPlugins
 
   return (
     <div className="relative flex h-full w-full flex-col overflow-hidden bg-background text-foreground select-none">

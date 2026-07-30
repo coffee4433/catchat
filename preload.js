@@ -44,6 +44,16 @@ contextBridge.exposeInMainWorld("updater", {
   getVersion: () => ipcRenderer.invoke("app:version"),
 });
 
+contextBridge.exposeInMainWorld("pluginInstaller", {
+  install: (payload) => ipcRenderer.invoke("plugin:install", payload),
+  getInstallPath: (pluginId) => ipcRenderer.invoke("plugin:get-install-path", pluginId),
+  onDownloadProgress: (callback) => {
+    const listener = (_event, progress) => callback(progress);
+    ipcRenderer.on("plugin:download-progress", listener);
+    return () => ipcRenderer.removeListener("plugin:download-progress", listener);
+  },
+});
+
 contextBridge.exposeInMainWorld("screenShare", {
   onSources: (cb) => {
     const listener = (_e, sources) => cb(sources);

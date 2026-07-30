@@ -2,6 +2,24 @@ import { NextResponse } from 'next/server'
 import fs from 'fs'
 import path from 'path'
 
+function resolvePluginDownloadUrl(release: any, pluginId: string, pluginVersion: string) {
+  const zipAsset = Array.isArray(release.assets)
+    ? release.assets.find(
+        (asset: any) =>
+          asset?.name === `${pluginId}-${pluginVersion}.zip` ||
+          asset?.name === `${pluginId}-${pluginVersion.replace(/^v/, '')}.zip` ||
+          asset?.name?.endsWith('.zip'),
+      )
+    : null
+
+  if (zipAsset?.browser_download_url) {
+    return zipAsset.browser_download_url
+  }
+
+  const tagName = release.tag_name || `plugin-${pluginId}-${pluginVersion}`
+  return `https://github.com/coffee4433/catchat/releases/download/${tagName}/${pluginId}-${pluginVersion}.zip`
+}
+
 export async function GET() {
   const plugins: any[] = []
   const foundIds = new Set<string>()
@@ -45,6 +63,7 @@ export async function GET() {
                 author: manifest.author || r.author?.login || 'coffee4433',
                 icon: manifest.icon || `/plugins/${pluginId}/icon.png`,
                 githubUrl: r.html_url || `https://github.com/coffee4433/catchat/releases/tag/${r.tag_name}`,
+                downloadUrl: resolvePluginDownloadUrl(r, pluginId, pluginVersion.startsWith('v') ? pluginVersion : `v${pluginVersion}`),
                 verified: true,
               })
             }
