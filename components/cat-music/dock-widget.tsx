@@ -29,7 +29,7 @@ export function CatMusicDockWidget({ onOpenCatMusic }: { onOpenCatMusic?: () => 
   }
 
   return (
-    <div className={`w-full border-b border-white/[0.06] bg-[#0a0a0b]/80 backdrop-blur-xl px-3 py-2 select-none transition-all duration-300 ${closing ? 'opacity-0 max-h-0 py-0 border-b-0 overflow-hidden' : 'opacity-100'}`}>
+    <div className={`w-full border-b border-white/[0.06] px-3 py-2 select-none transition-all duration-300 ${closing ? 'opacity-0 max-h-0 py-0 border-b-0 overflow-hidden' : 'opacity-100'}`}>
       <div className="flex items-center justify-between gap-2 min-w-0">
         {/* Track Artwork */}
         <div

@@ -1,11 +1,11 @@
-version: 0.3.34
+version: 0.3.35
 files:
-  - url: https://github.com/coffee4433/catchat/releases/download/v0.3.34/CatChat-Setup-0.3.34.exe
-    sha512: vCeB7qZLEEKEJKBviR1MG7VHEcsDvx9yB9Ghn+HbHPKyP24QDDGBwnk+VLbPZVJoXBugtEgMJRE8j/CFkvmq/g==
-    size: 415382175
-path: CatChat-Setup-0.3.34.exe
-sha512: vCeB7qZLEEKEJKBviR1MG7VHEcsDvx9yB9Ghn+HbHPKyP24QDDGBwnk+VLbPZVJoXBugtEgMJRE8j/CFkvmq/g==
-releaseDate: '2026-07-29T22:19:29.165Z'
+  - url: https://github.com/coffee4433/catchat/releases/download/v0.3.35/CatChat-Setup-0.3.35.exe
+    sha512: tcSO9NLCOoG+RYpFTHi33HATmuGCA+9SgqwpoKTFbjqF2Pht928nWa6LtniN9d3sdgrwUB2zouaEQq8+v2OsKg==
+    size: 360494242
+path: CatChat-Setup-0.3.35.exe
+sha512: tcSO9NLCOoG+RYpFTHi33HATmuGCA+9SgqwpoKTFbjqF2Pht928nWa6LtniN9d3sdgrwUB2zouaEQq8+v2OsKg==
+releaseDate: '2026-07-30T02:22:22.496Z'
 showReleaseModal: true
 releaseNotes: |
-  CatChat v0.3.34
+  CatChat v0.3.35
