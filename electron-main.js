@@ -137,7 +137,7 @@ function createSplashWindow() {
     resizable: false,
     alwaysOnTop: true,
     transparent: false,
-    backgroundColor: '#1e1f22',
+    backgroundColor: '#0a0a0a',
     icon: path.join(appDir, 'build', 'icon.png'),
     webPreferences: {
       nodeIntegration: false,

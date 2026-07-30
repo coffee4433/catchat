@@ -4,93 +4,216 @@
   <meta charset="utf-8">
   <style>
     :root {
-      /* Vibrant Electric Cyan that pops against the #1e1f22 dark background */
-      --primary: #00e5ff;
-      --primary-trans: rgba(0, 229, 255, 0.25);
+      --bg: #0a0a0a;
+      --fg: #fafafa;
+      --muted: rgba(255, 255, 255, 0.5);
+      --border-subtle: rgba(255, 255, 255, 0.07);
+      --glow-amber: rgba(245, 158, 11, 0.18);
+      --grid-size: 30px;
+      --worm-track: 150px;
+      --border-worm: #f59e0b;
+      --border-worm-trans: rgba(245, 158, 11, 0.28);
     }
 
-    /* Make the html transparent in case it's a frameless window */
     html {
-      background: transparent;
+      background: var(--bg);
     }
 
     body {
-      background-color: #1e1f22;
-      color: #dbdee1;
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      /* fixed + inset:0 en vez de height/width:100v* — así el body
-         queda pixel a pixel igual que las capas del borde (que ya son
-         fixed), sin desfase entre sus esquinas redondeadas */
       position: fixed;
       inset: 0;
+      margin: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       overflow: hidden;
       user-select: none;
-      /* Add border-radius to the page if it's a frameless window */
       border-radius: 16px;
       box-sizing: border-box;
+      isolation: isolate;
     }
 
-    .logo-container {
-      position: relative;
-      margin-bottom: 24px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 0.92; transform: scale(1) translateZ(0); }
-      50% { opacity: 1; transform: scale(1.04) translateZ(0); }
-    }
-
-    .logo {
-      width: 108px;
-      height: 108px;
-      object-fit: contain;
-      animation: pulse 2.4s infinite ease-in-out;
-      border-radius: 24px;
-      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
-      image-rendering: -webkit-optimize-contrast;
-      will-change: transform, opacity;
-      -webkit-backface-visibility: hidden;
-      backface-visibility: hidden;
-      transform: translateZ(0);
-    }
-
-    .logo-fallback {
-      display: none;
-      width: 108px;
-      height: 108px;
-      border-radius: 24px;
-      background: linear-gradient(135deg, #5865F2, #4752C4);
-      align-items: center;
-      justify-content: center;
-      font-size: 48px;
-      color: white;
-      font-weight: bold;
-      animation: pulse 2.4s infinite ease-in-out;
-    }
-
-    /* Magic Border Styles for the Page */
-    .magic-border-layer {
-      /* fixed = anclado al viewport/raiz del documento, no al body */
+    .ambient {
       position: fixed;
-      /* Trace the exact outer edge of the window */
       inset: 0;
       border-radius: 16px;
-      /* Sin esto, el blur de las capas estáticas se filtraba fuera de
-         la curva redondeada, hacia las esquinas cuadradas de la ventana.
-         Con overflow:hidden el resplandor se recorta justo en el borde
-         de 16px y detrás queda transparente. */
       overflow: hidden;
       pointer-events: none;
-      z-index: 100; /* Ensure it stays on top of the background */
+      z-index: 0;
+    }
+
+    /* Rejilla estática + gusanos de luz en bucle por las líneas */
+    .grid-wrap {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      -webkit-mask-image: radial-gradient(95% 95% at 50% 50%, #000 0%, transparent 100%);
+      mask-image: radial-gradient(95% 95% at 50% 50%, #000 0%, transparent 100%);
+    }
+
+    .grid-bg {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+        linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+      background-size: var(--grid-size) var(--grid-size);
+    }
+
+    .grid-worms {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      filter: blur(0.6px);
+    }
+
+    /* Gusanos horizontales — solo visibles sobre líneas H de la rejilla */
+    .grid-worms-h {
+      background-image: repeating-linear-gradient(
+        90deg,
+        transparent 0px,
+        transparent 20px,
+        rgba(245, 158, 11, 0.12) 26px,
+        rgba(255, 255, 255, 0.65) 34px,
+        rgba(245, 158, 11, 0.18) 42px,
+        transparent 50px,
+        transparent var(--worm-track)
+      );
+      background-size: var(--worm-track) var(--grid-size);
+      -webkit-mask-image: repeating-linear-gradient(
+        to bottom,
+        transparent 0,
+        transparent calc(var(--grid-size) - 1px),
+        #000 calc(var(--grid-size) - 1px),
+        #000 var(--grid-size)
+      );
+      mask-image: repeating-linear-gradient(
+        to bottom,
+        transparent 0,
+        transparent calc(var(--grid-size) - 1px),
+        #000 calc(var(--grid-size) - 1px),
+        #000 var(--grid-size)
+      );
+      animation: worms-h 2.6s linear infinite;
+    }
+
+    .grid-worms-h-2 {
+      background-image: repeating-linear-gradient(
+        90deg,
+        transparent 0px,
+        transparent 55px,
+        rgba(255, 255, 255, 0.08) 62px,
+        rgba(245, 158, 11, 0.35) 72px,
+        rgba(255, 255, 255, 0.08) 82px,
+        transparent 90px,
+        transparent var(--worm-track)
+      );
+      animation: worms-h-rev 3.4s linear infinite;
+      opacity: 0.75;
+    }
+
+    /* Gusanos verticales — solo visibles sobre líneas V de la rejilla */
+    .grid-worms-v {
+      background-image: repeating-linear-gradient(
+        0deg,
+        transparent 0px,
+        transparent 20px,
+        rgba(245, 158, 11, 0.12) 26px,
+        rgba(255, 255, 255, 0.65) 34px,
+        rgba(245, 158, 11, 0.18) 42px,
+        transparent 50px,
+        transparent var(--worm-track)
+      );
+      background-size: var(--grid-size) var(--worm-track);
+      -webkit-mask-image: repeating-linear-gradient(
+        to right,
+        transparent 0,
+        transparent calc(var(--grid-size) - 1px),
+        #000 calc(var(--grid-size) - 1px),
+        #000 var(--grid-size)
+      );
+      mask-image: repeating-linear-gradient(
+        to right,
+        transparent 0,
+        transparent calc(var(--grid-size) - 1px),
+        #000 calc(var(--grid-size) - 1px),
+        #000 var(--grid-size)
+      );
+      animation: worms-v 2.9s linear infinite;
+    }
+
+    .grid-worms-v-2 {
+      background-image: repeating-linear-gradient(
+        0deg,
+        transparent 0px,
+        transparent 48px,
+        rgba(255, 255, 255, 0.08) 56px,
+        rgba(245, 158, 11, 0.35) 66px,
+        rgba(255, 255, 255, 0.08) 76px,
+        transparent 84px,
+        transparent var(--worm-track)
+      );
+      animation: worms-v-rev 3.1s linear infinite;
+      opacity: 0.75;
+    }
+
+    @keyframes worms-h {
+      from { background-position: 0 0; }
+      to { background-position: var(--worm-track) 0; }
+    }
+
+    @keyframes worms-h-rev {
+      from { background-position: var(--worm-track) 0; }
+      to { background-position: 0 0; }
+    }
+
+    @keyframes worms-v {
+      from { background-position: 0 0; }
+      to { background-position: 0 var(--worm-track); }
+    }
+
+    @keyframes worms-v-rev {
+      from { background-position: 0 var(--worm-track); }
+      to { background-position: 0 0; }
+    }
+
+    .glow-orb {
+      position: absolute;
+      top: 28%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 260px;
+      height: 260px;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 50%;
+      filter: blur(80px);
+    }
+
+    .glow-orb-amber {
+      position: absolute;
+      bottom: 8%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 140px;
+      height: 70px;
+      background: var(--glow-amber);
+      border-radius: 50%;
+      filter: blur(36px);
+      opacity: 0.55;
+    }
+
+    /* Gusanos de borde — solo en el perímetro interior (sin halo exterior) */
+    .magic-border-layer {
+      position: fixed;
+      inset: 0;
+      border-radius: 16px;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 100;
+      contain: paint;
     }
 
     .magic-border-mask {
@@ -101,7 +224,7 @@
       mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       -webkit-mask-composite: xor;
       mask-composite: exclude;
-      padding: 2px;
+      padding: 1px;
       overflow: hidden;
     }
 
@@ -109,17 +232,18 @@
       position: absolute;
       top: 50%;
       left: 50%;
-      /* Huge width to cover the entire page's diagonal */
       width: 300vh;
       height: 300vh;
       transform: translate(-50%, -50%);
-      background: conic-gradient(from 0deg, 
-        transparent 0%, transparent 7%, var(--primary-trans) 13%, var(--primary) 15.5%, #ffffff 16.66%,
-        transparent 16.66%, transparent 23.66%, var(--primary-trans) 29.66%, var(--primary) 32.16%, #ffffff 33.33%,
-        transparent 33.33%, transparent 40.33%, var(--primary-trans) 46.33%, var(--primary) 48.83%, #ffffff 50%,
-        transparent 50%, transparent 57%, var(--primary-trans) 63%, var(--primary) 65.5%, #ffffff 66.66%,
-        transparent 66.66%, transparent 73.66%, var(--primary-trans) 79.66%, var(--primary) 82.16%, #ffffff 83.33%,
-        transparent 83.33%, transparent 90.33%, var(--primary-trans) 96.33%, var(--primary) 98.83%, #ffffff 100%);
+      background: conic-gradient(
+        from 0deg,
+        transparent 0%, transparent 7%, var(--border-worm-trans) 13%, var(--border-worm) 15.5%, #ffffff 16.66%,
+        transparent 16.66%, transparent 23.66%, var(--border-worm-trans) 29.66%, var(--border-worm) 32.16%, #ffffff 33.33%,
+        transparent 33.33%, transparent 40.33%, var(--border-worm-trans) 46.33%, var(--border-worm) 48.83%, #ffffff 50%,
+        transparent 50%, transparent 57%, var(--border-worm-trans) 63%, var(--border-worm) 65.5%, #ffffff 66.66%,
+        transparent 66.66%, transparent 73.66%, var(--border-worm-trans) 79.66%, var(--border-worm) 82.16%, #ffffff 83.33%,
+        transparent 83.33%, transparent 90.33%, var(--border-worm-trans) 96.33%, var(--border-worm) 98.83%, #ffffff 100%
+      );
       animation: magic-spin 5s linear infinite;
     }
 
@@ -127,92 +251,97 @@
       to { transform: translate(-50%, -50%) rotate(360deg); }
     }
 
-    /* Put UI elements above the border background effects */
     .content-wrapper {
       position: relative;
       z-index: 10;
       display: flex;
       flex-direction: column;
       align-items: center;
+      animation: fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes fade-up {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .logo-container {
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logo {
+      width: 96px;
+      height: 96px;
+      object-fit: contain;
+      border-radius: 20px;
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.1),
+        0 16px 40px rgba(0, 0, 0, 0.45);
+    }
+
+    .logo-fallback {
+      display: none;
+      width: 96px;
+      height: 96px;
+      border-radius: 20px;
+      background: #171717;
+      border: 1px solid var(--border-subtle);
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      color: var(--fg);
+      font-weight: 700;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
     }
 
     .title {
-      font-size: 16px;
-      font-weight: 700;
-      color: #ffffff;
-      margin-bottom: 6px;
-      letter-spacing: 0.5px;
-    }
-
-    .subtitle {
-      font-size: 11.5px;
-      color: #949ba4;
-      font-weight: 500;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    @keyframes spin {
-      100% { transform: rotate(360deg); }
-    }
-
-    .spinner {
-      width: 12px;
-      height: 12px;
-      border: 2px solid #949ba4;
-      border-top-color: #5865F2;
-      border-radius: 50%;
-      animation: spin 0.8s infinite linear;
-    }
-
-    @keyframes dots {
-      0%, 20% { content: ''; }
-      40% { content: '.'; }
-      60% { content: '..'; }
-      80%, 100% { content: '...'; }
-    }
-
-    .dots::after {
-      content: '';
-      animation: dots 1.5s infinite steps(1);
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--fg);
+      letter-spacing: -0.02em;
     }
   </style>
 </head>
 <body>
-  <!-- Page-level Magic Border -->
-  <!-- Static Primary Blurred outer glow -->
-  <div class="magic-border-layer" style="filter: blur(4px); opacity: 0.5;">
-    <div class="magic-border-mask" style="background-color: var(--primary);"></div>
-  </div>
-  
-  <!-- Static Secondary wide colored aura -->
-  <div class="magic-border-layer" style="filter: blur(12px); opacity: 0.3;">
-    <div class="magic-border-mask" style="background-color: var(--primary);"></div>
+  <div class="ambient" aria-hidden="true">
+    <div class="grid-wrap">
+      <div class="grid-bg"></div>
+      <div class="grid-worms grid-worms-h"></div>
+      <div class="grid-worms grid-worms-h grid-worms-h-2"></div>
+      <div class="grid-worms grid-worms-v"></div>
+      <div class="grid-worms grid-worms-v grid-worms-v-2"></div>
+    </div>
+    <div class="glow-orb"></div>
+    <div class="glow-orb-amber"></div>
   </div>
 
-  <!-- Animated glowing beam layer (core worms) -->
-  <div class="magic-border-layer">
+  <!-- Gusanos en el único borde de la ventana -->
+  <div class="magic-border-layer" aria-hidden="true">
     <div class="magic-border-mask">
       <div class="magic-beams"></div>
     </div>
   </div>
 
-  <!-- Static Inner/Top Glow Aura -->
-  <div class="magic-border-layer" style="filter: blur(6px); opacity: 0.4;">
-    <div class="magic-border-mask" style="background-color: var(--primary);"></div>
-  </div>
-
   <div class="content-wrapper">
     <div class="logo-container">
-      <img class="logo" src="./icon.png" alt="CatChat Logo" onerror="this.style.display='none';document.getElementById('logo-fallback').style.display='flex'">
+      <img
+        class="logo"
+        src="./icon.png"
+        alt="CatChat Logo"
+        onerror="this.style.display='none';document.getElementById('logo-fallback').style.display='flex'"
+      >
       <div class="logo-fallback" id="logo-fallback">CC</div>
     </div>
     <div class="title">CatChat</div>
-    <div class="subtitle">
-      <div class="spinner"></div>
-      <span>Buscando actualizaciones<span class="dots"></span></span>
-    </div>
   </div>
 </body>
 </html>
