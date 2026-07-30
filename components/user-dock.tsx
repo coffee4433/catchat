@@ -503,7 +503,7 @@ export function UserDock({
                               <span className="block text-[11px] text-muted-foreground/70">{formatSize(update.info.files[0].size)}</span>
                             )}
                             {update.info.releaseNotes && (
-                              <p className="text-[11px] text-muted-foreground/80 mt-1.5 leading-relaxed max-h-16 overflow-y-auto">
+                              <p className="text-[11px] text-muted-foreground/80 mt-1.5 leading-relaxed max-h-16 overflow-y-auto thin-scroll">
                                 {update.info.releaseNotes.replace(/<[^>]*>/g, '').trim()}
                               </p>
                             )}
@@ -590,7 +590,7 @@ export function UserDock({
                           <span className="font-mono text-[10px] font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-1.5 py-0.5 rounded">{activePluginUpdate.newVersion}</span>
                         </div>
                         {activePluginUpdate.releaseNotes && (
-                          <p className="text-[11px] text-muted-foreground/80 mt-1.5 leading-relaxed max-h-16 overflow-y-auto">
+                          <p className="text-[11px] text-muted-foreground/80 mt-1.5 leading-relaxed max-h-16 overflow-y-auto thin-scroll">
                             {activePluginUpdate.releaseNotes.replace(/<[^>]*>/g, '').trim()}
                           </p>
                         )}

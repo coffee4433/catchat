@@ -36,6 +36,12 @@ import { HomeDashboard } from './home-dashboard'
 import type { PluginViewProps } from '@/lib/plugins/plugin-types'
 import type { Track } from '@/lib/plugins/cat-music/types'
 import type { YtPlaylist, YtChannel } from '@/lib/plugins/cat-music/innertube'
+import {
+  exitDocumentFullscreen,
+  getFullscreenElement,
+  requestElementFullscreen,
+  subscribeFullscreenChange,
+} from '@/lib/fullscreen'
 
 type Tab = 'home' | 'explore' | 'library'
 type SearchTab = 'songs' | 'playlists' | 'artists'
@@ -112,10 +118,27 @@ export function CatMusicMainView({ onOpenSettings }: PluginViewProps) {
   }, [])
 
   useEffect(() => {
-    const onFullscreenChange = () => setIsFullscreen(Boolean(document.fullscreenElement))
-    document.addEventListener('fullscreenchange', onFullscreenChange)
-    return () => document.removeEventListener('fullscreenchange', onFullscreenChange)
+    return subscribeFullscreenChange(() => {
+      setIsFullscreen(Boolean(getFullscreenElement()))
+    })
   }, [])
+
+  useEffect(() => {
+    if (!isFullscreen) return
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsFullscreen(false)
+        exitDocumentFullscreen().catch(() => {})
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', onKeyDown)
+    }
+  }, [isFullscreen])
 
   const requestNotifications = async () => {
     if (!('Notification' in window)) return
@@ -124,15 +147,24 @@ export function CatMusicMainView({ onOpenSettings }: PluginViewProps) {
   }
 
   const toggleFullscreen = async () => {
-    if (!rootRef.current) return
-    try {
-      if (document.fullscreenElement) {
-        await document.exitFullscreen()
-      } else {
-        await rootRef.current.requestFullscreen()
+    const root = rootRef.current
+    if (!root) return
+
+    if (isFullscreen || getFullscreenElement()) {
+      setIsFullscreen(false)
+      try {
+        await exitDocumentFullscreen()
+      } catch {
+        // CSS immersive mode still exits via state
       }
+      return
+    }
+
+    setIsFullscreen(true)
+    try {
+      await requestElementFullscreen(root)
     } catch {
-      // Browser may block fullscreen outside user gesture
+      // Immersive CSS mode (fixed overlay) still applies via isFullscreen
     }
   }
 
@@ -211,7 +243,12 @@ export function CatMusicMainView({ onOpenSettings }: PluginViewProps) {
   const selectedPlaylist = playlists.find((p) => p.id === selectedPlaylistId)
 
   const withBackground = (children: React.ReactNode) => (
-    <div ref={rootRef} className="relative h-full w-full overflow-hidden text-white">
+    <div
+      ref={rootRef}
+      className={`relative h-full w-full overflow-hidden text-white ${
+        isFullscreen ? 'fixed inset-0 z-[9999] !h-dvh !w-dvw rounded-none' : ''
+      }`}
+    >
       <div className="pointer-events-none absolute inset-0">
         <img src="/bg.jpg" alt="" className="size-full object-cover" />
         <div className="absolute inset-0 bg-black/50" />
@@ -345,9 +382,13 @@ export function CatMusicMainView({ onOpenSettings }: PluginViewProps) {
               <Settings className="size-4" />
             </button>
             <button
-              onClick={toggleFullscreen}
+              type="button"
+              onClick={() => void toggleFullscreen()}
               aria-label={isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}
-              className="rounded-full p-2 text-white/40 hover:bg-white/10 hover:text-white transition-colors"
+              aria-pressed={isFullscreen}
+              className={`rounded-full p-2 transition-colors ${
+                isFullscreen ? 'bg-[#1DB954]/20 text-[#1DB954]' : 'text-white/40 hover:bg-white/10 hover:text-white'
+              }`}
             >
               {isFullscreen ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
             </button>

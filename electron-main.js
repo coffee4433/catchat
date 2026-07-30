@@ -6,6 +6,14 @@ const { autoUpdater } = require('electron-updater')
 const { registerCommandRunnerIPC } = require('./electron/commandRunner')
 const { registerPluginInstallerIPC } = require('./electron/pluginInstaller')
 
+// Use overlay scrollbars on Windows/Linux (no native arrow buttons)
+if (process.platform === 'win32') {
+  app.commandLine.appendSwitch('enable-features', 'OverlayScrollbar,FluentOverlayScrollbar')
+  app.commandLine.appendSwitch('disable-features', 'FluentScrollbar')
+} else {
+  app.commandLine.appendSwitch('enable-features', 'OverlayScrollbar,FluentOverlayScrollbar')
+}
+
 
 // This helps the embedded Next server find `DATABASE_URL` and other runtime vars.
 try {

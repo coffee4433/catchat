@@ -295,7 +295,7 @@ export function ReleaseNotesModal() {
             </div>
 
             {/* Release notes body */}
-            <div className="max-h-[60vh] overflow-y-auto p-6 space-y-3">
+            <div className="max-h-[60vh] overflow-y-auto thin-scroll p-6 space-y-3">
               {lines.map((line, idx) => (
                 <FormattedMarkdownLine key={idx} line={line} theme={customTheme} />
               ))}

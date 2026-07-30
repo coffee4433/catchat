@@ -301,7 +301,7 @@ export function SettingsModal({
               </header>
 
               {/* Mobile tabs */}
-              <div className="flex gap-1 overflow-x-auto border-b border-border/50 px-3 py-2 sm:hidden">
+              <div className="flex gap-1 overflow-x-auto thin-scroll border-b border-border/50 px-3 py-2 sm:hidden">
                 {allSections.map((s) => (
                   <button
                     key={s.id}
@@ -1168,7 +1168,7 @@ function ReleaseNotesSettingsSection({ onClose }: { onClose: () => void }) {
 
       {/* Release Notes Body */}
       {lines.length > 0 ? (
-        <div className="space-y-3 rounded-2xl border border-border/60 bg-secondary/15 p-5 max-h-[50vh] overflow-y-auto">
+        <div className="space-y-3 rounded-2xl border border-border/60 bg-secondary/15 p-5 max-h-[50vh] overflow-y-auto thin-scroll">
           {lines.map((line, idx) => (
             <FormattedMarkdownLine key={idx} line={line} theme={customTheme} />
           ))}

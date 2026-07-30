@@ -29,7 +29,7 @@ function StatChip({
   accent?: boolean
 }) {
   return (
-    <div className="cm-acrylic flex flex-1 items-center gap-2 rounded-2xl px-3 py-2">
+    <div className="cm-glass flex flex-1 items-center gap-2 rounded-2xl px-3 py-2">
       <div className={`flex size-7 shrink-0 items-center justify-center rounded-lg ${accent ? 'bg-[#1DB954]/20' : 'bg-white/[0.06]'}`}>
         <Icon className={`size-3.5 ${accent ? 'text-[#1DB954]' : 'text-white/50'}`} />
       </div>
@@ -70,7 +70,7 @@ export function HomeDashboard({
   return (
     <div className="flex h-full flex-col space-y-3 px-1 pt-1">
       {/* Hero — dark glass, coherente con el resto */}
-      <GlassPanel variant="strong" className="cm-acrylic relative overflow-hidden !rounded-[28px] p-4 md:p-5">
+      <GlassPanel className="relative overflow-hidden !rounded-[28px] p-4 md:p-5">
         {artistBannerUrl && (
           <div className="absolute inset-0">
             <img src={artistBannerUrl} alt="" className="size-full object-cover opacity-20 blur-sm scale-105" />
@@ -139,7 +139,7 @@ export function HomeDashboard({
       {/* Two-column layout */}
       <div className="flex flex-1 flex-col gap-3 lg:flex-row min-h-0">
         {/* Escuchas rápidas — left column */}
-        <GlassPanel className="cm-acrylic flex flex-1 flex-col overflow-hidden rounded-[24px] p-3">
+        <GlassPanel className="flex flex-1 flex-col overflow-hidden rounded-[24px] p-3">
           <div className="shrink-0">
             <h2 className="mb-0.5 flex items-center gap-2 text-sm font-bold text-white">
               <TrendingUp className="size-4 text-[#1DB954]" />
@@ -157,7 +157,7 @@ export function HomeDashboard({
         </GlassPanel>
 
         {/* Populares — right column */}
-        <GlassPanel className="cm-acrylic flex w-full flex-col overflow-hidden rounded-[24px] lg:flex-1">
+        <GlassPanel className="flex w-full flex-col overflow-hidden rounded-[24px] lg:flex-1">
           <div className="shrink-0 border-b border-white/[0.06] px-3 py-2 md:px-4">
             <h2 className="flex items-center gap-2 text-base font-bold text-white">
               <Music className="size-4 text-[#1DB954]" />
