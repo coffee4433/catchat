@@ -271,7 +271,7 @@ function HorizontalStrip({
   className?: string
 }) {
   const hasChildren = React.Children.count(children) > 0
-  const rowH = rowHeight === 'sm' ? 'h-[76px]' : 'h-[152px]'
+  const rowH = rowHeight === 'sm' ? 'min-h-[76px]' : 'min-h-[152px]'
 
   return (
     <section className={`flex min-w-0 flex-col overflow-hidden ${className ?? ''}`}>
@@ -284,7 +284,7 @@ function HorizontalStrip({
       </div>
       {hasChildren ? (
         <div
-          className={`thin-scroll flex ${rowH} min-w-0 items-stretch gap-3 overflow-x-auto overflow-y-hidden rounded-xl border border-border/30 bg-muted/10 px-2 py-2`}
+          className={`thin-scroll flex flex-wrap ${rowH} min-w-0 items-stretch gap-3 overflow-y-auto rounded-xl border border-border/30 bg-muted/10 px-2 py-2`}
         >
           {children}
         </div>
