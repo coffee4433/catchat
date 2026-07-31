@@ -80,7 +80,7 @@ function EventCard({
     <button
       type="button"
       onClick={onSelect}
-      className={`flex h-[148px] w-[280px] shrink-0 flex-col rounded-xl border p-3 text-left transition-all hover:border-primary/40 hover:bg-muted/40 ${
+      className={`flex h-full w-[280px] shrink-0 flex-col rounded-xl border p-3 text-left transition-all hover:border-primary/40 hover:bg-muted/40 ${
         selected
           ? 'border-primary/50 bg-primary/5 ring-1 ring-primary/20'
           : 'border-border/50 bg-background/60'
@@ -152,7 +152,7 @@ function AlertCard({
 }) {
   return (
     <div
-      className={`flex h-[120px] w-[260px] shrink-0 flex-col rounded-xl border p-3 transition-colors ${
+      className={`flex h-full w-[300px] shrink-0 items-center gap-2 rounded-xl border px-2.5 py-2 transition-colors ${
         selected
           ? 'border-primary/50 bg-primary/5 ring-1 ring-primary/20'
           : alert.read
@@ -160,31 +160,42 @@ function AlertCard({
             : 'border-emerald-500/30 bg-emerald-500/5'
       }`}
     >
-      <button type="button" onClick={onSelect} className="min-w-0 flex-1 text-left">
-        <div className="flex items-start gap-2">
-          {alert.image ? (
-            <img src={alert.image} alt="" className="size-9 shrink-0 rounded-lg object-cover" />
-          ) : (
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted">
-              {alert.category === 'sports' ? (
-                <Trophy className="size-3.5" />
-              ) : (
-                <Gamepad2 className="size-3.5" />
-              )}
-            </div>
-          )}
+      <button
+        type="button"
+        onClick={onSelect}
+        className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
+      >
+        {alert.image ? (
+          <img src={alert.image} alt="" className="size-10 shrink-0 rounded-lg object-cover" />
+        ) : (
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted">
+            {alert.category === 'sports' ? (
+              <Trophy className="size-4" />
+            ) : (
+              <Gamepad2 className="size-4" />
+            )}
+          </div>
+        )}
+        <div className="min-w-0 flex-1">
           <p className="line-clamp-2 text-sm font-medium leading-snug">{alert.title}</p>
+          <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+            {CATEGORY_LABELS[alert.category]} · {formatRelativeTime(alert.detectedAt)}
+          </p>
         </div>
-        <p className="mt-2 text-[11px] text-muted-foreground">
-          {CATEGORY_LABELS[alert.category]} · {formatRelativeTime(alert.detectedAt)}
-        </p>
       </button>
       {!alert.read && (
-        <div className="mt-1 flex justify-end">
-          <Button variant="ghost" size="icon-sm" onClick={onRead} title="Marcar leída">
-            <CheckCheck className="size-3.5" />
-          </Button>
-        </div>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className="shrink-0"
+          onClick={(e) => {
+            e.stopPropagation()
+            onRead()
+          }}
+          title="Marcar leída"
+        >
+          <CheckCheck className="size-3.5" />
+        </Button>
       )}
     </div>
   )
@@ -203,7 +214,7 @@ function ArbitrageCard({
     <button
       type="button"
       onClick={onSelect}
-      className={`flex h-[148px] w-[300px] shrink-0 flex-col rounded-xl border p-3 text-left transition-all hover:border-amber-500/40 ${
+      className={`flex h-full w-[300px] shrink-0 flex-col rounded-xl border p-3 text-left transition-all hover:border-amber-500/40 ${
         selected
           ? 'border-amber-500/50 bg-amber-500/10 ring-1 ring-amber-500/20'
           : 'border-amber-500/25 bg-amber-500/5'
@@ -248,29 +259,38 @@ function HorizontalStrip({
   action,
   empty,
   children,
+  rowHeight = 'md',
+  className,
 }: {
   title: string
   icon?: React.ReactNode
   action?: React.ReactNode
   empty?: React.ReactNode
   children: React.ReactNode
+  rowHeight?: 'sm' | 'md'
+  className?: string
 }) {
   const hasChildren = React.Children.count(children) > 0
+  const rowH = rowHeight === 'sm' ? 'h-[76px]' : 'h-[152px]'
 
   return (
-    <section className="flex min-h-0 min-w-0 flex-1 flex-col">
+    <section className={`flex min-w-0 flex-col overflow-hidden ${className ?? ''}`}>
       <div className="mb-2 flex shrink-0 items-center justify-between gap-2 px-1">
-        <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <h3 className="flex min-w-0 items-center gap-1.5 truncate text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           {icon}
           {title}
         </h3>
         {action}
       </div>
       {hasChildren ? (
-        <div className="thin-scroll flex gap-3 overflow-x-auto pb-2">{children}</div>
+        <div
+          className={`thin-scroll flex ${rowH} min-w-0 items-stretch gap-3 overflow-x-auto overflow-y-hidden rounded-xl border border-border/30 bg-muted/10 px-2 py-2`}
+        >
+          {children}
+        </div>
       ) : (
         (empty ?? (
-          <div className="flex flex-1 items-center justify-center rounded-xl border border-dashed border-border/50 px-4 py-8 text-center text-xs text-muted-foreground">
+          <div className="flex h-[76px] items-center justify-center rounded-xl border border-dashed border-border/50 px-4 text-center text-xs text-muted-foreground">
             Sin resultados
           </div>
         ))
@@ -507,13 +527,14 @@ export function PolimarketMainView() {
       <div className="flex min-h-0 flex-1">
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden p-4">
           {activeTab === 'alerts' && (
-            <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row">
+            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
               <HorizontalStrip
+                rowHeight="sm"
                 title="Alertas recientes"
                 icon={<BellRing className="size-3.5" />}
                 action={
                   alerts.length > 0 ? (
-                    <div className="flex gap-1">
+                    <div className="flex shrink-0 gap-1">
                       <Button variant="ghost" size="sm" onClick={markAllRead}>
                         <CheckCheck className="size-3.5" />
                       </Button>
@@ -524,8 +545,8 @@ export function PolimarketMainView() {
                   ) : undefined
                 }
                 empty={
-                  <div className="flex flex-1 flex-col items-center justify-center rounded-xl border border-dashed border-border/50 py-10 text-center">
-                    <BellRing className="mb-2 size-8 text-muted-foreground/40" />
+                  <div className="flex h-[76px] flex-col items-center justify-center rounded-xl border border-dashed border-border/50 text-center">
+                    <BellRing className="mb-1 size-5 text-muted-foreground/40" />
                     <p className="text-xs text-muted-foreground">Sin alertas todavía</p>
                   </div>
                 }
@@ -548,13 +569,13 @@ export function PolimarketMainView() {
                 ))}
               </HorizontalStrip>
 
-              <div className="hidden w-px shrink-0 bg-border/40 lg:block" />
-
               <HorizontalStrip
+                rowHeight="md"
+                className="min-h-0 flex-1"
                 title="Arbitraje entre equipos"
                 icon={<Zap className="size-3.5 text-amber-500" />}
                 action={
-                  <div className="relative">
+                  <div className="relative shrink-0">
                     <Search className="pointer-events-none absolute left-2 top-1/2 size-3 -translate-y-1/2 text-muted-foreground" />
                     <input
                       type="search"
@@ -566,7 +587,7 @@ export function PolimarketMainView() {
                   </div>
                 }
                 empty={
-                  <div className="flex flex-1 flex-col items-center justify-center rounded-xl border border-dashed border-amber-500/20 bg-amber-500/5 py-10 text-center">
+                  <div className="flex h-[152px] flex-col items-center justify-center rounded-xl border border-dashed border-amber-500/20 bg-amber-500/5 text-center">
                     <Zap className="mb-2 size-8 text-amber-500/40" />
                     <p className="text-xs text-muted-foreground">
                       {isLoading
@@ -592,6 +613,8 @@ export function PolimarketMainView() {
 
           {(activeTab === 'sports' || activeTab === 'esports') && (
             <HorizontalStrip
+              rowHeight="md"
+              className="min-h-0 flex-1"
               title={activeTab === 'sports' ? 'Apuestas deportivas' : 'Apuestas esports'}
               icon={
                 activeTab === 'sports' ? (
@@ -601,10 +624,12 @@ export function PolimarketMainView() {
                 )
               }
               empty={
-                <EmptyCategory
-                  label={activeTab === 'sports' ? 'deportes' : 'esports'}
-                  loading={isLoading}
-                />
+                <div className="flex h-[152px] w-full items-center justify-center gap-3 rounded-xl border border-dashed border-border/50">
+                  <EmptyCategory
+                    label={activeTab === 'sports' ? 'deportes' : 'esports'}
+                    loading={isLoading}
+                  />
+                </div>
               }
             >
               {latestEvents[activeTab].map((event) => (
