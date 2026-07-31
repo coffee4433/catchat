@@ -1,11 +1,37 @@
-version: 0.3.43
+version: 0.3.44
 files:
-  - url: https://github.com/coffee4433/catchat/releases/download/v0.3.43/CatChat-Setup-0.3.43.exe
-    sha512: 4LJ7M3GGR5cfkZ8e8icIzx1zP+AdxPAmFgXHJw2W9k0dEOHS5qBjwQNeNkSg/g+1HZnJPcnkFabi5bNp2B6AgA==
-    size: 361495584
-path: CatChat-Setup-0.3.43.exe
-sha512: 4LJ7M3GGR5cfkZ8e8icIzx1zP+AdxPAmFgXHJw2W9k0dEOHS5qBjwQNeNkSg/g+1HZnJPcnkFabi5bNp2B6AgA==
-releaseDate: '2026-07-31T01:50:34.719Z'
+  - url: https://github.com/coffee4433/catchat/releases/download/v0.3.44/CatChat-Setup-0.3.44.exe
+    sha512: b0hCotpAOm8DwKIQ/hrMAlE+71VX5pICX0NkDsQ310UOK+XcO/nydFwkvxVT2W07xA5XrIiX0kO4HJ6rCNHEZw==
+    size: 353873093
+path: CatChat-Setup-0.3.44.exe
+sha512: b0hCotpAOm8DwKIQ/hrMAlE+71VX5pICX0NkDsQ310UOK+XcO/nydFwkvxVT2W07xA5XrIiX0kO4HJ6rCNHEZw==
+releaseDate: '2026-07-31T12:16:51.207Z'
 showReleaseModal: true
 releaseNotes: |
-  CatChat v0.3.43
+  ## ✨ Novedades Destacadas
+  
+  > [!NOTE]
+  > ¡Llega el **Survivor Shooter**! Un nuevo mini‑juego de supervivencia con oleadas de enemigos, potenciadores y tabla de clasificación. ¡Pon a prueba tus reflejos!
+  
+  - [NUEVO] **Plugin Survivor Shooter** – Acción arcade directamente en CatChat.
+    - Soporte completo como plugin oficial: instalación, configuración y ejecución desde el `Hub de Plugins`.
+    - Sistema de puntuación, vidas y niveles progresivos.
+    - Efectos visuales y de sonido inmersivos (si el servidor lo permite).
+  - [MEJORA] **Plugin Hub** – Ahora muestra la nueva categoría “Juegos” e incluye acceso rápido a Survivor Shooter.
+  - [MEJORA] **Polimarket** – Actualización menor en la vista principal para mejor compatibilidad con el nuevo sistema de plugins.
+  
+  ## 🐛 Correcciones y Ajustes
+  
+  - [FIX] Se resolvió un error que impedía cargar plugins con dependencias personalizadas en el `Plugin Provider`.
+  - [FIX] Corregida la ruta de recursos en `pnpm-lock.yaml` tras añadir las nuevas librerías del juego.
+  
+  ## ⚡ Rendimiento y Optimización
+  
+  - [MEJORA] **Carga de plugins** optimizada: el motor de plugins ahora precarga metadatos sin afectar el renderizado inicial.
+  - [MEJORA] **Memoria** – Survivor Shooter libera correctamente los recursos gráficos al cerrarse, evitando fugas en sesiones largas.
+  
+  ## 🎨 UI & Experiencia de Usuario
+  
+  - [DISEÑO] **Hub de Plugins** – Mejoras visuales en las tarjetas de juegos, con insignias de “Nuevo” y miniatura dinámica.
+  - [DISEÑO] **Survivor Shooter** – Interfaz de juego integrada nativamente con el tema de CatChat (modo claro/oscuro adaptable).
+  - [DISEÑO] **Transiciones** – Animaciones suaves al abrir/cerrar el plugin desde el hub.

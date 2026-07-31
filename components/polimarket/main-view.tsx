@@ -284,7 +284,7 @@ function HorizontalStrip({
       </div>
       {hasChildren ? (
         <div
-          className={`thin-scroll flex flex-wrap ${rowH} min-w-0 items-stretch gap-3 overflow-y-auto rounded-xl border border-border/30 bg-muted/10 px-2 py-2`}
+          className={`thin-scroll flex flex-wrap ${rowH} min-w-0 items-start gap-3 overflow-y-auto rounded-xl border border-border/30 bg-muted/10 px-2 py-2`}
         >
           {children}
         </div>

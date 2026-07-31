@@ -4,6 +4,7 @@ import React, { createContext, useCallback, useContext, useEffect, useState } fr
 import type { CatChatPlugin, PluginRailTab } from './plugin-types'
 import { catMusicPlugin } from './cat-music'
 import { polimarketPlugin } from './polimarket'
+import { survivorShooterPlugin } from './survivor-shooter'
 import { getRegisteredPlugins, registerPlugin, unregisterPlugin } from './plugin-registry'
 import { getPluginInstaller } from './plugin-installer-client'
 
@@ -46,6 +47,7 @@ const PLUGIN_UPDATE_POLL_MS = 30_000
 const STABLE_ROOT_PROVIDERS = [
   { id: 'cat-music' as const, Provider: catMusicPlugin.rootProvider! },
   { id: 'polimarket' as const, Provider: polimarketPlugin.rootProvider! },
+  { id: 'survivor-shooter' as const, Provider: survivorShooterPlugin.rootProvider! },
 ]
 
 export function isElectronEnv(): boolean {
@@ -140,6 +142,12 @@ export function PluginProvider({ children, user }: { children: React.ReactNode; 
     registerPlugin(polimarketPlugin)
   } else {
     unregisterPlugin('polimarket')
+  }
+
+  if (installedPluginIds.includes('survivor-shooter')) {
+    registerPlugin(survivorShooterPlugin)
+  } else {
+    unregisterPlugin('survivor-shooter')
   }
 
   // Persist installed and enabled plugins

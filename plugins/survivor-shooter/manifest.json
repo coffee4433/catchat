@@ -1,0 +1,9 @@
+{
+  "id": "survivor-shooter",
+  "name": "Survivor Shooter",
+  "version": "1.0.0",
+  "author": "CatChat",
+  "description": "Third-person shooter game built with Three.js — WASD to move, mouse to aim and shoot, R to reload",
+  "category": "media",
+  "iconName": "Crosshair"
+}

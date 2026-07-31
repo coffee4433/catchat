@@ -5,6 +5,7 @@ import {
   Boxes,
   Cloud,
   Command,
+  Crosshair,
   Download,
   HardDrive,
   Layers,
@@ -53,6 +54,7 @@ function PluginIcon({ id, className }: { id: string; className?: string }) {
       />
     )
   }
+  if (id === 'survivor-shooter') return <Crosshair className={className} />
   if (id === 'cat-ai') return <Sparkles className={className} />
   if (id === 'cat-canvas') return <Zap className={className} />
   return <Boxes className={className} />

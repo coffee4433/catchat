@@ -1,6 +1,6 @@
 {
   "name": "catchat",
-  "version": "0.3.43",
+  "version": "0.3.44",
   "private": true,
   "author": "CatChat <dev@catchat.app>",
   "description": "Team collaboration messenger with threads, channels and lightning-fast command search",
@@ -84,8 +84,11 @@
     "@huggingface/transformers": "^4.2.0",
     "@livekit/components-react": "^2.9.23",
     "@livekit/components-styles": "^1.2.0",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.6.1",
     "@supabase/supabase-js": "^2.110.7",
     "@swc/helpers": "^0.5.23",
+    "@types/three": "^0.185.1",
     "@vercel/analytics": "1.6.1",
     "adm-zip": "^0.6.0",
     "better-auth": "^1.6.23",
@@ -107,6 +110,7 @@
     "shadcn": "^4.8.0",
     "swr": "^2.4.2",
     "tailwind-merge": "^3.3.1",
+    "three": "^0.185.1",
     "tw-animate-css": "^1.4.0"
   },
   "devDependencies": {
