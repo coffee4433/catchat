@@ -5,24 +5,29 @@ import {
   Bell,
   BellOff,
   BellRing,
-  ExternalLink,
-  Loader2,
-  RefreshCw,
-  Trophy,
-  Gamepad2,
   CheckCheck,
-  Trash2,
+  Gamepad2,
+  Loader2,
   Pause,
   Play,
+  RefreshCw,
+  Search,
+  Trash2,
+  Trophy,
+  Zap,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { EventDetailPanel } from '@/components/polimarket/event-detail-panel'
+import { findAllArbitrage, filterArbitrage } from '@/lib/plugins/polimarket/arbitrage'
+import { formatUsd, parseMarket } from '@/lib/plugins/polimarket/markets'
 import { usePolimarket } from '@/lib/plugins/polimarket/polimarket-provider'
 import {
   CATEGORY_LABELS,
-  POLYMARKET_EVENT_URL,
+  type ArbitrageOpportunity,
   type PolymarketAlert,
   type PolymarketCategory,
   type PolymarketEvent,
+  type SelectedPolymarketItem,
 } from '@/lib/plugins/polimarket/types'
 
 type Tab = 'alerts' | 'sports' | 'esports'
@@ -30,12 +35,11 @@ type Tab = 'alerts' | 'sports' | 'esports'
 function formatRelativeTime(iso: string) {
   const diff = Date.now() - new Date(iso).getTime()
   const mins = Math.floor(diff / 60_000)
-  if (mins < 1) return 'ahora mismo'
-  if (mins < 60) return `hace ${mins} min`
+  if (mins < 1) return 'ahora'
+  if (mins < 60) return `${mins}m`
   const hours = Math.floor(mins / 60)
-  if (hours < 24) return `hace ${hours} h`
-  const days = Math.floor(hours / 24)
-  return `hace ${days} d`
+  if (hours < 24) return `${hours}h`
+  return `${Math.floor(hours / 24)}d`
 }
 
 function formatDateTime(iso: string | null) {
@@ -48,124 +52,230 @@ function formatDateTime(iso: string | null) {
   })
 }
 
+function findEvent(
+  latestEvents: Record<PolymarketCategory, PolymarketEvent[]>,
+  category: PolymarketCategory,
+  eventId: string,
+): PolymarketEvent | undefined {
+  return latestEvents[category].find((e) => e.id === eventId)
+}
+
 function EventCard({
   event,
   category,
   isNew,
-  onOpen,
+  selected,
+  onSelect,
 }: {
   event: PolymarketEvent
   category: PolymarketCategory
   isNew?: boolean
-  onOpen?: () => void
+  selected?: boolean
+  onSelect: () => void
 }) {
-  const market = event.markets?.[0]
-  let prices: string[] | null = null
-  if (market?.outcomePrices) {
-    try {
-      prices = JSON.parse(market.outcomePrices) as string[]
-    } catch {
-      prices = null
-    }
-  }
+  const market = event.markets?.[0] ? parseMarket(event.markets[0]) : null
+  const hasArb = (event.markets ?? []).some((m) => parseMarket(m)?.hasArbitrage)
 
   return (
-    <a
-      href={`${POLYMARKET_EVENT_URL}/${event.slug}`}
-      target="_blank"
-      rel="noopener noreferrer"
-      onClick={onOpen}
-      className="group flex gap-3 rounded-2xl border border-border/50 bg-background/60 p-3 transition-all hover:border-primary/40 hover:bg-muted/40"
+    <button
+      type="button"
+      onClick={onSelect}
+      className={`flex h-[148px] w-[280px] shrink-0 flex-col rounded-xl border p-3 text-left transition-all hover:border-primary/40 hover:bg-muted/40 ${
+        selected
+          ? 'border-primary/50 bg-primary/5 ring-1 ring-primary/20'
+          : 'border-border/50 bg-background/60'
+      }`}
     >
-      {event.image ? (
-        <img
-          src={event.image}
-          alt=""
-          className="size-12 shrink-0 rounded-xl object-cover"
-        />
-      ) : (
-        <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-muted">
-          {category === 'sports' ? (
-            <Trophy className="size-5 text-muted-foreground" />
-          ) : (
-            <Gamepad2 className="size-5 text-muted-foreground" />
-          )}
-        </div>
-      )}
-
-      <div className="min-w-0 flex-1">
-        <div className="flex items-start gap-2">
-          <p className="line-clamp-2 text-sm font-medium leading-snug group-hover:text-primary">
-            {event.title}
-          </p>
-          {isNew && (
-            <span className="shrink-0 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-400">
-              Nuevo
+      <div className="flex items-start gap-2.5">
+        {event.image ? (
+          <img src={event.image} alt="" className="size-11 shrink-0 rounded-lg object-cover" />
+        ) : (
+          <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-muted">
+            {category === 'sports' ? (
+              <Trophy className="size-4 text-muted-foreground" />
+            ) : (
+              <Gamepad2 className="size-4 text-muted-foreground" />
+            )}
+          </div>
+        )}
+        <div className="min-w-0 flex-1">
+          <p className="line-clamp-2 text-sm font-medium leading-snug">{event.title}</p>
+          <div className="mt-1 flex flex-wrap items-center gap-1.5">
+            <span className="rounded bg-muted px-1.5 py-0.5 text-[10px]">
+              {CATEGORY_LABELS[category]}
             </span>
-          )}
-        </div>
-
-        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-          <span className="rounded-md bg-muted px-1.5 py-0.5">{CATEGORY_LABELS[category]}</span>
-          <span>{formatRelativeTime(event.createdAt)}</span>
-          {prices && prices.length >= 2 && (
-            <span>
-              {Math.round(Number(prices[0]) * 100)}% / {Math.round(Number(prices[1]) * 100)}%
+            <span className="text-[10px] text-muted-foreground">
+              {formatRelativeTime(event.createdAt)}
             </span>
-          )}
+          </div>
         </div>
       </div>
 
-      <ExternalLink className="mt-1 size-4 shrink-0 opacity-0 transition-opacity group-hover:opacity-60" />
-    </a>
+      <div className="mt-auto flex flex-wrap items-center gap-2 pt-2 text-[11px] text-muted-foreground">
+        {event.volume != null && event.volume > 0 && (
+          <span>Vol. {formatUsd(event.volume)}</span>
+        )}
+        {event.liquidity != null && event.liquidity > 0 && (
+          <span>Liq. {formatUsd(event.liquidity)}</span>
+        )}
+        {market && market.outcomes.length >= 2 && (
+          <span className="tabular-nums">
+            {market.outcomes[0].impliedPct}% / {market.outcomes[1].impliedPct}%
+          </span>
+        )}
+        {isNew && (
+          <span className="rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[9px] font-bold uppercase text-emerald-600 dark:text-emerald-400">
+            Nuevo
+          </span>
+        )}
+        {hasArb && (
+          <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-bold text-amber-600 dark:text-amber-400">
+            <Zap className="size-2.5" />
+            Arb
+          </span>
+        )}
+      </div>
+    </button>
   )
 }
 
-function AlertRow({ alert, onRead }: { alert: PolymarketAlert; onRead: () => void }) {
+function AlertCard({
+  alert,
+  selected,
+  onSelect,
+  onRead,
+}: {
+  alert: PolymarketAlert
+  selected?: boolean
+  onSelect: () => void
+  onRead: () => void
+}) {
   return (
     <div
-      className={`flex gap-3 rounded-2xl border p-3 transition-colors ${
-        alert.read
-          ? 'border-border/30 bg-background/30 opacity-70'
-          : 'border-emerald-500/30 bg-emerald-500/5'
+      className={`flex h-[120px] w-[260px] shrink-0 flex-col rounded-xl border p-3 transition-colors ${
+        selected
+          ? 'border-primary/50 bg-primary/5 ring-1 ring-primary/20'
+          : alert.read
+            ? 'border-border/30 bg-background/30 opacity-75'
+            : 'border-emerald-500/30 bg-emerald-500/5'
       }`}
     >
-      {alert.image ? (
-        <img src={alert.image} alt="" className="size-10 shrink-0 rounded-lg object-cover" />
-      ) : (
-        <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted">
-          {alert.category === 'sports' ? (
-            <Trophy className="size-4" />
+      <button type="button" onClick={onSelect} className="min-w-0 flex-1 text-left">
+        <div className="flex items-start gap-2">
+          {alert.image ? (
+            <img src={alert.image} alt="" className="size-9 shrink-0 rounded-lg object-cover" />
           ) : (
-            <Gamepad2 className="size-4" />
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted">
+              {alert.category === 'sports' ? (
+                <Trophy className="size-3.5" />
+              ) : (
+                <Gamepad2 className="size-3.5" />
+              )}
+            </div>
           )}
+          <p className="line-clamp-2 text-sm font-medium leading-snug">{alert.title}</p>
         </div>
-      )}
-
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium leading-snug">{alert.title}</p>
-        <p className="mt-0.5 text-xs text-muted-foreground">
-          {CATEGORY_LABELS[alert.category]} · detectado {formatRelativeTime(alert.detectedAt)}
+        <p className="mt-2 text-[11px] text-muted-foreground">
+          {CATEGORY_LABELS[alert.category]} · {formatRelativeTime(alert.detectedAt)}
         </p>
-      </div>
-
-      <div className="flex shrink-0 flex-col gap-1">
-        <a
-          href={`${POLYMARKET_EVENT_URL}/${alert.slug}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          title="Abrir en Polymarket"
-          className="inline-flex size-7 items-center justify-center rounded-lg hover:bg-muted"
-        >
-          <ExternalLink className="size-3.5" />
-        </a>
-        {!alert.read && (
-          <Button variant="ghost" size="icon-sm" onClick={onRead} title="Marcar como leída">
+      </button>
+      {!alert.read && (
+        <div className="mt-1 flex justify-end">
+          <Button variant="ghost" size="icon-sm" onClick={onRead} title="Marcar leída">
             <CheckCheck className="size-3.5" />
           </Button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
+  )
+}
+
+function ArbitrageCard({
+  op,
+  selected,
+  onSelect,
+}: {
+  op: ArbitrageOpportunity
+  selected?: boolean
+  onSelect: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={`flex h-[148px] w-[300px] shrink-0 flex-col rounded-xl border p-3 text-left transition-all hover:border-amber-500/40 ${
+        selected
+          ? 'border-amber-500/50 bg-amber-500/10 ring-1 ring-amber-500/20'
+          : 'border-amber-500/25 bg-amber-500/5'
+      }`}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <p className="line-clamp-2 text-sm font-medium leading-snug">{op.eventTitle}</p>
+        <span className="shrink-0 rounded-full bg-amber-500/20 px-2 py-0.5 text-xs font-bold text-amber-600 dark:text-amber-400">
+          +{op.profitPct}%
+        </span>
+      </div>
+
+      <p className="mt-1 line-clamp-1 text-[11px] text-muted-foreground">{op.marketQuestion}</p>
+
+      <div className="mt-auto flex items-end justify-between gap-2 pt-2">
+        <div className="flex min-w-0 flex-1 gap-2">
+          {op.outcomes.map((o) => (
+            <div
+              key={o.name}
+              className="min-w-0 flex-1 rounded-lg bg-background/60 px-2 py-1.5 text-center"
+            >
+              <p className="truncate text-[10px] text-muted-foreground">{o.name}</p>
+              <p className="text-sm font-bold tabular-nums">{o.impliedPct}%</p>
+              <p className="text-[10px] tabular-nums text-muted-foreground">
+                {(o.price * 100).toFixed(1)}¢
+              </p>
+            </div>
+          ))}
+        </div>
+        <div className="shrink-0 text-right text-[10px] text-muted-foreground">
+          <p>Coste {(op.totalCost * 100).toFixed(1)}¢</p>
+          <p className="font-medium text-emerald-600 dark:text-emerald-400">Pago 100¢</p>
+        </div>
+      </div>
+    </button>
+  )
+}
+
+function HorizontalStrip({
+  title,
+  icon,
+  action,
+  empty,
+  children,
+}: {
+  title: string
+  icon?: React.ReactNode
+  action?: React.ReactNode
+  empty?: React.ReactNode
+  children: React.ReactNode
+}) {
+  const hasChildren = React.Children.count(children) > 0
+
+  return (
+    <section className="flex min-h-0 min-w-0 flex-1 flex-col">
+      <div className="mb-2 flex shrink-0 items-center justify-between gap-2 px-1">
+        <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          {icon}
+          {title}
+        </h3>
+        {action}
+      </div>
+      {hasChildren ? (
+        <div className="thin-scroll flex gap-3 overflow-x-auto pb-2">{children}</div>
+      ) : (
+        (empty ?? (
+          <div className="flex flex-1 items-center justify-center rounded-xl border border-dashed border-border/50 px-4 py-8 text-center text-xs text-muted-foreground">
+            Sin resultados
+          </div>
+        ))
+      )}
+    </section>
   )
 }
 
@@ -188,76 +298,165 @@ export function PolimarketMainView() {
   } = usePolimarket()
 
   const [activeTab, setActiveTab] = useState<Tab>('alerts')
+  const [selected, setSelected] = useState<SelectedPolymarketItem | null>(null)
+  const [arbQuery, setArbQuery] = useState('')
 
   const recentAlertIds = useMemo(
     () => new Set(alerts.slice(0, 20).map((a) => `${a.category}:${a.eventId}`)),
     [alerts],
   )
 
+  const arbitrageOps = useMemo(
+    () => findAllArbitrage(latestEvents),
+    [latestEvents],
+  )
+
+  const filteredArb = useMemo(
+    () => filterArbitrage(arbitrageOps, arbQuery),
+    [arbitrageOps, arbQuery],
+  )
+
+  const selectEvent = (event: PolymarketEvent, category: PolymarketCategory) => {
+    setSelected({ event, category })
+  }
+
+  const selectByIds = (
+    eventId: string,
+    category: PolymarketCategory,
+    fallback?: Pick<PolymarketAlert, 'title' | 'slug' | 'image' | 'createdAt'>,
+  ) => {
+    const event = findEvent(latestEvents, category, eventId)
+    if (event) {
+      selectEvent(event, category)
+      return
+    }
+    if (fallback) {
+      selectEvent(
+        {
+          id: eventId,
+          title: fallback.title,
+          slug: fallback.slug,
+          image: fallback.image,
+          createdAt: fallback.createdAt,
+          markets: [],
+        },
+        category,
+      )
+    }
+  }
+
+  const selectArbitrage = (op: ArbitrageOpportunity) => {
+    selectByIds(op.eventId, op.category)
+  }
+
+  const isSelected = (eventId: string, category: PolymarketCategory) =>
+    selected?.event.id === eventId && selected.category === category
+
   const tabs: { id: Tab; label: string; icon: React.ReactNode; badge?: number }[] = [
-    {
-      id: 'alerts',
-      label: 'Alertas',
-      icon: <BellRing className="size-4" />,
-      badge: unreadCount,
-    },
-    {
-      id: 'sports',
-      label: 'Deportes',
-      icon: <Trophy className="size-4" />,
-    },
-    {
-      id: 'esports',
-      label: 'Esports',
-      icon: <Gamepad2 className="size-4" />,
-    },
+    { id: 'alerts', label: 'Alertas', icon: <BellRing className="size-4" />, badge: unreadCount },
+    { id: 'sports', label: 'Deportes', icon: <Trophy className="size-4" /> },
+    { id: 'esports', label: 'Esports', icon: <Gamepad2 className="size-4" /> },
   ]
 
   return (
     <div className="flex h-full flex-col">
-      {/* Header */}
-      <div className="border-b border-border/40 px-6 py-5">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-xl font-semibold tracking-tight">Polimarket Alerts</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Te avisa cuando llega una apuesta nueva de deportes o esports
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => updateSettings({ monitoring: !settings.monitoring })}
-            >
-              {settings.monitoring ? (
-                <>
-                  <Pause className="size-3.5" />
-                  Pausar
-                </>
-              ) : (
-                <>
-                  <Play className="size-3.5" />
-                  Reanudar
-                </>
-              )}
-            </Button>
-            <Button variant="outline" size="sm" onClick={refreshNow} disabled={isLoading}>
-              {isLoading ? (
-                <Loader2 className="size-3.5 animate-spin" />
-              ) : (
-                <RefreshCw className="size-3.5" />
-              )}
-              Actualizar
-            </Button>
-          </div>
+      {/* Header horizontal */}
+      <header className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-2 border-b border-border/40 px-4 py-3">
+        <div className="mr-auto min-w-0">
+          <h1 className="text-lg font-semibold tracking-tight">Polimarket</h1>
+          <p className="text-xs text-muted-foreground">
+            Alertas · arbitraje · deportes y esports
+          </p>
         </div>
 
-        {/* Status bar */}
-        <div className="mt-4 flex flex-wrap items-center gap-3 text-xs">
+        <div className="flex flex-wrap items-center gap-3 text-xs">
+          <label className="flex cursor-pointer items-center gap-1.5">
+            <input
+              type="checkbox"
+              checked={settings.notifySports}
+              onChange={(e) => updateSettings({ notifySports: e.target.checked })}
+              className="size-3.5 rounded accent-primary"
+            />
+            <Trophy className="size-3" />
+            Deportes
+          </label>
+          <label className="flex cursor-pointer items-center gap-1.5">
+            <input
+              type="checkbox"
+              checked={settings.notifyEsports}
+              onChange={(e) => updateSettings({ notifyEsports: e.target.checked })}
+              className="size-3.5 rounded accent-primary"
+            />
+            <Gamepad2 className="size-3" />
+            Esports
+          </label>
+          <label className="flex cursor-pointer items-center gap-1.5">
+            <input
+              type="checkbox"
+              checked={settings.browserNotifications}
+              onChange={(e) => updateSettings({ browserNotifications: e.target.checked })}
+              className="size-3.5 rounded accent-primary"
+            />
+            <Bell className="size-3" />
+            Notif.
+          </label>
+          <select
+            value={settings.pollIntervalMs}
+            onChange={(e) => updateSettings({ pollIntervalMs: Number(e.target.value) })}
+            className="rounded-lg border border-border bg-background px-2 py-1 text-xs"
+          >
+            <option value={30000}>30s</option>
+            <option value={60000}>1m</option>
+            <option value={120000}>2m</option>
+            <option value={300000}>5m</option>
+          </select>
+        </div>
+
+        {notificationPermission !== 'granted' && settings.browserNotifications && (
+          <Button variant="secondary" size="sm" onClick={requestNotificationPermission}>
+            {notificationPermission === 'denied' ? (
+              <>
+                <BellOff className="size-3.5" />
+                Denegado
+              </>
+            ) : (
+              <>
+                <Bell className="size-3.5" />
+                Permiso
+              </>
+            )}
+          </Button>
+        )}
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => updateSettings({ monitoring: !settings.monitoring })}
+        >
+          {settings.monitoring ? (
+            <>
+              <Pause className="size-3.5" />
+              Pausar
+            </>
+          ) : (
+            <>
+              <Play className="size-3.5" />
+              Reanudar
+            </>
+          )}
+        </Button>
+        <Button variant="outline" size="sm" onClick={refreshNow} disabled={isLoading}>
+          {isLoading ? (
+            <Loader2 className="size-3.5 animate-spin" />
+          ) : (
+            <RefreshCw className="size-3.5" />
+          )}
+          Actualizar
+        </Button>
+
+        <div className="flex w-full flex-wrap items-center gap-2 border-t border-border/30 pt-2 text-[11px] lg:w-auto lg:border-0 lg:pt-0">
           <span
-            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 ${
+            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 ${
               settings.monitoring
                 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
                 : 'bg-muted text-muted-foreground'
@@ -268,201 +467,167 @@ export function PolimarketMainView() {
                 settings.monitoring ? 'animate-pulse bg-emerald-500' : 'bg-muted-foreground'
               }`}
             />
-            {settings.monitoring ? 'Monitor activo' : 'Monitor pausado'}
+            {settings.monitoring ? 'Activo' : 'Pausado'}
           </span>
-          <span className="text-muted-foreground">
-            Última revisión: {formatDateTime(lastCheckedAt)}
-          </span>
-          {lastError && (
-            <span className="text-destructive">Error: {lastError}</span>
+          <span className="text-muted-foreground">Rev. {formatDateTime(lastCheckedAt)}</span>
+          {lastError && <span className="text-destructive">{lastError}</span>}
+          {arbitrageOps.length > 0 && (
+            <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
+              <Zap className="size-3" />
+              {arbitrageOps.length} arbitrajes
+            </span>
           )}
         </div>
+      </header>
+
+      {/* Tabs horizontales */}
+      <div className="flex shrink-0 gap-1 border-b border-border/40 px-4">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors ${
+              activeTab === tab.id
+                ? 'border-primary text-foreground'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            {tab.icon}
+            {tab.label}
+            {tab.badge != null && tab.badge > 0 && (
+              <span className="rounded-full bg-emerald-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                {tab.badge}
+              </span>
+            )}
+          </button>
+        ))}
       </div>
 
+      {/* Cuerpo: lista horizontal + panel detalle */}
       <div className="flex min-h-0 flex-1">
-        {/* Sidebar settings */}
-        <aside className="hidden w-56 shrink-0 border-r border-border/40 p-4 lg:block">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Configuración
-          </p>
-
-          <div className="space-y-4">
-            <label className="flex cursor-pointer items-center justify-between gap-2 text-sm">
-              <span className="flex items-center gap-2">
-                <Trophy className="size-3.5" />
-                Deportes
-              </span>
-              <input
-                type="checkbox"
-                checked={settings.notifySports}
-                onChange={(e) => updateSettings({ notifySports: e.target.checked })}
-                className="size-4 rounded accent-primary"
-              />
-            </label>
-
-            <label className="flex cursor-pointer items-center justify-between gap-2 text-sm">
-              <span className="flex items-center gap-2">
-                <Gamepad2 className="size-3.5" />
-                Esports
-              </span>
-              <input
-                type="checkbox"
-                checked={settings.notifyEsports}
-                onChange={(e) => updateSettings({ notifyEsports: e.target.checked })}
-                className="size-4 rounded accent-primary"
-              />
-            </label>
-
-            <label className="flex cursor-pointer items-center justify-between gap-2 text-sm">
-              <span className="flex items-center gap-2">
-                <Bell className="size-3.5" />
-                Notif. sistema
-              </span>
-              <input
-                type="checkbox"
-                checked={settings.browserNotifications}
-                onChange={(e) => updateSettings({ browserNotifications: e.target.checked })}
-                className="size-4 rounded accent-primary"
-              />
-            </label>
-
-            {notificationPermission !== 'granted' && settings.browserNotifications && (
-              <Button
-                variant="secondary"
-                size="sm"
-                className="w-full"
-                onClick={requestNotificationPermission}
-              >
-                {notificationPermission === 'denied' ? (
-                  <>
-                    <BellOff className="size-3.5" />
-                    Permiso denegado
-                  </>
-                ) : (
-                  <>
-                    <Bell className="size-3.5" />
-                    Activar notificaciones
-                  </>
-                )}
-              </Button>
-            )}
-
-            <div>
-              <label className="mb-1.5 block text-xs text-muted-foreground">
-                Intervalo de revisión
-              </label>
-              <select
-                value={settings.pollIntervalMs}
-                onChange={(e) => updateSettings({ pollIntervalMs: Number(e.target.value) })}
-                className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-sm"
-              >
-                <option value={30000}>30 segundos</option>
-                <option value={60000}>1 minuto</option>
-                <option value={120000}>2 minutos</option>
-                <option value={300000}>5 minutos</option>
-              </select>
-            </div>
-          </div>
-        </aside>
-
-        {/* Main content */}
-        <div className="flex min-w-0 flex-1 flex-col">
-          {/* Tabs */}
-          <div className="flex gap-1 border-b border-border/40 px-4 pt-3">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`relative flex items-center gap-2 rounded-t-lg px-4 py-2 text-sm font-medium transition-colors ${
-                  activeTab === tab.id
-                    ? 'bg-muted/60 text-foreground'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                {tab.icon}
-                {tab.label}
-                {tab.badge != null && tab.badge > 0 && (
-                  <span className="rounded-full bg-emerald-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
-                    {tab.badge}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-
-          {/* Tab content */}
-          <div className="flex-1 overflow-y-auto thin-scroll p-4">
-            {activeTab === 'alerts' && (
-              <div className="mx-auto max-w-2xl space-y-3">
-                {alerts.length > 0 && (
-                  <div className="mb-4 flex justify-end gap-2">
-                    <Button variant="ghost" size="sm" onClick={markAllRead}>
-                      <CheckCheck className="size-3.5" />
-                      Marcar todas leídas
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={clearAlerts}>
-                      <Trash2 className="size-3.5" />
-                      Limpiar
-                    </Button>
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden p-4">
+          {activeTab === 'alerts' && (
+            <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row">
+              <HorizontalStrip
+                title="Alertas recientes"
+                icon={<BellRing className="size-3.5" />}
+                action={
+                  alerts.length > 0 ? (
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="sm" onClick={markAllRead}>
+                        <CheckCheck className="size-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={clearAlerts}>
+                        <Trash2 className="size-3.5" />
+                      </Button>
+                    </div>
+                  ) : undefined
+                }
+                empty={
+                  <div className="flex flex-1 flex-col items-center justify-center rounded-xl border border-dashed border-border/50 py-10 text-center">
+                    <BellRing className="mb-2 size-8 text-muted-foreground/40" />
+                    <p className="text-xs text-muted-foreground">Sin alertas todavía</p>
                   </div>
-                )}
+                }
+              >
+                {alerts.map((alert) => (
+                  <AlertCard
+                    key={alert.id}
+                    alert={alert}
+                    selected={isSelected(alert.eventId, alert.category)}
+                    onSelect={() =>
+                      selectByIds(alert.eventId, alert.category, {
+                        title: alert.title,
+                        slug: alert.slug,
+                        image: alert.image,
+                        createdAt: alert.createdAt,
+                      })
+                    }
+                    onRead={() => markAlertRead(alert.id)}
+                  />
+                ))}
+              </HorizontalStrip>
 
-                {alerts.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-16 text-center">
-                    <BellRing className="mb-3 size-10 text-muted-foreground/50" />
-                    <p className="text-sm font-medium">Sin alertas todavía</p>
-                    <p className="mt-1 max-w-sm text-xs text-muted-foreground">
-                      Cuando Polymarket publique una apuesta nueva de deportes o esports, aparecerá
-                      aquí y recibirás una notificación.
+              <div className="hidden w-px shrink-0 bg-border/40 lg:block" />
+
+              <HorizontalStrip
+                title="Arbitraje entre equipos"
+                icon={<Zap className="size-3.5 text-amber-500" />}
+                action={
+                  <div className="relative">
+                    <Search className="pointer-events-none absolute left-2 top-1/2 size-3 -translate-y-1/2 text-muted-foreground" />
+                    <input
+                      type="search"
+                      value={arbQuery}
+                      onChange={(e) => setArbQuery(e.target.value)}
+                      placeholder="Buscar equipo..."
+                      className="w-36 rounded-lg border border-border bg-background py-1 pl-7 pr-2 text-xs"
+                    />
+                  </div>
+                }
+                empty={
+                  <div className="flex flex-1 flex-col items-center justify-center rounded-xl border border-dashed border-amber-500/20 bg-amber-500/5 py-10 text-center">
+                    <Zap className="mb-2 size-8 text-amber-500/40" />
+                    <p className="text-xs text-muted-foreground">
+                      {isLoading
+                        ? 'Analizando mercados...'
+                        : arbQuery
+                          ? 'Sin coincidencias'
+                          : 'No hay arbitraje ahora (suma < 100%)'}
                     </p>
                   </div>
-                ) : (
-                  alerts.map((alert) => (
-                    <AlertRow
-                      key={alert.id}
-                      alert={alert}
-                      onRead={() => markAlertRead(alert.id)}
-                    />
-                  ))
-                )}
-              </div>
-            )}
+                }
+              >
+                {filteredArb.map((op) => (
+                  <ArbitrageCard
+                    key={`${op.category}:${op.marketId}`}
+                    op={op}
+                    selected={isSelected(op.eventId, op.category)}
+                    onSelect={() => selectArbitrage(op)}
+                  />
+                ))}
+              </HorizontalStrip>
+            </div>
+          )}
 
-            {activeTab === 'sports' && (
-              <div className="mx-auto max-w-2xl space-y-2">
-                {latestEvents.sports.length === 0 ? (
-                  <EmptyCategory label="deportes" loading={isLoading} />
+          {(activeTab === 'sports' || activeTab === 'esports') && (
+            <HorizontalStrip
+              title={activeTab === 'sports' ? 'Apuestas deportivas' : 'Apuestas esports'}
+              icon={
+                activeTab === 'sports' ? (
+                  <Trophy className="size-3.5" />
                 ) : (
-                  latestEvents.sports.map((event) => (
-                    <EventCard
-                      key={event.id}
-                      event={event}
-                      category="sports"
-                      isNew={recentAlertIds.has(`sports:${event.id}`)}
-                    />
-                  ))
-                )}
-              </div>
-            )}
-
-            {activeTab === 'esports' && (
-              <div className="mx-auto max-w-2xl space-y-2">
-                {latestEvents.esports.length === 0 ? (
-                  <EmptyCategory label="esports" loading={isLoading} />
-                ) : (
-                  latestEvents.esports.map((event) => (
-                    <EventCard
-                      key={event.id}
-                      event={event}
-                      category="esports"
-                      isNew={recentAlertIds.has(`esports:${event.id}`)}
-                    />
-                  ))
-                )}
-              </div>
-            )}
-          </div>
+                  <Gamepad2 className="size-3.5" />
+                )
+              }
+              empty={
+                <EmptyCategory
+                  label={activeTab === 'sports' ? 'deportes' : 'esports'}
+                  loading={isLoading}
+                />
+              }
+            >
+              {latestEvents[activeTab].map((event) => (
+                <EventCard
+                  key={event.id}
+                  event={event}
+                  category={activeTab}
+                  isNew={recentAlertIds.has(`${activeTab}:${event.id}`)}
+                  selected={isSelected(event.id, activeTab)}
+                  onSelect={() => selectEvent(event, activeTab)}
+                />
+              ))}
+            </HorizontalStrip>
+          )}
         </div>
+
+        {selected && (
+          <EventDetailPanel
+            event={selected.event}
+            category={selected.category}
+            onClose={() => setSelected(null)}
+          />
+        )}
       </div>
     </div>
   )
@@ -470,11 +635,11 @@ export function PolimarketMainView() {
 
 function EmptyCategory({ label, loading }: { label: string; loading: boolean }) {
   return (
-    <div className="flex flex-col items-center justify-center py-16 text-center">
+    <div className="flex flex-1 items-center justify-center gap-3 rounded-xl border border-dashed border-border/50 py-12">
       {loading ? (
-        <Loader2 className="mb-3 size-8 animate-spin text-muted-foreground" />
+        <Loader2 className="size-6 animate-spin text-muted-foreground" />
       ) : (
-        <Trophy className="mb-3 size-10 text-muted-foreground/50" />
+        <Trophy className="size-6 text-muted-foreground/40" />
       )}
       <p className="text-sm text-muted-foreground">
         {loading ? `Cargando ${label}...` : `No hay apuestas recientes de ${label}`}

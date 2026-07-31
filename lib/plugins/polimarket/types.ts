@@ -8,9 +8,12 @@ export type PolymarketMarket = {
   id: string
   question: string
   slug: string
+  outcomes?: string
   outcomePrices?: string
   volume?: string
   liquidity?: string
+  endDate?: string
+  active?: boolean
 }
 
 export type PolymarketEvent = {
@@ -42,6 +45,26 @@ export type PolymarketAlert = {
   createdAt: string
   detectedAt: string
   read: boolean
+}
+
+export type ArbitrageOpportunity = {
+  eventId: string
+  eventTitle: string
+  eventSlug: string
+  category: PolymarketCategory
+  image?: string
+  marketId: string
+  marketQuestion: string
+  outcomes: { name: string; price: number; impliedPct: number }[]
+  profitPct: number
+  totalCost: number
+  volume: number
+  liquidity: number
+}
+
+export type SelectedPolymarketItem = {
+  event: PolymarketEvent
+  category: PolymarketCategory
 }
 
 export type PolymarketSettings = {

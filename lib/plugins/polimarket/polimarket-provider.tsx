@@ -206,7 +206,7 @@ export function PolimarketRootProvider({
     setLastError(null)
 
     try {
-      const data = await fetchAllCategoryEvents(25)
+      const data = await fetchAllCategoryEvents(50)
       processEvents(data)
       setLastCheckedAt(new Date().toISOString())
     } catch (err) {
