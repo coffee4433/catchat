@@ -75,6 +75,7 @@ export async function GET(req: NextRequest) {
         if (stripped) resHeaders.set(key, stripped)
         return
       }
+      if (lower === 'content-encoding' || lower === 'content-length') return
       resHeaders.set(key, value)
     })
 

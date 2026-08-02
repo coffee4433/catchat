@@ -208,7 +208,6 @@ export function EventDetailPanel({ event, category, onClose }: Props) {
               src={`${IFRAME_PROXY}${encodeURIComponent(`/event/${event.slug}`)}`}
               title="Polymarket"
               className="h-full w-full flex-1 bg-white"
-              sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
             />
           </aside>
         </div>
