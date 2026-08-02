@@ -15,7 +15,6 @@ import { Button } from '@/components/ui/button'
 import { parseMarket, formatUsd } from '@/lib/plugins/polimarket/markets'
 import {
   CATEGORY_LABELS,
-  POLYMARKET_EVENT_URL,
   type PolymarketCategory,
   type PolymarketEvent,
 } from '@/lib/plugins/polimarket/types'
@@ -49,6 +48,8 @@ type Props = {
 
 export function EventDetailPanel({ event, category, onClose }: Props) {
   const [showPolymarket, setShowPolymarket] = React.useState(false)
+  const [embedMarketId, setEmbedMarketId] = React.useState<string | null>(null)
+  const [isDark, setIsDark] = React.useState(false)
   const markets = (event.markets ?? [])
     .map(parseMarket)
     .filter((m): m is NonNullable<typeof m> => m !== null)
@@ -58,6 +59,12 @@ export function EventDetailPanel({ event, category, onClose }: Props) {
     if (!best || m.profitPct > best.profitPct) return m
     return best
   }, null)
+
+  const openPolymarket = () => {
+    setEmbedMarketId(markets[0]?.slug ?? event.slug)
+    setIsDark(document.documentElement.classList.contains('dark'))
+    setShowPolymarket(true)
+  }
 
   return (
     <aside className="flex h-full w-[min(440px,42vw)] shrink-0 flex-col border-l border-border/40 bg-muted/20">
@@ -165,13 +172,9 @@ export function EventDetailPanel({ event, category, onClose }: Props) {
       </div>
 
       <div className="border-t border-border/40 p-3">
-        <Button
-          variant="outline"
-          className="w-full"
-          onClick={() => setShowPolymarket(true)}
-        >
+        <Button variant="outline" className="w-full" onClick={openPolymarket}>
           <ExternalLink className="size-3.5" />
-          Abrir en Polymarket
+          Ver en Polymarket
         </Button>
       </div>
 
@@ -182,10 +185,12 @@ export function EventDetailPanel({ event, category, onClose }: Props) {
             onClick={() => setShowPolymarket(false)}
           />
           <aside className="absolute right-0 top-0 flex h-full w-[min(520px,92vw)] flex-col border-l border-border/40 bg-background shadow-2xl animate-in slide-in-from-right-full duration-300">
-            <div className="flex items-center justify-between border-b border-border/40 px-4 py-3">
-              <div className="flex min-w-0 items-center gap-2">
+            <div className="flex items-center justify-between gap-2 border-b border-border/40 px-4 py-3">
+              <div className="flex min-w-0 flex-1 items-center gap-2">
                 <ExternalLink className="size-4 shrink-0 text-muted-foreground" />
-                <span className="truncate text-sm font-semibold">Polymarket</span>
+                <span className="truncate text-sm font-semibold">
+                  {markets.length > 1 ? 'Selecciona un mercado' : 'Polymarket'}
+                </span>
               </div>
               <Button
                 variant="ghost"
@@ -196,12 +201,38 @@ export function EventDetailPanel({ event, category, onClose }: Props) {
                 <X className="size-4" />
               </Button>
             </div>
-            <iframe
-              src={`${POLYMARKET_EVENT_URL}/${event.slug}`}
-              title="Polymarket"
-              className="h-full w-full flex-1 bg-white"
-              sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-            />
+
+            {markets.length > 1 && (
+              <div className="thin-scroll flex shrink-0 gap-1.5 overflow-x-auto border-b border-border/40 px-3 py-2">
+                {markets.map((m) => (
+                  <button
+                    key={m.slug}
+                    type="button"
+                    onClick={() => setEmbedMarketId(m.slug)}
+                    className={`shrink-0 rounded-full px-3 py-1 text-[11px] font-medium transition-colors ${
+                      embedMarketId === m.slug
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground'
+                    }`}
+                  >
+                    {m.outcomes.map((o) => o.name).join(' vs ')}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {embedMarketId ? (
+              <iframe
+                src={`https://embed.polymarket.com/market?market=${encodeURIComponent(embedMarketId)}&fit=true&theme=${isDark ? 'dark' : 'light'}`}
+                title="Polymarket"
+                className="h-full w-full flex-1"
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+              />
+            ) : (
+              <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
+                Selecciona un mercado para verlo
+              </div>
+            )}
           </aside>
         </div>
       )}
