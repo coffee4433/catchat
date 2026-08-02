@@ -17,6 +17,53 @@ function stripRestrictiveCsp(csp: string | null): string | null {
     .join('; ') || null
 }
 
+const FIX_IMAGES_SCRIPT = `<script>
+(function () {
+  function fixUrl(u) {
+    if (!u) return u
+    if (/^https?:\\/\\//.test(u) || u.indexOf(' ') === -1) return u
+    try {
+      return u.replace(/\\s/g, '%20')
+    } catch (e) {
+      return u
+    }
+  }
+  function fixSrcset(v) {
+    if (!v) return v
+    return v
+      .split(',')
+      .map(function (c) {
+        c = c.trim()
+        var m = c.match(/^(.*?)\\s+(\\d+(\\.\\d+)?[wxh])$/i)
+        if (!m) return fixUrl(c)
+        return fixUrl(m[1]) + ' ' + m[2]
+      })
+      .join(', ')
+  }
+  function fix(el) {
+    if (el.getAttribute('srcset')) el.setAttribute('srcset', fixSrcset(el.getAttribute('srcset')))
+    if (el.tagName === 'IMG' && el.getAttribute('src')) el.setAttribute('src', fixUrl(el.getAttribute('src')))
+  }
+  function fixAll() {
+    var els = document.querySelectorAll('img, source')
+    for (var i = 0; i < els.length; i++) fix(els[i])
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', fixAll)
+  } else {
+    fixAll()
+  }
+  var obs = new MutationObserver(function (mut) {
+    var dirty = false
+    for (var i = 0; i < mut.length; i++) {
+      if (mut[i].addedNodes && mut[i].addedNodes.length) dirty = true
+    }
+    if (dirty) fixAll()
+  })
+  obs.observe(document.documentElement, { subtree: true, childList: true })
+})();
+<\/script>`
+
 function decodeNextImage(value: string): string | null {
   const m = value.match(/^\/_next\/image[^?]*\?(.*)$/i)
   if (!m) return null
@@ -113,6 +160,7 @@ export async function GET(req: NextRequest) {
     if (isHtml) {
       let html = await upstream.text()
       html = rewriteHtmlUrls(html, parsed.toString())
+      html = html.replace('</head>', `${FIX_IMAGES_SCRIPT}</head>`)
       body = html
       if (!resHeaders.has('content-type')) {
         resHeaders.set('content-type', 'text/html; charset=utf-8')
