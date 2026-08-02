@@ -89,10 +89,17 @@ const FIX_IMAGES_SCRIPT = `<script>
     var m = u.match(/\\?url=([^&]+)/)
     if (!m) return null
     try {
-      return decodeURIComponent(m[1])
+      var target = decodeURIComponent(m[1])
+      if (target.indexOf('://') === -1 && target.charAt(0) === '/') {
+        target = PM_ORIGIN + target
+      }
+      return target
     } catch (e) {
       return null
     }
+  }
+  function escapeCommas(s) {
+    return s.replace(/,/g, '%2C')
   }
   function fixCandidate(c) {
     c = c.trim()
@@ -104,7 +111,7 @@ const FIX_IMAGES_SCRIPT = `<script>
     var decoded = decodeNextImage(url)
     if (decoded) {
       if (decoded.indexOf(' ') !== -1) return ''
-      return decoded + desc
+      return escapeCommas(decoded) + desc
     }
     if (url.indexOf(' ') !== -1) return ''
     return c
@@ -144,6 +151,8 @@ const FIX_IMAGES_SCRIPT = `<script>
     fixAll()
   }
   window.addEventListener('load', fixAll)
+  setTimeout(fixAll, 1500)
+  setTimeout(fixAll, 4000)
 })();
 <\/script>`
 
@@ -183,7 +192,7 @@ function rewriteHtmlUrls(html: string, baseUrl: string): string {
             const parts = candidate.trim().split(/\s+/)
             if (!parts.length) return candidate
             const url = parts.shift()!
-            return [rewriteUrl(url, baseUrl), ...parts].join(' ')
+            return [rewriteUrl(url, baseUrl).replace(/,/g, '%2C'), ...parts].join(' ')
           })
           .join(', ')
         return `${attr}=${quote}${rewritten}${quote}`
