@@ -1,0 +1,13 @@
+{
+  "id": "tps-shooter",
+  "name": "TPS Shooter",
+  "version": "0.0.1",
+  "author": "CatChat",
+  "description": "Third-person shooter con física Rapier, bosque 3D, correr, saltar, agacharte y disparar",
+  "category": "media",
+  "iconName": "Crosshair",
+  "updatedAt": "2026-08-02T06:41:40.089Z",
+  "githubUrl": "https://github.com/coffee4433/catchat/tree/main/plugins/tps-shooter",
+  "releasedAt": "2026-08-02T06:41:40.090Z",
+  "downloadUrl": "https://github.com/coffee4433/catchat/releases/download/plugin-tps-shooter-0.0.1/tps-shooter-0.0.1.zip"
+}
