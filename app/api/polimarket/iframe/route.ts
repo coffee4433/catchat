@@ -78,20 +78,7 @@ const FIX_IMAGES_SCRIPT = `<script>
   } else {
     fixAll()
   }
-  var obs = new MutationObserver(function (mut) {
-    var dirty = false
-    for (var i = 0; i < mut.length; i++) {
-      if (mut[i].type === 'childList' && mut[i].addedNodes && mut[i].addedNodes.length) dirty = true
-      if (mut[i].type === 'attributes') dirty = true
-    }
-    if (dirty) fixAll()
-  })
-  obs.observe(document.documentElement, {
-    subtree: true,
-    childList: true,
-    attributes: true,
-    attributeFilter: ['src', 'srcset'],
-  })
+  window.addEventListener('load', fixAll)
 })();
 <\/script>`
 
