@@ -151,8 +151,13 @@ function AlertCard({
   onRead: () => void
 }) {
   return (
-    <div
-      className={`flex h-[168.5px] w-[300px] shrink-0 items-center gap-2 rounded-xl border px-2.5 py-2 transition-colors ${
+    <button
+      type="button"
+      onClick={() => {
+        onSelect()
+        if (!alert.read) onRead()
+      }}
+      className={`flex h-[168.5px] w-[300px] shrink-0 items-center gap-2 rounded-xl border px-2.5 py-2 text-left transition-all hover:border-primary/40 hover:bg-muted/40 ${
         selected
           ? 'border-primary/50 bg-primary/5 ring-1 ring-primary/20'
           : alert.read
@@ -160,44 +165,25 @@ function AlertCard({
             : 'border-emerald-500/30 bg-emerald-500/5'
       }`}
     >
-      <button
-        type="button"
-        onClick={onSelect}
-        className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
-      >
-        {alert.image ? (
-          <img src={alert.image} alt="" className="size-10 shrink-0 rounded-lg object-cover" />
-        ) : (
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted">
-            {alert.category === 'sports' ? (
-              <Trophy className="size-4" />
-            ) : (
-              <Gamepad2 className="size-4" />
-            )}
-          </div>
-        )}
-        <div className="min-w-0 flex-1">
-          <p className="line-clamp-2 text-sm font-medium leading-snug">{alert.title}</p>
-          <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
-            {CATEGORY_LABELS[alert.category]} · {formatRelativeTime(alert.detectedAt)}
-          </p>
+      {alert.image ? (
+        <img src={alert.image} alt="" className="size-10 shrink-0 rounded-lg object-cover" />
+      ) : (
+        <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted">
+          {alert.category === 'sports' ? (
+            <Trophy className="size-4" />
+          ) : (
+            <Gamepad2 className="size-4" />
+          )}
         </div>
-      </button>
-      {!alert.read && (
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          className="shrink-0"
-          onClick={(e) => {
-            e.stopPropagation()
-            onRead()
-          }}
-          title="Marcar leída"
-        >
-          <CheckCheck className="size-3.5" />
-        </Button>
       )}
-    </div>
+      <div className="min-w-0 flex-1">
+        <p className="line-clamp-2 text-sm font-medium leading-snug">{alert.title}</p>
+        <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+          {CATEGORY_LABELS[alert.category]} · {formatRelativeTime(alert.detectedAt)}
+        </p>
+      </div>
+      {!alert.read && <CheckCheck className="size-3.5 shrink-0 text-emerald-500" />}
+    </button>
   )
 }
 
