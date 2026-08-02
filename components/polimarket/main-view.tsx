@@ -80,7 +80,7 @@ function EventCard({
     <button
       type="button"
       onClick={onSelect}
-      className={`flex h-full w-[280px] shrink-0 flex-col rounded-xl border p-3 text-left transition-all hover:border-primary/40 hover:bg-muted/40 ${
+      className={`flex h-[168.5px] w-[300px] shrink-0 flex-col rounded-xl border p-3 text-left transition-all hover:border-primary/40 hover:bg-muted/40 ${
         selected
           ? 'border-primary/50 bg-primary/5 ring-1 ring-primary/20'
           : 'border-border/50 bg-background/60'
