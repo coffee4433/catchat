@@ -54,7 +54,7 @@ export function IconRail({
   return (
     <aside
       aria-label={t.workspacesLabel}
-      className="flex h-full w-20 shrink-0 flex-col items-center gap-3 py-4 select-none"
+      className="flex h-full w-20 shrink-0 flex-col items-center gap-3 pt-1 pb-4 select-none"
     >
       <button
         aria-label={t.catChatWorkspaceLabel}
