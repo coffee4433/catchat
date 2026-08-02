@@ -184,7 +184,7 @@ export function EventDetailPanel({ event, category, onClose }: Props) {
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setShowPolymarket(false)}
           />
-          <aside className="absolute right-0 top-0 flex h-full w-[min(640px,94vw)] flex-col border-l border-border/40 bg-background shadow-2xl animate-in slide-in-from-right-full duration-300">
+          <aside className="absolute right-0 top-0 flex h-full w-[min(640px,94vw)] flex-col rounded-2xl border-l border-border/40 bg-background shadow-2xl animate-in slide-in-from-right-full duration-300">
             <div className="flex items-center justify-between gap-2 border-b border-border/40 px-4 py-3">
               <div className="flex min-w-0 flex-1 items-center gap-2">
                 {category === 'sports' ? (
