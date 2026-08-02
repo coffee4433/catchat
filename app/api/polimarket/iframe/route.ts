@@ -60,8 +60,14 @@ const FIX_IMAGES_SCRIPT = `<script>
     return u
   }
   function fix(el) {
-    if (el.getAttribute('srcset')) el.setAttribute('srcset', fixSrcset(el.getAttribute('srcset')))
-    if (el.tagName === 'IMG' && el.getAttribute('src')) el.setAttribute('src', fixSrc(el.getAttribute('src')))
+    if (el.getAttribute('srcset')) {
+      var fixed = fixSrcset(el.getAttribute('srcset'))
+      if (fixed !== el.getAttribute('srcset')) el.setAttribute('srcset', fixed)
+    }
+    if (el.tagName === 'IMG' && el.getAttribute('src')) {
+      var fixedSrc = fixSrc(el.getAttribute('src'))
+      if (fixedSrc !== el.getAttribute('src')) el.setAttribute('src', fixedSrc)
+    }
   }
   function fixAll() {
     var els = document.querySelectorAll('img, source')
