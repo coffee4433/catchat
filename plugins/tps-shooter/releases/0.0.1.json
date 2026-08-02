@@ -1,0 +1,13 @@
+{
+  "id": "tps-shooter",
+  "name": "Plugin TPS Shooter 0.0.1",
+  "version": "0.0.1",
+  "author": "coffee4433",
+  "description": "Plugin Plugin TPS Shooter 0.0.1 para CatChat.",
+  "category": "productivity",
+  "iconName": "TrendingUp",
+  "updatedAt": "2026-08-02T13:08:31.273Z",
+  "githubUrl": "https://github.com/coffee4433/catchat/tree/main/plugins/tps-shooter",
+  "releasedAt": "2026-08-02T13:08:31.274Z",
+  "downloadUrl": "https://github.com/coffee4433/catchat/releases/download/plugin-tps-shooter-0.0.1/tps-shooter-0.0.1.zip"
+}
