@@ -35,6 +35,12 @@ const nextConfig = {
       '@dimforge/rapier3d-compat': path.join(mainNodeModules, '@dimforge/rapier3d-compat'),
     }
 
+    // Vercel can't clone the TPS-Controls submodule — provide a stub
+    const tpsDist = path.join(__dirname, 'TPS-Controls', 'package', 'dist', 'index.esm.js')
+    if (!fs.existsSync(tpsDist)) {
+      config.resolve.alias[tpsDist] = path.join(__dirname, 'lib', 'plugins', 'tps-controls', 'player-stub.tsx')
+    }
+
     return config
   }
 }

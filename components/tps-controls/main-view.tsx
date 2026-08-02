@@ -6,12 +6,17 @@ import { KeyboardControls, Text } from '@react-three/drei'
 import { Physics, RigidBody, useRapier } from '@react-three/rapier'
 import * as THREE from 'three'
 import RAPIER from '@dimforge/rapier3d-compat'
-import { Player } from '../../TPS-Controls/package/dist/index.esm.js'
+import dynamic from 'next/dynamic'
 import {
   useMultiplayer,
   type RemotePlayerState,
 } from '@/lib/plugins/tps-controls/multiplayer'
 import { RemotePlayer } from './remote-player'
+
+const Player = dynamic(
+  () => import('../../TPS-Controls/package/dist/index.esm.js').then((m) => ({ default: m.Player })),
+  { ssr: false },
+)
 
 function Environment() {
   return (
