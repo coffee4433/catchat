@@ -19,30 +19,49 @@ function stripRestrictiveCsp(csp: string | null): string | null {
 
 const FIX_IMAGES_SCRIPT = `<script>
 (function () {
-  function fixUrl(u) {
-    if (!u) return u
-    if (/^https?:\\/\\//.test(u) || u.indexOf(' ') === -1) return u
+  function decodeNextImage(u) {
+    if (!u || u.indexOf('/_next/image') !== 0) return null
+    var m = u.match(/\\?url=([^&]+)/)
+    if (!m) return null
     try {
-      return u.replace(/\\s/g, '%20')
+      return decodeURIComponent(m[1])
     } catch (e) {
-      return u
+      return null
     }
+  }
+  function fixCandidate(c) {
+    c = c.trim()
+    if (!c) return ''
+    var m = c.match(/^(\\S+)(\\s+(\\d+(\\.\\d+)?[wxh]))?$/i)
+    if (!m) return ''
+    var url = m[1]
+    var desc = m[2] || ''
+    var decoded = decodeNextImage(url)
+    if (decoded) {
+      if (decoded.indexOf(' ') !== -1) return ''
+      return decoded + desc
+    }
+    if (url.indexOf(' ') !== -1) return ''
+    return c
   }
   function fixSrcset(v) {
     if (!v) return v
     return v
       .split(',')
-      .map(function (c) {
-        c = c.trim()
-        var m = c.match(/^(.*?)\\s+(\\d+(\\.\\d+)?[wxh])$/i)
-        if (!m) return fixUrl(c)
-        return fixUrl(m[1]) + ' ' + m[2]
+      .map(fixCandidate)
+      .filter(function (x) {
+        return x
       })
       .join(', ')
   }
+  function fixSrc(u) {
+    var decoded = decodeNextImage(u)
+    if (decoded && decoded.indexOf(' ') === -1) return decoded
+    return u
+  }
   function fix(el) {
     if (el.getAttribute('srcset')) el.setAttribute('srcset', fixSrcset(el.getAttribute('srcset')))
-    if (el.tagName === 'IMG' && el.getAttribute('src')) el.setAttribute('src', fixUrl(el.getAttribute('src')))
+    if (el.tagName === 'IMG' && el.getAttribute('src')) el.setAttribute('src', fixSrc(el.getAttribute('src')))
   }
   function fixAll() {
     var els = document.querySelectorAll('img, source')
@@ -56,11 +75,17 @@ const FIX_IMAGES_SCRIPT = `<script>
   var obs = new MutationObserver(function (mut) {
     var dirty = false
     for (var i = 0; i < mut.length; i++) {
-      if (mut[i].addedNodes && mut[i].addedNodes.length) dirty = true
+      if (mut[i].type === 'childList' && mut[i].addedNodes && mut[i].addedNodes.length) dirty = true
+      if (mut[i].type === 'attributes') dirty = true
     }
     if (dirty) fixAll()
   })
-  obs.observe(document.documentElement, { subtree: true, childList: true })
+  obs.observe(document.documentElement, {
+    subtree: true,
+    childList: true,
+    attributes: true,
+    attributeFilter: ['src', 'srcset'],
+  })
 })();
 <\/script>`
 
