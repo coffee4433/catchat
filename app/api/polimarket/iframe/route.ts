@@ -17,6 +17,41 @@ function stripRestrictiveCsp(csp: string | null): string | null {
     .join('; ') || null
 }
 
+const DIAG_SCRIPT = `<script>
+(function () {
+  var errors = []
+  var prevError = window.onerror
+  window.onerror = function (msg, src, line, col, err) {
+    errors.push((msg || '') + ' @' + line)
+    if (prevError) return prevError.apply(this, arguments)
+  }
+  window.addEventListener('unhandledrejection', function (e) {
+    errors.push('rejection: ' + (e.reason && e.reason.message ? e.reason.message : String(e.reason)))
+  })
+  function report() {
+    var c = document.getElementById('group-chart-container')
+    var info = []
+    if (!c) {
+      info.push('NO chart container')
+    } else {
+      var r = c.getBoundingClientRect()
+      info.push('chart rect: ' + Math.round(r.width) + 'x' + Math.round(r.height))
+      info.push('canvases: ' + c.querySelectorAll('canvas').length)
+      info.push('children: ' + c.children.length)
+    }
+    info.push('errors: ' + (errors.length ? errors.slice(0, 5).join(' || ') : 'none'))
+    var d = document.createElement('div')
+    d.style.cssText = 'position:fixed;top:6px;left:6px;z-index:99999;background:#111;color:#0f0;font:10px monospace;padding:6px;border-radius:4px;max-width:520px;white-space:pre-wrap;word-break:break-all'
+    d.textContent = '[DIAG] ' + info.join(' | ')
+    document.body.appendChild(d)
+  }
+  window.addEventListener('load', function () {
+    setTimeout(report, 2500)
+    setTimeout(report, 8000)
+  })
+})();
+<\/script>`
+
 const FIX_IMAGES_SCRIPT = `<script>
 (function () {
   var PM_ORIGIN = 'https://polymarket.com'
@@ -208,7 +243,7 @@ export async function GET(req: NextRequest) {
     if (isHtml) {
       let html = await upstream.text()
       html = rewriteHtmlUrls(html, parsed.toString())
-      html = html.replace('</head>', `${FIX_IMAGES_SCRIPT}</head>`)
+      html = html.replace('</head>', `${DIAG_SCRIPT}${FIX_IMAGES_SCRIPT}</head>`)
       body = html
       if (!resHeaders.has('content-type')) {
         resHeaders.set('content-type', 'text/html; charset=utf-8')
