@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { MessageSquare, Plus, Search, Trash2 } from 'lucide-react'
+import { MessageSquare, Plus, Trash2 } from 'lucide-react'
 import type { ConversationListItem } from '@/app/actions/chat'
 import { deleteConversation } from '@/app/actions/chat'
 import { useLanguage } from '@/lib/i18n'
@@ -77,7 +77,6 @@ function ConversationRow({
 }
 
 export function Sidebar({
-  onOpenSearch,
   onOpenNewChat,
   conversations,
   activeConversationId,
@@ -85,7 +84,6 @@ export function Sidebar({
   onConversationsChange,
   currentUserId,
 }: {
-  onOpenSearch: () => void
   onOpenNewChat: () => void
   conversations: ConversationListItem[]
   activeConversationId: number | null
@@ -143,16 +141,6 @@ export function Sidebar({
 
   return (
     <aside className="flex h-full w-60 shrink-0 flex-col rounded-2xl border border-border bg-card shadow-sm">
-      <div className="flex items-center justify-between px-3 py-3">
-        <button
-          aria-label={t.searchPlaceholder}
-          onClick={onOpenSearch}
-          className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-        >
-          <Search className="size-4" />
-        </button>
-      </div>
-
       <nav className="thin-scroll flex-1 overflow-y-auto px-2 pb-3" aria-label={t.conversationsLabel}>
         <FriendRequestsPanel currentUserId={currentUserId} onChatWithUser={(id) => onSelectConversation(id)} />
         <div className="mt-1 mb-1 flex items-center justify-between px-2">

@@ -121,7 +121,6 @@ function ChatAppInner({
           <div className="flex flex-1 min-w-0 h-full">
             <div className="hidden h-full lg:block ml-3">
               <Sidebar
-                onOpenSearch={() => setSearchOpen(true)}
                 onOpenNewChat={() => setNewChatOpen(true)}
                 conversations={conversations}
                 activeConversationId={activeConversationId}
