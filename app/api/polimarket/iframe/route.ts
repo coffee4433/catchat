@@ -17,25 +17,48 @@ function stripRestrictiveCsp(csp: string | null): string | null {
     .join('; ') || null
 }
 
-function rewriteHtmlUrls(html: string, baseUrl: string): string {
+function decodeNextImage(value: string): string | null {
+  const m = value.match(/^\/_next\/image[^?]*\?(.*)$/i)
+  if (!m) return null
+  const query = m[1].replace(/&amp;/g, '&')
+  const params = new URLSearchParams(query)
+  const target = params.get('url')
+  if (!target) return null
+  try {
+    return decodeURIComponent(target)
+  } catch {
+    return null
+  }
+}
+
+function rewriteUrl(value: string, baseUrl: string): string {
+  if (!value || value.startsWith('data:') || value.startsWith('blob:')) return value
+  const nextImage = decodeNextImage(value)
+  let target = nextImage || value
+  if (target.startsWith('http')) return target
   const base = new URL(baseUrl).origin
+  if (target.startsWith('//')) return `${base}${target}`
+  if (target.startsWith('/')) return `${base}${target}`
+  return new URL(target, baseUrl).href
+}
+
+function rewriteHtmlUrls(html: string, baseUrl: string): string {
   return html.replace(
     /(href|src|action|srcset|data-src|poster)\s*=\s*(['"])(.*?)\2/gi,
     (match, attr: string, quote: string, value: string) => {
-      if (!value || value.startsWith('http') || value.startsWith('data:') || value.startsWith('blob:')) {
-        return match
+      if (attr.toLowerCase() === 'srcset') {
+        const rewritten = value
+          .split(',')
+          .map((candidate) => {
+            const parts = candidate.trim().split(/\s+/)
+            if (!parts.length) return candidate
+            const url = parts.shift()!
+            return [rewriteUrl(url, baseUrl), ...parts].join(' ')
+          })
+          .join(', ')
+        return `${attr}=${quote}${rewritten}${quote}`
       }
-      if (value.startsWith('/_next/image')) {
-        return `${attr}=${quote}/api/polimarket/iframe?url=${encodeURIComponent(`/_next/image${value.slice('/_next/image'.length)}`)}${quote}`
-      }
-      if (value.startsWith('//')) {
-        return `${attr}=${quote}${base}${value}${quote}`
-      }
-      if (value.startsWith('/')) {
-        return `${attr}=${quote}${base}${value}${quote}`
-      }
-      const resolved = new URL(value, baseUrl).href
-      return `${attr}=${quote}${resolved}${quote}`
+      return `${attr}=${quote}${rewriteUrl(value, baseUrl)}${quote}`
     },
   )
 }
