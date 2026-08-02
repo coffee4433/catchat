@@ -1477,7 +1477,7 @@ export function ChatThread({
   }
 
   return (
-    <section ref={sectionRef} className="relative flex h-full min-w-0 flex-1 flex-col rounded-2xl border border-border bg-card shadow-sm ml-3 overflow-hidden">
+    <section ref={sectionRef} className="relative flex h-full min-w-0 flex-1 flex-col rounded-2xl border border-border bg-card shadow-sm ml-3">
       <header className="flex items-center justify-between border-b border-border px-4 py-3">
         <div className="flex min-w-0 items-center gap-2 text-sm">
           {conversation?.otherUser ? (
