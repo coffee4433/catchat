@@ -88,14 +88,15 @@ const CHART_SCRIPT = `<script>
       '<div class="' + NS + '-title">' + escapeHtml(card.title) + '</div>' + rows + '</div>'
   }
   function inject(card) {
-    if (card.el.querySelector('.' + NS + '-wrap')) return
-    var h3 = card.el.querySelector('h3')
-    if (!h3) return
-    var chart = document.createElement('div')
-    chart.innerHTML = buildHTML(card)
-    var wrap = chart.firstChild
-    if (!wrap) return
-    h3.parentNode.insertBefore(wrap, h3.parentNode.nextSibling)
+    try {
+      if (card.el.parentElement && card.el.parentElement.querySelector('.' + NS + '-wrap')) return
+      var chart = document.createElement('div')
+      chart.innerHTML = buildHTML(card)
+      var wrap = chart.firstChild
+      if (!wrap) return
+      var parent = card.el.parentElement || card.el
+      parent.insertBefore(wrap, card.el)
+    } catch (err) { /* el DOM puede cambiar mid-render; se reintenta en la siguiente pasada */ }
   }
   function ensureStyle() {
     if (document.getElementById('cc-style')) return
