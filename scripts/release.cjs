@@ -29,19 +29,18 @@ if (oldVersion === version) {
   fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n')
 }
 
+console.log('Pushing to GitHub (triggers Vercel deploy)...\n')
+try {
+  execSync('git add package.json', { cwd: root, stdio: 'inherit' })
+  execSync(`git commit -m "Release v${version}"`, { cwd: root, stdio: 'inherit' })
+  execSync('git push', { cwd: root, stdio: 'inherit' })
+  console.log(`✓ Pushed v${version} — Vercel is deploying...\n`)
+} catch (e) {
+  console.error('\n⚠ Failed to push to GitHub:', e.message)
+}
+
 console.log('Building...\n')
 execSync('pnpm run desktop:build', { cwd: root, stdio: 'inherit' })
 
 console.log('\nPublishing to GitHub...\n')
 execSync('node scripts/publish-release.cjs', { cwd: root, stdio: 'inherit' })
-
-console.log('\nPushing to GitHub (triggers Vercel deploy)...\n')
-try {
-  execSync('git add package.json', { cwd: root, stdio: 'inherit' })
-  execSync(`git commit -m "Release v${version}"`, { cwd: root, stdio: 'inherit' })
-  execSync('git push', { cwd: root, stdio: 'inherit' })
-  console.log(`\n✓ Pushed v${version} to GitHub — Vercel will auto-deploy.\n`)
-} catch (e) {
-  console.error('\n⚠ Failed to push to GitHub:', e.message)
-  console.error('You may need to push manually: git push')
-}
