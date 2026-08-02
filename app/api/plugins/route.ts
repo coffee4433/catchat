@@ -41,6 +41,7 @@ export async function GET() {
           if (r.tag_name && r.tag_name.startsWith('plugin-')) {
             const parts = r.tag_name.split('-')
             const pluginId = parts.slice(1, -1).join('-') || parts[1] || r.tag_name.replace('plugin-', '')
+            if (pluginId === 'survivor-shooter') continue
             const pluginVersion = parts.pop() || r.tag_name
 
             if (!foundIds.has(pluginId)) {
@@ -75,28 +76,27 @@ export async function GET() {
     console.error('Remote GitHub plugins fetch error:', err)
   }
 
-  // 2. If no published GitHub releases exist, fallback to local plugins/ directory (local dev only)
-  if (plugins.length === 0) {
-    try {
-      const pluginsDir = path.join(process.cwd(), 'plugins')
-      if (fs.existsSync(pluginsDir)) {
-        const entries = fs.readdirSync(pluginsDir, { withFileTypes: true })
-        for (const ent of entries) {
-          if (ent.isDirectory()) {
-            const manifestPath = path.join(pluginsDir, ent.name, 'manifest.json')
-            if (fs.existsSync(manifestPath)) {
-              const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
-              plugins.push({
-                ...manifest,
-                verified: true,
-              })
-            }
+  // 2. Always merge local plugins/ directory for local plugins
+  try {
+    const pluginsDir = path.join(process.cwd(), 'plugins')
+    if (fs.existsSync(pluginsDir)) {
+      const entries = fs.readdirSync(pluginsDir, { withFileTypes: true })
+      for (const ent of entries) {
+        if (ent.isDirectory() && !foundIds.has(ent.name)) {
+          const manifestPath = path.join(pluginsDir, ent.name, 'manifest.json')
+          if (fs.existsSync(manifestPath)) {
+            const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
+            plugins.push({
+              ...manifest,
+              downloadUrl: `/plugins/${ent.name}/release.zip`,
+              verified: true,
+            })
           }
         }
       }
-    } catch (err) {
-      console.error('Local plugins read error:', err)
     }
+  } catch (err) {
+    console.error('Local plugins read error:', err)
   }
 
   return NextResponse.json({ plugins })

@@ -270,6 +270,8 @@ export function ChatThread({
   })
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  const sectionRef = useRef<HTMLElement>(null)
+  const ctxMenuRef = useRef<HTMLDivElement>(null)
   const pinBtnRef = useRef<HTMLButtonElement>(null)
   const wasAtBottom = useRef(true)
   const lastReportedTyping = useRef<number>(0)
@@ -383,6 +385,19 @@ export function ChatThread({
     y: number
     msg: MessageWithSender
   } | null>(null)
+
+  // Close context menu on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ctxMenuRef.current && !ctxMenuRef.current.contains(e.target as Node)) {
+        setContextMenu(null)
+      }
+    }
+    if (contextMenu) {
+      document.addEventListener('mousedown', handleClick)
+      return () => document.removeEventListener('mousedown', handleClick)
+    }
+  }, [contextMenu])
 
   // Edit Message state
   const [editingMessage, setEditingMessage] = useState<MessageWithSender | null>(null)
@@ -814,20 +829,36 @@ export function ChatThread({
   }
 
   const showContextMenu = (clientX: number, clientY: number, msg: MessageWithSender) => {
-    let x = clientX
-    let y = clientY
+    const section = sectionRef.current
     const menuWidth = 240
     const menuHeight = 520
 
-    if (x + menuWidth > window.innerWidth) {
-      x = window.innerWidth - menuWidth - 10
-    }
-    if (x < 10) x = 10
+    let x = clientX
+    let y = clientY
 
-    if (y + menuHeight > window.innerHeight) {
-      y = window.innerHeight - menuHeight - 10
+    if (section) {
+      const rect = section.getBoundingClientRect()
+      x = clientX - rect.left
+      y = clientY - rect.top
+
+      if (x + menuWidth > rect.width) {
+        x = rect.width - menuWidth - 8
+      }
+      if (x < 8) x = 8
+      if (y + menuHeight > rect.height) {
+        y = rect.height - menuHeight - 8
+      }
+      if (y < 8) y = 8
+    } else {
+      if (x + menuWidth > window.innerWidth) {
+        x = window.innerWidth - menuWidth - 10
+      }
+      if (x < 10) x = 10
+      if (y + menuHeight > window.innerHeight) {
+        y = window.innerHeight - menuHeight - 10
+      }
+      if (y < 10) y = 10
     }
-    if (y < 10) y = 10
 
     setContextMenu({ x, y, msg })
   }
@@ -1446,7 +1477,7 @@ export function ChatThread({
   }
 
   return (
-    <section className="relative flex h-full min-w-0 flex-1 flex-col rounded-2xl border border-border bg-card shadow-sm ml-3">
+    <section ref={sectionRef} className="relative flex h-full min-w-0 flex-1 flex-col rounded-2xl border border-border bg-card shadow-sm ml-3 overflow-hidden">
       <header className="flex items-center justify-between border-b border-border px-4 py-3">
         <div className="flex min-w-0 items-center gap-2 text-sm">
           {conversation?.otherUser ? (
@@ -2209,12 +2240,13 @@ export function ChatThread({
       <AnimatePresence>
         {contextMenu && (
           <motion.div
+            ref={ctxMenuRef}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.1 }}
             style={{ top: contextMenu.y, left: contextMenu.x }}
-            className="fixed z-50 w-60 rounded-xl border border-border bg-card p-1 shadow-2xl text-[13px] select-none text-foreground animate-in fade-in zoom-in-95 duration-100"
+            className="absolute z-50 w-60 rounded-xl border border-border ctx-menu p-1 shadow-2xl text-[13px] select-none text-foreground"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between gap-1 border-b border-border/60 pb-1.5 mb-1 px-1 pt-0.5">

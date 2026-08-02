@@ -529,29 +529,129 @@ html[data-theme='liquid-glass'] .thin-scroll::-webkit-scrollbar-button {
   height: 0 !important;
 }
 
-/* CatChat auth theme: deep space dark with electric cyan & coral */
+/* CatChat: deep-space glass — same aesthetic as the sign-in page */
 [data-theme='catchat'] {
   color-scheme: dark;
-  --background: oklch(0.13 0.015 260);
-  --foreground: oklch(0.97 0.005 260);
-  --card: oklch(0.18 0.02 260);
-  --card-foreground: oklch(0.97 0.005 260);
-  --popover: oklch(0.18 0.02 260);
-  --popover-foreground: oklch(0.97 0.005 260);
-  --primary: oklch(0.85 0.16 195);
-  --primary-foreground: oklch(0.15 0.03 230);
-  --secondary: oklch(0.24 0.025 260);
-  --secondary-foreground: oklch(0.97 0.005 260);
-  --muted: oklch(0.24 0.025 260);
-  --muted-foreground: oklch(0.66 0.02 250);
-  --accent: oklch(0.72 0.19 25);
-  --accent-foreground: oklch(0.98 0.01 25);
+  --background: oklch(0.14 0.01 260 / 0.82);
+  --foreground: oklch(0.96 0.005 260);
+  --card: oklch(0.18 0.015 260 / 0.78);
+  --card-foreground: oklch(0.96 0.005 260);
+  --popover: oklch(0.18 0.015 260 / 0.78);
+  --popover-foreground: oklch(0.96 0.005 260);
+  --primary: oklch(0.62 0.22 290);
+  --primary-foreground: oklch(0.98 0.01 290);
+  --secondary: oklch(0.25 0.02 260 / 0.70);
+  --secondary-foreground: oklch(0.96 0.005 260);
+  --muted: oklch(0.25 0.02 260 / 0.70);
+  --muted-foreground: oklch(0.65 0.02 250);
+  --accent: oklch(0.72 0.16 200);
+  --accent-foreground: oklch(0.17 0.03 230);
   --destructive: oklch(0.63 0.24 27);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 8%);
-  --ring: oklch(0.85 0.16 195);
-  --glow: oklch(0.85 0.16 195);
-  --radius: 1.25rem;
+  --ring: oklch(0.62 0.22 290);
+  --glow: oklch(0.72 0.16 200);
+  --radius: 0.625rem;
+}
+
+[data-theme='catchat'] .bg-card,
+[data-theme='catchat'] .bg-background,
+[data-theme='catchat'] .bg-popover,
+[data-theme='catchat'] .bg-secondary,
+[data-theme='catchat'] .bg-muted {
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+[data-theme='catchat'] .ctx-menu {
+  background: oklch(0.18 0.015 260 / 0.94);
+  backdrop-filter: blur(32px);
+  -webkit-backdrop-filter: blur(32px);
+}
+
+/* CatChat: aurora animada de fondo — igual que en la pantalla de login */
+html[data-theme='catchat'] body {
+  position: relative;
+}
+
+html[data-theme='catchat'] body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 30% 20%, oklch(0.62 0.22 290 / 0.12) 0%, transparent 55%),
+    radial-gradient(ellipse at 70% 60%, oklch(0.72 0.16 200 / 0.10) 0%, transparent 55%),
+    radial-gradient(ellipse at 50% 80%, oklch(0.68 0.20 350 / 0.08) 0%, transparent 55%),
+    radial-gradient(ellipse at 20% 50%, oklch(1 0 0 / 0.03) 0%, transparent 40%);
+  animation: catchat-aurora 8s ease-in-out infinite;
+}
+
+html[data-theme='catchat'] body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    radial-gradient(1.5px 1.5px at 15% 25%, oklch(0.62 0.22 290 / 0.5), transparent),
+    radial-gradient(1px 1px at 55% 18%, oklch(0.72 0.16 200 / 0.45), transparent),
+    radial-gradient(1.5px 1.5px at 75% 45%, oklch(0.68 0.20 350 / 0.4), transparent),
+    radial-gradient(1px 1px at 30% 65%, oklch(1 0 0 / 0.4), transparent),
+    radial-gradient(1.5px 1.5px at 85% 75%, oklch(0.62 0.22 290 / 0.35), transparent),
+    radial-gradient(1px 1px at 45% 85%, oklch(0.72 0.16 200 / 0.4), transparent),
+    radial-gradient(1.5px 1.5px at 10% 55%, oklch(0.68 0.20 350 / 0.35), transparent),
+    radial-gradient(1px 1px at 65% 35%, oklch(1 0 0 / 0.35), transparent);
+  background-size: 300% 300%;
+  animation: catchat-shimmer 6s ease-in-out infinite;
+}
+
+@keyframes catchat-aurora {
+  0%, 100% { transform: scale(1) translate(0, 0); }
+  33% { transform: scale(1.05) translate(10px, -8px); }
+  66% { transform: scale(1.03) translate(-6px, 6px); }
+}
+
+@keyframes catchat-shimmer {
+  0%, 100% { background-position: 0% 0%; }
+  25% { background-position: 100% 0%; }
+  50% { background-position: 100% 100%; }
+  75% { background-position: 0% 100%; }
+}
+
+/* Deja que la aurora se vea a través del shell de la app en vez de taparla */
+html[data-theme='catchat'] main.bg-background {
+  background-color: transparent;
+}
+
+/* Paneles y tarjetas de cristal translúcido — mismo material que la card de login */
+html[data-theme='catchat'] .bg-card,
+html[data-theme='catchat'] .bg-popover,
+html[data-theme='catchat'] .bg-secondary,
+html[data-theme='catchat'] .glass-card {
+  background-color: oklch(0.7 0.03 260 / 0.07) !important;
+  backdrop-filter: blur(22px) saturate(160%);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+}
+
+html[data-theme='catchat'] .border-border {
+  border-color: oklch(1 0 0 / 0.12);
+}
+
+/* Línea de brillo superior típica de vidrio, reutilizable en modales/paneles */
+.catchat-sheen {
+  position: relative;
+  overflow: hidden;
+}
+.catchat-sheen::before {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, oklch(1 0 0 / 0.35), transparent);
+  pointer-events: none;
 }
 
 /* Machined corner-screw decoration — four screw indentations, 14px inset. */
@@ -1139,4 +1239,8 @@ body::-webkit-scrollbar-corner,
   animation: marquee 5s ease-in-out infinite alternate;
   white-space: nowrap;
   display: inline-block;
+}
+
+@keyframes magic-spin {
+  to { transform: translate(-50%, -50%) rotate(360deg); }
 }

@@ -163,12 +163,13 @@ function createWindow() {
     minHeight: 600,
     title: "CatChat",
     icon: path.join(appDir, 'build', 'icon.png'),
-    autoHideMenuBar: true, // Oculta la barra de menú para que parezca una app nativa estilo Discord
-    show: false, // Inicialmente invisible para que cargue por detrás del splash
+    autoHideMenuBar: true,
+    show: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
+      sandbox: false,
     }
   })
 
@@ -236,13 +237,13 @@ function createWindow() {
     mainWindow = null
   })
 
-  // Carga la URL del servidor local de desarrollo o la URL de producción de Vercel
-  const startUrl = process.env.ELECTRON_START_URL || 'https://catchat-three.vercel.app'
+  // Carga la URL del servidor local de desarrollo o el servidor embebido de produccion
+  const startUrl = process.env.ELECTRON_START_URL || (nextServer ? 'http://localhost:3000' : 'https://catchat-three.vercel.app')
   mainWindow.loadURL(startUrl)
 }
 
 async function startNextServer() {
-  if (process.env.ELECTRON_START_URL || !process.env.USE_LOCAL_NEXT_SERVER) {
+  if (process.env.ELECTRON_START_URL) {
     return
   }
 
@@ -271,9 +272,7 @@ app.on('ready', async () => {
   createSplashWindow()
   try {
     setupAutoUpdater()
-    if (process.env.USE_LOCAL_NEXT_SERVER) {
-      await startNextServer()
-    }
+    await startNextServer()
     createWindow()
     function checkUpdate() {
       try {

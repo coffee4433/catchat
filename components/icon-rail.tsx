@@ -22,7 +22,11 @@ function PluginRailIcon({
   const [imgFailed, setImgFailed] = useState(false)
 
   if (imgFailed) {
-    return <span className="flex h-full w-full items-center justify-center">{fallback}</span>
+    return (
+      <span className="flex h-full w-full items-center justify-center text-foreground">
+        {fallback}
+      </span>
+    )
   }
 
   return (
@@ -74,9 +78,9 @@ export function IconRail({
             onClick={() => onSelectView?.(tab.id)}
             title={tab.label}
             aria-label={tab.label}
-            className={`flex size-10 shrink-0 items-center justify-center overflow-hidden transition-all ${
+            className={`flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-xl transition-all ${
               isSelected
-                ? 'scale-105 opacity-100'
+                ? 'scale-105 opacity-100 ring-1 ring-primary/40'
                 : 'opacity-70 hover:opacity-100 hover:scale-105'
             }`}
           >

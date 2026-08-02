@@ -13,6 +13,7 @@ import { SettingsModal } from '@/components/settings-modal'
 import { Sidebar } from '@/components/sidebar'
 import { UserDock } from '@/components/user-dock'
 import { ReleaseNotesModal } from '@/components/release-notes-modal'
+import { ChatBackground } from '@/components/chat-background'
 import { CallProvider } from '@/components/calls/call-provider'
 import { PluginProvider, usePlugins } from '@/lib/plugins/plugin-provider'
 import { CatMusicPlayerBar } from '@/components/cat-music/player-bar'
@@ -62,6 +63,18 @@ function ChatAppInner({
     }
   }, [activeView, isPluginEnabled])
 
+  // Listen for plugin navigation requests (e.g. Escape from game view via hash)
+  useEffect(() => {
+    const onHash = () => {
+      if (window.location.hash === '#chat') {
+        setActiveView('chat')
+        history.replaceState(null, '', window.location.pathname + window.location.search)
+      }
+    }
+    window.addEventListener('hashchange', onHash)
+    return () => window.removeEventListener('hashchange', onHash)
+  }, [])
+
   const { data: conversations = initialConversations, mutate: mutateConversations } = useSWR(
     'conversations',
     () => getConversations(),
@@ -100,6 +113,7 @@ function ChatAppInner({
   return (
     <CallProvider user={user}>
       <main className="relative flex h-dvh overflow-hidden bg-background p-3 pl-0">
+        <ChatBackground />
         <IconRail activeView={activeView} onSelectView={setActiveView} />
 
         {/* VIEW 1: Main CatChat Workspace */}
@@ -200,7 +214,7 @@ export function ChatApp(props: { user: AppUser; initialConversations: Conversati
       const saved = localStorage.getItem('cz-theme')
       if (saved && themes.some((t) => t.id === saved)) return saved
     }
-    return 'light'
+    return 'catchat'
   })
 
   useEffect(() => {

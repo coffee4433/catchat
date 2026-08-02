@@ -8,6 +8,12 @@ export type Theme = {
 
 export const themes: Theme[] = [
   {
+    id: 'catchat',
+    name: 'CatChat',
+    dark: true,
+    preview: { bg: '#0d0d12', card: '#191925', accent: '#8b5cf6', text: '#f0f0f5' },
+  },
+  {
     id: 'light',
     name: 'Claro',
     dark: false,

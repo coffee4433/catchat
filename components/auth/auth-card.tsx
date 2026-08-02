@@ -6,7 +6,6 @@ import { AnimatePresence, motion } from 'framer-motion'
 import {
   ArrowRight,
   AtSign,
-  Cat,
   Check,
   Eye,
   EyeOff,
@@ -14,12 +13,7 @@ import {
   User,
 } from 'lucide-react'
 import { authClient } from '@/lib/auth-client'
-import { CatLogo } from './cat-logo'
 
-// Mechanical spring easing (overshoot) used across the industrial system.
-const EASE_MECH: [number, number, number, number] = [0.175, 0.885, 0.32, 1.275]
-
-// Recessed data-slot field: inset neumorphic well, mono label, LED-glow focus.
 function Field({
   id,
   label,
@@ -43,15 +37,12 @@ function Field({
   const isPassword = type === 'password'
 
   return (
-    <div className="flex flex-col gap-2">
-      <label
-        htmlFor={id}
-        className="stamp text-[10px] text-muted-foreground emboss"
-      >
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={id} className="text-[11px] font-medium tracking-wide text-white/40 uppercase">
         {label}
       </label>
-      <div className="group flex items-center gap-3 rounded-xl bg-input px-4 py-3.5 shadow-[var(--shadow-neu-inset)] transition-shadow duration-300 focus-within:shadow-[var(--shadow-neu-inset),0_0_0_2px_var(--ring)]">
-        <span className="text-muted-foreground transition-colors group-focus-within:text-primary">
+      <div className="group flex items-center gap-3 rounded-xl border border-white/[0.12] bg-white/[0.015] px-3.5 py-3 backdrop-blur-[2px] transition-all duration-300 focus-within:border-purple-400/50 focus-within:bg-white/[0.04] focus-within:shadow-[0_0_20px_rgba(139,92,246,0.12)]">
+        <span className="text-white/30 transition-colors group-focus-within:text-purple-400">
           {icon}
         </span>
         <input
@@ -63,20 +54,16 @@ function Field({
           required
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full bg-transparent text-sm font-semibold text-foreground outline-none placeholder:font-normal placeholder:text-muted-foreground/60"
+          className="w-full bg-transparent text-sm text-white placeholder:text-white/20 outline-none"
         />
         {isPassword && (
           <button
             type="button"
             onClick={() => setShowPassword((s) => !s)}
-            className="text-muted-foreground transition-colors hover:text-primary"
+            className="text-white/30 transition-colors hover:text-white/60"
             aria-label={showPassword ? 'Hide password' : 'Show password'}
           >
-            {showPassword ? (
-              <EyeOff className="h-4 w-4" />
-            ) : (
-              <Eye className="h-4 w-4" />
-            )}
+            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
         )}
       </div>
@@ -126,33 +113,46 @@ export function AuthCard({ initialMode }: { initialMode: 'login' | 'register' })
     <motion.div
       initial={{ opacity: 0, y: 40, scale: 0.96 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.7, ease: EASE_MECH }}
+      transition={{ duration: 0.7, ease: [0.175, 0.885, 0.32, 1.275] }}
       className="w-full"
     >
-      {/* Bolted plastic chassis: dual-shadow extrusion + machined corner screws */}
-      <div className="screws relative overflow-hidden rounded-[1.75rem] bg-card p-7 shadow-[var(--shadow-neu)] sm:p-9">
-        {/* Header: recessed icon housing, wordmark, live status LED */}
-        <div className="mb-7 flex items-center gap-3">
-          <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-input shadow-[var(--shadow-neu-inset)]">
-            <CatLogo className="h-7 w-7" />
-          </span>
-          <div className="flex flex-col">
-            <span className="text-xl font-extrabold tracking-tight text-foreground emboss">
-              CatChat
-            </span>
-            <span className="stamp flex items-center gap-1.5 text-[9px] text-muted-foreground">
-              <span className="led text-[color:var(--success)]" style={{ color: 'var(--success)' }} />
-              system online
-            </span>
-          </div>
+      <div
+        className="relative overflow-hidden rounded-[2rem] border border-white/[0.12] p-6 sm:p-8"
+        style={{
+          background: 'linear-gradient(160deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 40%, rgba(255,255,255,0.02) 100%)',
+          backdropFilter: 'blur(20px) saturate(150%)',
+          WebkitBackdropFilter: 'blur(20px) saturate(150%)',
+          boxShadow:
+            '0 0 0 1px rgba(255,255,255,0.04) inset, 0 1px 0 rgba(255,255,255,0.15) inset, 0 24px 70px rgba(0,0,0,0.45), 0 0 80px rgba(139,92,246,0.08), 0 0 140px rgba(6,182,212,0.05)',
+        }}
+      >
+        {/* Inner aurora glow, sutil para no tapar el cristal */}
+        <div aria-hidden className="pointer-events-none absolute inset-0 opacity-70"
+          style={{
+            background:
+              'radial-gradient(ellipse at 25% 15%, rgba(139,92,246,0.10) 0%, transparent 50%),' +
+              'radial-gradient(ellipse at 78% 65%, rgba(6,182,212,0.08) 0%, transparent 50%),' +
+              'radial-gradient(ellipse at 50% 90%, rgba(236,72,153,0.06) 0%, transparent 50%)',
+          }} />
+
+        {/* Top sheen line, típico del vidrio */}
+        <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-px"
+          style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent)' }} />
+
+        {/* Logo */}
+        <div className="relative mb-6 flex justify-center">
+          <motion.img
+            initial={{ scale: 0.85, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.6, ease: [0.175, 0.885, 0.32, 1.275] }}
+            src="/cat-chat-logo.png"
+            alt="CatChat Logo"
+            className="relative z-10 h-36 w-36 object-contain drop-shadow-[0_8px_28px_rgba(139,92,246,0.35)]"
+          />
         </div>
 
-        {/* Tab switcher: recessed track, extruded active key */}
-        <div
-          role="tablist"
-          aria-label="Authentication mode"
-          className="relative mb-8 grid grid-cols-2 gap-1.5 rounded-2xl bg-input p-1.5 shadow-[var(--shadow-neu-inset)]"
-        >
+        {/* Tab switcher */}
+        <div className="relative mx-auto mb-8 flex w-fit gap-0.5 rounded-xl border border-white/[0.08] bg-white/[0.03] p-0.5">
           {(['login', 'register'] as const).map((m) => {
             const selected = mode === m
             return (
@@ -161,13 +161,24 @@ export function AuthCard({ initialMode }: { initialMode: 'login' | 'register' })
                 role="tab"
                 aria-selected={selected}
                 onClick={() => switchMode(m)}
-                className={`stamp relative z-10 rounded-xl py-2.5 text-xs transition-all duration-300 ${
+                className={`relative rounded-lg px-4 py-1.5 text-[12.5px] font-medium tracking-tight transition-all duration-300 ${
                   selected
-                    ? 'bg-card text-primary shadow-[var(--shadow-neu-sm)]'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'text-white'
+                    : 'text-white/35 hover:text-white/60'
                 }`}
               >
-                {m === 'login' ? 'Sign In' : 'Sign Up'}
+                {selected && (
+                  <motion.span
+                    layoutId="auth-tab-pill"
+                    transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                    className="absolute inset-0 rounded-lg"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(139,92,246,0.25), rgba(6,182,212,0.2))',
+                      boxShadow: '0 0 16px rgba(139,92,246,0.25), inset 0 0 0 1px rgba(255,255,255,0.08)',
+                    }}
+                  />
+                )}
+                <span className="relative z-10">{m === 'login' ? 'Sign In' : 'Sign Up'}</span>
               </button>
             )
           })}
@@ -182,17 +193,17 @@ export function AuthCard({ initialMode }: { initialMode: 'login' | 'register' })
             transition={{ duration: 0.3, ease: 'easeOut' }}
           >
             <div className="mb-7">
-              <h2 className="text-balance text-2xl font-extrabold tracking-tight text-foreground emboss">
+              <h2 className="text-2xl font-bold tracking-tight text-white">
                 {isLogin ? 'Welcome back' : 'Join the pack'}
               </h2>
-              <p className="mt-2 text-sm font-medium leading-relaxed text-muted-foreground">
+              <p className="mt-2 text-sm leading-relaxed text-white/40">
                 {isLogin
                   ? 'Your chats missed you. Sign in and continue the conversation.'
                   : 'Create your account in seconds and start chatting.'}
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+            <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
               {!isLogin && (
                 <Field
                   id="name"
@@ -227,31 +238,41 @@ export function AuthCard({ initialMode }: { initialMode: 'login' | 'register' })
 
               {isLogin && (
                 <div className="flex justify-end">
-                  <button
-                    type="button"
-                    className="stamp text-[10px] text-primary transition-opacity hover:opacity-70"
-                  >
+                  <button type="button" className="text-[11px] text-purple-400/60 transition-opacity hover:text-purple-400">
                     Forgot password?
                   </button>
                 </div>
               )}
 
               {error && (
-                <p className="text-center text-sm font-semibold text-destructive" role="alert">
+                <p className="text-center text-sm font-medium text-red-400" role="alert">
                   {error}
                 </p>
               )}
 
-              {/* Tactile accent key: red-tinted extrusion, inverts to pressed on tap */}
               <motion.button
                 type="submit"
-                whileTap={{ y: 1 }}
+                whileHover={{ scale: 1.015 }}
+                whileTap={{ scale: 0.97 }}
                 disabled={status === 'loading'}
-                className={`stamp group mt-1 flex items-center justify-center gap-2 rounded-2xl py-4 text-xs text-primary-foreground transition-shadow duration-200 ${
-                  status === 'success'
-                    ? 'bg-[color:var(--success)] shadow-[var(--shadow-neu-sm)]'
-                    : 'bg-primary shadow-[var(--shadow-accent)] active:shadow-[var(--shadow-neu-pressed)]'
-                }`}
+                className="group mt-2 flex items-center justify-center gap-1.5 rounded-xl px-5 py-2.5 text-[13px] font-semibold tracking-tight text-white transition-all duration-300 disabled:cursor-not-allowed"
+                style={{
+                  ...(status === 'success'
+                    ? {
+                        background: 'linear-gradient(135deg, rgba(34,197,94,0.18), rgba(22,163,74,0.14))',
+                        border: '1px solid rgba(34,197,94,0.3)',
+                        boxShadow: '0 0 20px rgba(34,197,94,0.15), inset 0 1px 0 rgba(255,255,255,0.1)',
+                        backdropFilter: 'blur(8px)',
+                        WebkitBackdropFilter: 'blur(8px)',
+                      }
+                    : {
+                        background: 'linear-gradient(135deg, rgba(139,92,246,0.15), rgba(6,182,212,0.12))',
+                        border: '1px solid rgba(255,255,255,0.15)',
+                        boxShadow: '0 0 20px rgba(139,92,246,0.15), 0 0 40px rgba(6,182,212,0.06), inset 0 1px 0 rgba(255,255,255,0.12)',
+                        backdropFilter: 'blur(8px)',
+                        WebkitBackdropFilter: 'blur(8px)',
+                      }),
+                }}
               >
                 <AnimatePresence mode="wait" initial={false}>
                   {status === 'loading' ? (
@@ -262,7 +283,7 @@ export function AuthCard({ initialMode }: { initialMode: 'login' | 'register' })
                       exit={{ opacity: 0, y: -8 }}
                       className="flex items-center gap-2"
                     >
-                      <Cat className="h-4 w-4 animate-bounce" />
+                      <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
                       Loading...
                     </motion.span>
                   ) : status === 'success' ? (
@@ -271,9 +292,9 @@ export function AuthCard({ initialMode }: { initialMode: 'login' | 'register' })
                       initial={{ opacity: 0, scale: 0.6 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, y: -8 }}
-                      className="flex items-center gap-2"
+                      className="flex items-center gap-1.5"
                     >
-                      <Check className="h-4 w-4" />
+                      <Check className="h-3.5 w-3.5" />
                       {isLogin ? 'Welcome!' : 'Account created!'}
                     </motion.span>
                   ) : (
@@ -282,10 +303,10 @@ export function AuthCard({ initialMode }: { initialMode: 'login' | 'register' })
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -8 }}
-                      className="flex items-center gap-2"
+                      className="flex items-center gap-1.5"
                     >
                       {isLogin ? 'Sign in to CatChat' : 'Create my account'}
-                      <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                      <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1" />
                     </motion.span>
                   )}
                 </AnimatePresence>

@@ -23,6 +23,18 @@ const nextConfig = {
   webpack: (config) => {
     config.resolve.alias['@'] = __dirname
     config.output.hashFunction = 'sha256'
+
+    const mainNodeModules = path.join(__dirname, 'node_modules')
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      three: path.join(mainNodeModules, 'three'),
+      '@react-three/drei': path.join(mainNodeModules, '@react-three/drei'),
+      '@react-three/fiber': path.join(mainNodeModules, '@react-three/fiber'),
+      '@react-three/rapier': path.join(mainNodeModules, '@react-three/rapier'),
+      'three-stdlib': path.join(mainNodeModules, 'three-stdlib'),
+      '@dimforge/rapier3d-compat': path.join(mainNodeModules, '@dimforge/rapier3d-compat'),
+    }
+
     return config
   }
 }

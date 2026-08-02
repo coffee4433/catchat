@@ -519,7 +519,7 @@ ipcMain.handle('delete:plugin', async (_event, pluginId) => {
 
 ipcMain.handle('get:plugins', async (_event, customDir) => {
   const cfg = loadConfig()
-  const baseDir = customDir || (cfg.projectPath ? path.join(cfg.projectPath, 'plugins') : null)
+  const baseDir = customDir || (cfg.projectPath ? path.join(cfg.projectPath, 'plugins') : path.join(__dirname, '..', 'plugins'))
   const localPluginsMap = new Map()
 
   if (baseDir && fs.existsSync(baseDir)) {
@@ -557,6 +557,7 @@ ipcMain.handle('get:plugins', async (_event, customDir) => {
         if (r.tag_name && r.tag_name.startsWith('plugin-')) {
           const parts = r.tag_name.split('-')
           const pluginId = parts.slice(1, -1).join('-') || parts[1] || r.tag_name.replace('plugin-', '')
+          if (pluginId === 'survivor-shooter') continue
           const pluginVersion = r.tag_name.split('-').pop() || r.tag_name
           const existing = localPluginsMap.get(pluginId)
           if (existing) {

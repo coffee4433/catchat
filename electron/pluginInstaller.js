@@ -97,6 +97,16 @@ function writeInstallRecord(pluginId, version, installDir) {
 }
 
 function registerPluginInstallerIPC(mainWindow) {
+  // Purge legacy survivor-shooter plugin from installed-plugins directory on disk
+  try {
+    const legacyDir = path.join(getPluginsRoot(), 'survivor-shooter')
+    if (fs.existsSync(legacyDir)) {
+      fs.rmSync(legacyDir, { recursive: true, force: true })
+    }
+  } catch (err) {
+    console.error('Failed to purge legacy survivor-shooter plugin dir:', err)
+  }
+
   ipcMain.handle('plugin:install', async (_event, payload) => {
     const pluginId = payload?.pluginId
     const version = payload?.version || 'latest'

@@ -5,7 +5,6 @@ import {
   Boxes,
   Cloud,
   Command,
-  Crosshair,
   Download,
   HardDrive,
   Layers,
@@ -54,7 +53,6 @@ function PluginIcon({ id, className }: { id: string; className?: string }) {
       />
     )
   }
-  if (id === 'survivor-shooter') return <Crosshair className={className} />
   if (id === 'cat-ai') return <Sparkles className={className} />
   if (id === 'cat-canvas') return <Zap className={className} />
   return <Boxes className={className} />
@@ -302,22 +300,10 @@ export function PluginHubView({ onClose }: { onClose?: () => void }) {
                       <div className="flex items-center gap-1.5">
                         {!isInstalled ? (
                           <button
-                            onClick={() => isElectron && installPlugin(plugin.id)}
-                            disabled={!isElectron || isInstalling}
-                            title={
-                              isElectron
-                                ? lang === 'es'
-                                  ? 'Instalar plugin'
-                                  : 'Install plugin'
-                                : lang === 'es'
-                                  ? 'Solo disponible en la app de escritorio'
-                                  : 'Desktop app only'
-                            }
-                            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-bold transition-colors ${
-                              !isElectron
-                                ? 'cursor-not-allowed border border-border/50 bg-secondary/40 text-muted-foreground'
-                                : 'bg-primary text-primary-foreground shadow-md shadow-primary/25 hover:bg-primary/90 disabled:opacity-60'
-                            }`}
+                            onClick={() => installPlugin(plugin.id)}
+                            disabled={isInstalling}
+                            title={lang === 'es' ? 'Instalar plugin' : 'Install plugin'}
+                            className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-[11px] font-bold text-primary-foreground shadow-md shadow-primary/25 hover:bg-primary/90 disabled:opacity-60 transition-colors"
                           >
                             {isInstalling ? (
                               <>
@@ -327,15 +313,7 @@ export function PluginHubView({ onClose }: { onClose?: () => void }) {
                             ) : (
                               <>
                                 <Download className="size-3" />
-                                <span>
-                                  {isElectron
-                                    ? lang === 'es'
-                                      ? 'Instalar'
-                                      : 'Install'
-                                    : lang === 'es'
-                                      ? 'Solo escritorio'
-                                      : 'Desktop only'}
-                                </span>
+                                <span>{lang === 'es' ? 'Instalar' : 'Install'}</span>
                               </>
                             )}
                           </button>
