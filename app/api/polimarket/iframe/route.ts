@@ -191,12 +191,15 @@ const CHART_SCRIPT = `<script>
     return cards
   }
   function loadEvent(slug, host) {
+    console.log('[CC] loading event', slug)
     fetch(GAMMA + '/events?slug=' + encodeURIComponent(slug))
-      .then(function (r) { return r.json() })
+      .then(function (r) { console.log('[CC] gamma status', r.status); return r.json() })
       .then(function (data) {
         var ev = Array.isArray(data) ? data[0] : data
+        console.log('[CC] event', ev && ev.id, ev && ev.title, 'markets', ev && ev.markets && ev.markets.length)
         if (!ev || !ev.markets || !ev.markets.length) return
         var cards = buildCards(ev)
+        console.log('[CC] cards', cards.length, cards.map(function (c) { return c.name }))
         if (!cards.length) return
         var proms = cards.map(function (c) {
           var t = tokenIdOf(c.mkt)
@@ -215,9 +218,10 @@ const CHART_SCRIPT = `<script>
           var old = document.getElementById('cc-root')
           if (old) old.remove()
           host.insertBefore(root, host.firstChild)
+          console.log('[CC] rendered, host=', host.id || host.className)
         })
       })
-      .catch(function () { /* evento sin datos o red caida; se ignora */ })
+      .catch(function (e) { console.log('[CC] error', e && e.message) })
   }
   function run() {
     var slug = getSlug()
@@ -229,6 +233,7 @@ const CHART_SCRIPT = `<script>
     loadEvent(slug, host)
   }
   function start() {
+    console.log('[CC] start, slug=' + getSlug())
     run()
     var tries = 0
     var timer = setInterval(function () {
