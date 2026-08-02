@@ -639,6 +639,13 @@ html[data-theme='catchat'] .border-border {
   border-color: oklch(1 0 0 / 0.12);
 }
 
+/* Chat: cristal translúcido en TODOS los temas para que se vean las partículas de fondo */
+.chat-panel {
+  background-color: oklch(0.7 0.03 260 / 0.04) !important;
+  backdrop-filter: blur(2px) saturate(130%);
+  -webkit-backdrop-filter: blur(2px) saturate(130%);
+}
+
 /* Línea de brillo superior típica de vidrio, reutilizable en modales/paneles */
 .catchat-sheen {
   position: relative;
