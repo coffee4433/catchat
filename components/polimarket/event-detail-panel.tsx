@@ -50,6 +50,7 @@ const IFRAME_PROXY = '/api/polimarket/iframe?url='
 
 export function EventDetailPanel({ event, category, onClose }: Props) {
   const [showPolymarket, setShowPolymarket] = React.useState(false)
+  const [closing, setClosing] = React.useState(false)
   const [iframeKey, setIframeKey] = React.useState(0)
   const markets = (event.markets ?? [])
     .map(parseMarket)
@@ -64,6 +65,15 @@ export function EventDetailPanel({ event, category, onClose }: Props) {
   const openPolymarket = () => {
     setIframeKey((k) => k + 1)
     setShowPolymarket(true)
+  }
+
+  const closePolymarket = () => {
+    if (closing) return
+    setClosing(true)
+    setTimeout(() => {
+      setShowPolymarket(false)
+      setClosing(false)
+    }, 300)
   }
 
   return (
@@ -181,10 +191,20 @@ export function EventDetailPanel({ event, category, onClose }: Props) {
       {showPolymarket && (
         <div className="fixed inset-0 z-[80]" role="dialog" aria-modal="true">
           <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={() => setShowPolymarket(false)}
+            className={`absolute inset-0 bg-black/50 backdrop-blur-sm ${
+              closing
+                ? 'animate-out fade-out duration-300'
+                : 'animate-in fade-in duration-300'
+            }`}
+            onClick={closePolymarket}
           />
-          <aside className="absolute right-0 top-0 flex h-full w-[min(640px,94vw)] flex-col rounded-2xl border-l border-border/40 bg-background shadow-2xl animate-in slide-in-from-right-full duration-300">
+          <aside
+            className={`absolute right-0 top-0 flex h-full w-[min(640px,94vw)] flex-col overflow-hidden rounded-2xl border-l border-border/40 bg-background shadow-2xl duration-300 ${
+              closing
+                ? 'animate-out slide-out-to-right-full ease-in'
+                : 'animate-in slide-in-from-right-full ease-out'
+            }`}
+          >
             <div className="flex items-center justify-between gap-2 border-b border-border/40 px-4 py-3">
               <div className="flex min-w-0 flex-1 items-center gap-2">
                 {category === 'sports' ? (
@@ -197,7 +217,7 @@ export function EventDetailPanel({ event, category, onClose }: Props) {
               <Button
                 variant="ghost"
                 size="icon-sm"
-                onClick={() => setShowPolymarket(false)}
+                onClick={closePolymarket}
                 title="Cerrar"
               >
                 <X className="size-4" />
