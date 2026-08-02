@@ -65,7 +65,7 @@ export function IconRail({
             : 'opacity-70 hover:opacity-100 hover:scale-105'
         }`}
       >
-        <img src="/catchat.png" alt="CatChat Logo" className="h-full w-full object-cover" />
+        <img src="/cat-chat-logo.png" alt="CatChat Logo" className="h-full w-full object-cover" />
       </button>
 
       <div className="my-1 h-[1px] w-6 bg-border/40" />
