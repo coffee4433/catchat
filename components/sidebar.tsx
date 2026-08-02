@@ -144,7 +144,6 @@ export function Sidebar({
   return (
     <aside className="flex h-full w-60 shrink-0 flex-col rounded-2xl border border-border bg-card shadow-sm">
       <div className="flex items-center justify-between px-3 py-3">
-        <span className="text-sm font-semibold">CatChat</span>
         <button
           aria-label={t.searchPlaceholder}
           onClick={onOpenSearch}
