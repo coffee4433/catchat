@@ -54,12 +54,12 @@ export function IconRail({
   return (
     <aside
       aria-label={t.workspacesLabel}
-      className="flex h-full w-14 shrink-0 flex-col items-center gap-3 py-4 select-none"
+      className="flex h-full w-20 shrink-0 flex-col items-center gap-3 py-4 select-none"
     >
       <button
         aria-label={t.catChatWorkspaceLabel}
         onClick={() => onSelectView?.('chat')}
-        className={`flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-xl transition-all ${
+        className={`flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-xl transition-all ${
           !activeView || activeView === 'chat'
             ? 'scale-105 opacity-100'
             : 'opacity-70 hover:opacity-100 hover:scale-105'
@@ -78,7 +78,7 @@ export function IconRail({
             onClick={() => onSelectView?.(tab.id)}
             title={tab.label}
             aria-label={tab.label}
-            className={`flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-xl transition-all ${
+            className={`flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl transition-all ${
               isSelected
                 ? 'scale-105 opacity-100 ring-1 ring-primary/40'
                 : 'opacity-70 hover:opacity-100 hover:scale-105'
