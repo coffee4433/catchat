@@ -48,8 +48,6 @@ type Props = {
 
 export function EventDetailPanel({ event, category, onClose }: Props) {
   const [showPolymarket, setShowPolymarket] = React.useState(false)
-  const [embedMarketId, setEmbedMarketId] = React.useState<string | null>(null)
-  const [isDark, setIsDark] = React.useState(false)
   const markets = (event.markets ?? [])
     .map(parseMarket)
     .filter((m): m is NonNullable<typeof m> => m !== null)
@@ -59,12 +57,6 @@ export function EventDetailPanel({ event, category, onClose }: Props) {
     if (!best || m.profitPct > best.profitPct) return m
     return best
   }, null)
-
-  const openPolymarket = () => {
-    setEmbedMarketId(markets[0]?.slug ?? event.slug)
-    setIsDark(document.documentElement.classList.contains('dark'))
-    setShowPolymarket(true)
-  }
 
   return (
     <aside className="flex h-full w-[min(440px,42vw)] shrink-0 flex-col border-l border-border/40 bg-muted/20">
@@ -172,9 +164,13 @@ export function EventDetailPanel({ event, category, onClose }: Props) {
       </div>
 
       <div className="border-t border-border/40 p-3">
-        <Button variant="outline" className="w-full" onClick={openPolymarket}>
+        <Button
+          variant="outline"
+          className="w-full"
+          onClick={() => setShowPolymarket(true)}
+        >
           <ExternalLink className="size-3.5" />
-          Ver en Polymarket
+          Ver evento completo
         </Button>
       </div>
 
@@ -184,12 +180,16 @@ export function EventDetailPanel({ event, category, onClose }: Props) {
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setShowPolymarket(false)}
           />
-          <aside className="absolute right-0 top-0 flex h-full w-[min(520px,92vw)] flex-col border-l border-border/40 bg-background shadow-2xl animate-in slide-in-from-right-full duration-300">
+          <aside className="absolute right-0 top-0 flex h-full w-[min(560px,94vw)] flex-col border-l border-border/40 bg-background shadow-2xl animate-in slide-in-from-right-full duration-300">
             <div className="flex items-center justify-between gap-2 border-b border-border/40 px-4 py-3">
               <div className="flex min-w-0 flex-1 items-center gap-2">
-                <ExternalLink className="size-4 shrink-0 text-muted-foreground" />
+                {category === 'sports' ? (
+                  <Trophy className="size-4 shrink-0 text-muted-foreground" />
+                ) : (
+                  <Gamepad2 className="size-4 shrink-0 text-muted-foreground" />
+                )}
                 <span className="truncate text-sm font-semibold">
-                  {markets.length > 1 ? 'Selecciona un mercado' : 'Polymarket'}
+                  {CATEGORY_LABELS[category]}
                 </span>
               </div>
               <Button
@@ -202,37 +202,104 @@ export function EventDetailPanel({ event, category, onClose }: Props) {
               </Button>
             </div>
 
-            {markets.length > 1 && (
-              <div className="thin-scroll flex shrink-0 gap-1.5 overflow-x-auto border-b border-border/40 px-3 py-2">
-                {markets.map((m) => (
-                  <button
-                    key={m.slug}
-                    type="button"
-                    onClick={() => setEmbedMarketId(m.slug)}
-                    className={`shrink-0 rounded-full px-3 py-1 text-[11px] font-medium transition-colors ${
-                      embedMarketId === m.slug
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground'
-                    }`}
-                  >
-                    {m.outcomes.map((o) => o.name).join(' vs ')}
-                  </button>
-                ))}
-              </div>
-            )}
+            <div className="thin-scroll flex-1 overflow-y-auto">
+              {event.image ? (
+                <img
+                  src={event.image}
+                  alt=""
+                  className="h-44 w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-32 w-full items-center justify-center bg-muted">
+                  {category === 'sports' ? (
+                    <Trophy className="size-10 text-muted-foreground/40" />
+                  ) : (
+                    <Gamepad2 className="size-10 text-muted-foreground/40" />
+                  )}
+                </div>
+              )}
 
-            {embedMarketId ? (
-              <iframe
-                src={`https://embed.polymarket.com/market?market=${encodeURIComponent(embedMarketId)}&fit=true&theme=${isDark ? 'dark' : 'light'}`}
-                title="Polymarket"
-                className="h-full w-full flex-1"
-                sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-              />
-            ) : (
-              <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
-                Selecciona un mercado para verlo
+              <div className="p-4">
+                <h2 className="text-lg font-semibold leading-snug">{event.title}</h2>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Publicado {formatRelativeTime(event.createdAt)}
+                </p>
+
+                {event.description && (
+                  <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+                    {event.description.replace(/<[^>]+>/g, '').slice(0, 600)}
+                  </p>
+                )}
+
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {event.volume != null && event.volume > 0 && (
+                    <StatChip icon={<TrendingUp className="size-3" />} label="Volumen" value={formatUsd(event.volume)} />
+                  )}
+                  {event.volume24hr != null && event.volume24hr > 0 && (
+                    <StatChip icon={<TrendingUp className="size-3" />} label="Vol. 24h" value={formatUsd(event.volume24hr)} />
+                  )}
+                  {event.liquidity != null && event.liquidity > 0 && (
+                    <StatChip icon={<Droplets className="size-3" />} label="Liquidez" value={formatUsd(event.liquidity)} />
+                  )}
+                  {event.endDate && (
+                    <StatChip icon={<Calendar className="size-3" />} label="Cierra" value={formatDateTime(event.endDate)} />
+                  )}
+                </div>
+
+                {bestArb && (
+                  <div className="mt-4 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-amber-600 dark:text-amber-400">
+                      <Zap className="size-4" />
+                      Arbitraje detectado — +{bestArb.profitPct}% margen
+                    </div>
+                    <p className="mt-1.5 text-xs text-muted-foreground">
+                      Comprando ambos lados ({bestArb.outcomes.map((o) => o.name).join(' + ')}) por{' '}
+                      {(bestArb.totalPrice * 100).toFixed(1)}¢ obtienes 100¢ garantizados.
+                    </p>
+                  </div>
+                )}
+
+                <div className="mt-5">
+                  <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Mercados ({markets.length})
+                  </h3>
+                  <div className="flex flex-col gap-2">
+                    {markets.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">Sin mercados activos</p>
+                    ) : (
+                      markets.map((market) => (
+                        <MarketBlock key={market.id} market={market} />
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {event.tags && event.tags.length > 0 && (
+                  <div className="mt-4 flex flex-wrap gap-1.5">
+                    {event.tags.slice(0, 8).map((tag) => (
+                      <span
+                        key={tag.id}
+                        className="rounded-md bg-muted px-2 py-0.5 text-[11px] text-muted-foreground"
+                      >
+                        {tag.label}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
+            </div>
+
+            <div className="border-t border-border/40 p-3">
+              <a
+                href={`https://polymarket.com/event/${event.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium transition-colors hover:bg-muted"
+              >
+                <ExternalLink className="size-3.5" />
+                Abrir en Polymarket
+              </a>
+            </div>
           </aside>
         </div>
       )}
