@@ -6,6 +6,7 @@
   "description": "Predicciones y mercados de Polimarket integrados en CatChat. Consulta eventos, precios y oportunidades de arbitraje en tiempo real.",
   "category": "finance",
   "iconName": "TrendingUp",
+  "icon": "/plugins/polimarket/icon.svg",
   "updatedAt": "2026-08-02T13:10:00.000Z",
   "githubUrl": "https://github.com/coffee4433/catchat/tree/main/plugins/polimarket"
 }
