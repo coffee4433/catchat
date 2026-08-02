@@ -112,7 +112,7 @@ function ChatAppInner({
 
   return (
     <CallProvider user={user}>
-      <main className="relative flex h-dvh overflow-hidden bg-background p-3 pl-0">
+      <main className="relative flex h-dvh bg-background p-3 pl-0">
         <ChatBackground />
         <IconRail activeView={activeView} onSelectView={setActiveView} />
 
