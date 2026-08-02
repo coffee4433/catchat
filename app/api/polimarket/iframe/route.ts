@@ -20,14 +20,32 @@ function stripRestrictiveCsp(csp: string | null): string | null {
 const DIAG_SCRIPT = `<script>
 (function () {
   var errors = []
+  var resourceFails = []
   var prevError = window.onerror
   window.onerror = function (msg, src, line, col, err) {
-    errors.push((msg || '') + ' @' + line)
+    errors.push((msg || '').substring(0, 140) + ' @' + line)
     if (prevError) return prevError.apply(this, arguments)
   }
   window.addEventListener('unhandledrejection', function (e) {
-    errors.push('rejection: ' + (e.reason && e.reason.message ? e.reason.message : String(e.reason)))
+    var r = e.reason
+    errors.push('rejection: ' + (r && r.message ? r.message : String(r)).substring(0, 140))
   })
+  window.addEventListener('error', function (e) {
+    if (e.target && (e.target.tagName === 'SCRIPT' || e.target.tagName === 'LINK')) {
+      var u = e.target.src || e.target.href || ''
+      resourceFails.push((e.target.tagName) + ':' + u.replace(/^https?:\/\/[^\/]+/, '').substring(0, 90))
+    }
+  }, true)
+  var seen = false
+  function noteContainer(tag) {
+    var c = document.getElementById('group-chart-container')
+    if (!c) {
+      if (!seen) {
+        seen = true
+        errors.push('container missing @' + tag)
+      }
+    }
+  }
   function report() {
     var c = document.getElementById('group-chart-container')
     var info = []
@@ -38,16 +56,20 @@ const DIAG_SCRIPT = `<script>
       info.push('chart rect: ' + Math.round(r.width) + 'x' + Math.round(r.height))
       info.push('canvases: ' + c.querySelectorAll('canvas').length)
       info.push('children: ' + c.children.length)
+      info.push('bodychildren: ' + document.body.children.length)
     }
-    info.push('errors: ' + (errors.length ? errors.slice(0, 5).join(' || ') : 'none'))
+    info.push('errors: ' + (errors.length ? errors.slice(0, 4).join(' || ') : 'none'))
+    info.push('resfails: ' + (resourceFails.length ? resourceFails.slice(0, 6).join(' || ') : 'none'))
     var d = document.createElement('div')
-    d.style.cssText = 'position:fixed;top:6px;left:6px;z-index:99999;background:#111;color:#0f0;font:10px monospace;padding:6px;border-radius:4px;max-width:520px;white-space:pre-wrap;word-break:break-all'
+    d.style.cssText = 'position:fixed;top:6px;left:6px;z-index:99999;background:#111;color:#0f0;font:10px monospace;padding:6px;border-radius:4px;max-width:560px;white-space:pre-wrap;word-break:break-all'
     d.textContent = '[DIAG] ' + info.join(' | ')
     document.body.appendChild(d)
   }
+  noteContainer('init')
+  window.addEventListener('DOMContentLoaded', function () { noteContainer('dcl') })
   window.addEventListener('load', function () {
-    setTimeout(report, 2500)
-    setTimeout(report, 8000)
+    setTimeout(function () { report(); noteContainer('t2.5') }, 2500)
+    setTimeout(function () { report(); noteContainer('t8') }, 8000)
   })
 })();
 <\/script>`
