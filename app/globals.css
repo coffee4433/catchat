@@ -559,8 +559,8 @@ html[data-theme='liquid-glass'] .thin-scroll::-webkit-scrollbar-button {
 [data-theme='catchat'] .bg-popover,
 [data-theme='catchat'] .bg-secondary,
 [data-theme='catchat'] .bg-muted {
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 
 [data-theme='catchat'] .ctx-menu {
@@ -630,9 +630,9 @@ html[data-theme='catchat'] .bg-card,
 html[data-theme='catchat'] .bg-popover,
 html[data-theme='catchat'] .bg-secondary,
 html[data-theme='catchat'] .glass-card {
-  background-color: oklch(0.7 0.03 260 / 0.07) !important;
-  backdrop-filter: blur(22px) saturate(160%);
-  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  background-color: oklch(0.7 0.03 260 / 0.05) !important;
+  backdrop-filter: blur(6px) saturate(140%);
+  -webkit-backdrop-filter: blur(6px) saturate(140%);
 }
 
 html[data-theme='catchat'] .border-border {
