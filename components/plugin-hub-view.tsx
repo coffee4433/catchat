@@ -40,7 +40,7 @@ function PluginIcon({ id, className }: { id: string; className?: string }) {
       <img
         src="/plugins/cat-music/icon.png"
         alt="CatMusic"
-        className="h-full w-full rounded-none object-cover"
+        className="h-full w-full rounded-xl object-cover"
       />
     )
   }
