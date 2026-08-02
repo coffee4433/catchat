@@ -49,7 +49,7 @@ function PluginIcon({ id, className }: { id: string; className?: string }) {
       <img
         src="/polymarket-icon.png"
         alt="Polimarket"
-        className="h-full w-full rounded-none object-cover"
+        className="h-full w-full rounded-xl object-cover"
       />
     )
   }
