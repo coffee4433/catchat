@@ -152,7 +152,7 @@ function AlertCard({
 }) {
   return (
     <div
-      className={`flex h-full w-[300px] shrink-0 items-center gap-2 rounded-xl border px-2.5 py-2 transition-colors ${
+      className={`flex h-[168.5px] w-[300px] shrink-0 items-center gap-2 rounded-xl border px-2.5 py-2 transition-colors ${
         selected
           ? 'border-primary/50 bg-primary/5 ring-1 ring-primary/20'
           : alert.read
