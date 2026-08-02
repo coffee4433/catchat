@@ -22,7 +22,6 @@ const nextConfig = {
 
   webpack: (config) => {
     config.resolve.alias['@'] = __dirname
-    config.output.hashFunction = 'sha256'
 
     const mainNodeModules = path.join(__dirname, 'node_modules')
     config.resolve.alias = {
