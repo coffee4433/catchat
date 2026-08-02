@@ -20,10 +20,13 @@ function stripRestrictiveCsp(csp: string | null): string | null {
 function rewriteHtmlUrls(html: string, baseUrl: string): string {
   const base = new URL(baseUrl).origin
   return html.replace(
-    /(href|src|action|srcset|data-src|poster|content)\s*=\s*(['"])(.*?)\2/gi,
+    /(href|src|action|srcset|data-src|poster)\s*=\s*(['"])(.*?)\2/gi,
     (match, attr: string, quote: string, value: string) => {
       if (!value || value.startsWith('http') || value.startsWith('data:') || value.startsWith('blob:')) {
         return match
+      }
+      if (value.startsWith('/_next/image')) {
+        return `${attr}=${quote}/api/polimarket/iframe?url=${encodeURIComponent(`/_next/image${value.slice('/_next/image'.length)}`)}${quote}`
       }
       if (value.startsWith('//')) {
         return `${attr}=${quote}${base}${value}${quote}`
@@ -58,6 +61,7 @@ export async function GET(req: NextRequest) {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36',
         Accept: 'text/html,application/xhtml+xml',
+        Referer: 'https://polymarket.com/',
       },
       redirect: 'follow',
       cache: 'no-store',
