@@ -48,6 +48,7 @@ type Props = {
 }
 
 export function EventDetailPanel({ event, category, onClose }: Props) {
+  const [showPolymarket, setShowPolymarket] = React.useState(false)
   const markets = (event.markets ?? [])
     .map(parseMarket)
     .filter((m): m is NonNullable<typeof m> => m !== null)
@@ -164,16 +165,46 @@ export function EventDetailPanel({ event, category, onClose }: Props) {
       </div>
 
       <div className="border-t border-border/40 p-3">
-        <a
-          href={`${POLYMARKET_EVENT_URL}/${event.slug}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium transition-colors hover:bg-muted"
+        <Button
+          variant="outline"
+          className="w-full"
+          onClick={() => setShowPolymarket(true)}
         >
           <ExternalLink className="size-3.5" />
           Abrir en Polymarket
-        </a>
+        </Button>
       </div>
+
+      {showPolymarket && (
+        <div className="fixed inset-0 z-[80]" role="dialog" aria-modal="true">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowPolymarket(false)}
+          />
+          <aside className="absolute right-0 top-0 flex h-full w-[min(520px,92vw)] flex-col border-l border-border/40 bg-background shadow-2xl animate-in slide-in-from-right-full duration-300">
+            <div className="flex items-center justify-between border-b border-border/40 px-4 py-3">
+              <div className="flex min-w-0 items-center gap-2">
+                <ExternalLink className="size-4 shrink-0 text-muted-foreground" />
+                <span className="truncate text-sm font-semibold">Polymarket</span>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => setShowPolymarket(false)}
+                title="Cerrar"
+              >
+                <X className="size-4" />
+              </Button>
+            </div>
+            <iframe
+              src={`${POLYMARKET_EVENT_URL}/${event.slug}`}
+              title="Polymarket"
+              className="h-full w-full flex-1 bg-white"
+              sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+            />
+          </aside>
+        </div>
+      )}
     </aside>
   )
 }
