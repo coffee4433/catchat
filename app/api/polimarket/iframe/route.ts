@@ -19,6 +19,7 @@ function stripRestrictiveCsp(csp: string | null): string | null {
 
 const CHART_SCRIPT = `<script>
 (function () {
+  var NS = 'cc'
   function escapeHtml(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
@@ -28,109 +29,110 @@ const CHART_SCRIPT = `<script>
     var m = txt.match(/(\\d+([.,]\\d+)?)¢/)
     return m ? parseFloat(m[1].replace(',', '.')) : null
   }
-  function extractOutcomes() {
-    var out = []
-    var cards = document.querySelectorAll('button.trading-button')
-    for (var i = 0; i < cards.length; i++) {
-      var btn = cards[i]
-      var txt = (btn.innerText || btn.textContent || '')
-        .replace(/\\s+/g, ' ')
-        .trim()
-      if (!txt) continue
-      var price = parseMoney(txt)
-      if (price == null) continue
-      var label = txt
-        .replace(/\\s*\\d+([.,]\\d+)?¢\\s*/g, '')
-        .replace(/^\\s+/, '')
-        .trim()
-      if (!label) continue
-      var bg = btn.style.getPropertyValue('--btn-background')
-      out.push({
-        label: label,
-        price: price,
-        color: bg ? bg.trim() : '',
-        sel: btn.hasAttribute('data-selected'),
-      })
-    }
-    return out
+  function parseBtn(btn) {
+    var txt = (btn.innerText || btn.textContent || '').replace(/\\s+/g, ' ').trim()
+    var price = parseMoney(txt)
+    if (price == null) return null
+    var label = txt.replace(/\\s*\\d+([.,]\\d+)?¢\\s*/g, '').replace(/^\\s+/, '').trim()
+    if (!label) return null
+    var bg = btn.style.getPropertyValue('--btn-background')
+    return { label: label, price: price, color: bg ? bg.trim() : '' }
   }
-  function groupByMarket(items) {
-    var groups = []
-    var current = null
-    var currentKey = null
-    for (var i = 0; i < items.length; i++) {
-      var it = items[i]
-      if (it.sel) {
-        if (current && current.items.length) groups.push(current)
-        current = { title: it.label, items: [] }
-        currentKey = it.label
-      } else if (current) {
-        current.items.push(it)
+  function nearestCard(btn) {
+    var el = btn
+    for (var i = 0; i < 12; i++) {
+      el = el.parentElement
+      if (!el || el === document.body || el === document.documentElement) return null
+      var btns = el.querySelectorAll('button.trading-button')
+      if (btns.length < 2) continue
+      var h3 = el.querySelector('h3')
+      if (h3) return el
+    }
+    return null
+  }
+  function collectCards() {
+    var cards = []
+    var seen = []
+    var btns = document.querySelectorAll('button.trading-button')
+    for (var i = 0; i < btns.length; i++) {
+      var card = nearestCard(btns[i])
+      if (!card || seen.indexOf(card) !== -1) continue
+      seen.push(card)
+      var h3 = card.querySelector('h3')
+      var title = h3 ? h3.innerText.replace(/\\s+/g, ' ').trim() : 'Mercado'
+      var items = []
+      var cardBtns = card.querySelectorAll('button.trading-button')
+      for (var j = 0; j < cardBtns.length; j++) {
+        var p = parseBtn(cardBtns[j])
+        if (p) items.push(p)
       }
+      if (items.length >= 2) cards.push({ el: card, title: title, items: items })
     }
-    if (current && current.items.length) groups.push(current)
-    return groups
+    return cards
   }
-  function buildChart() {
-    var all = extractOutcomes()
-    if (!all.length) return null
-    var groups = groupByMarket(all)
+  function buildHTML(card) {
     var rows = ''
     var palette = ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#ef4444']
     var ci = 0
-    for (var g = 0; g < groups.length; g++) {
-      var grp = groups[g]
-      rows += '<div class="ccg">'
-      rows += '<div class="ccg-title">' + escapeHtml(grp.title) + '</div>'
-      for (var i = 0; i < grp.items.length; i++) {
-        var it = grp.items[i]
-        var pct = Math.max(3, Math.min(100, it.price))
-        var color = it.color || palette[ci++ % palette.length]
-        rows +=
-          '<div class="cc-row">' +
-          '<span class="cc-name">' + escapeHtml(it.label) + '</span>' +
-          '<div class="cc-track"><div class="cc-fill" style="width:' + pct + '%;background:' + color + '"></div></div>' +
-          '<span class="cc-price">' + it.price + '¢</span>' +
-          '</div>'
-      }
-      rows += '</div>'
+    for (var i = 0; i < card.items.length; i++) {
+      var it = card.items[i]
+      var pct = Math.max(3, Math.min(100, it.price))
+      var color = it.color || palette[ci++ % palette.length]
+      rows +=
+        '<div class="' + NS + '-row">' +
+        '<span class="' + NS + '-name">' + escapeHtml(it.label) + '</span>' +
+        '<div class="' + NS + '-track"><div class="' + NS + '-fill" style="width:' + pct + '%;background:' + color + '"></div></div>' +
+        '<span class="' + NS + '-price">' + it.price + '¢</span></div>'
     }
-    return '<div class="cc-wrap">' + rows + '</div>'
+    return '<div class="' + NS + '-wrap">' +
+      '<div class="' + NS + '-title">' + escapeHtml(card.title) + '</div>' + rows + '</div>'
   }
-  function inject() {
-    var host = document.getElementById('group-chart-container')
-    if (!host) return false
-    var chart = buildChart()
-    if (!chart) return false
-    if (host.getAttribute('data-cc-injected') === '1') return true
-    host.setAttribute('data-cc-injected', '1')
-    host.innerHTML = chart
-    if (!document.getElementById('cc-style')) {
-      var style = document.createElement('style')
-      style.id = 'cc-style'
-      style.textContent = [
-        '#group-chart-container{overflow:hidden}',
-        '.cc-wrap{padding:8px 10px;display:flex;flex-direction:column;gap:10px;font-family:inherit;width:100%;box-sizing:border-box}',
-        '.ccg{display:flex;flex-direction:column;gap:5px}',
-        '.ccg-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;opacity:.55;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
-        '.cc-row{display:flex;align-items:center;gap:8px}',
-        '.cc-name{width:52px;flex:none;font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
-        '.cc-track{flex:1;height:12px;border-radius:9999px;background:rgba(127,127,127,.18);overflow:hidden}',
-        '.cc-fill{height:100%;border-radius:9999px;min-width:4px;transition:width .5s ease}',
-        '.cc-price{width:38px;flex:none;text-align:right;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums}',
-      ].join('')
-      document.head.appendChild(style)
-    }
-    return true
+  function inject(card) {
+    if (card.el.querySelector('.' + NS + '-wrap')) return
+    var h3 = card.el.querySelector('h3')
+    if (!h3) return
+    var chart = document.createElement('div')
+    chart.innerHTML = buildHTML(card)
+    var wrap = chart.firstChild
+    if (!wrap) return
+    h3.parentNode.insertBefore(wrap, h3.parentNode.nextSibling)
+  }
+  function ensureStyle() {
+    if (document.getElementById('cc-style')) return
+    var style = document.createElement('style')
+    style.id = 'cc-style'
+    style.textContent = [
+      '.' + NS + '-wrap{margin:0 0 4px;padding:8px 12px;border-radius:10px;background:rgba(127,127,127,.06);display:flex;flex-direction:column;gap:5px;font-family:inherit}',
+      '.' + NS + '-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;opacity:.55;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+      '.' + NS + '-row{display:flex;align-items:center;gap:8px}',
+      '.' + NS + '-name{width:52px;flex:none;font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+      '.' + NS + '-track{flex:1;height:12px;border-radius:9999px;background:rgba(127,127,127,.18);overflow:hidden}',
+      '.' + NS + '-fill{height:100%;border-radius:9999px;min-width:4px;transition:width .5s ease}',
+      '.' + NS + '-price{width:38px;flex:none;text-align:right;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums}',
+    ].join('')
+    document.head.appendChild(style)
+  }
+  function run() {
+    ensureStyle()
+    var cards = collectCards()
+    for (var i = 0; i < cards.length; i++) inject(cards[i])
   }
   function start() {
-    inject()
+    run()
     var tries = 0
     var timer = setInterval(function () {
       tries++
-      if (inject() || tries > 30) clearInterval(timer)
+      run()
+      if (tries > 60) clearInterval(timer)
     }, 1000)
-    setTimeout(function () { inject() }, 3000)
+    if (window.MutationObserver) {
+      var pending = null
+      var mo = new MutationObserver(function () {
+        clearTimeout(pending)
+        pending = setTimeout(run, 80)
+      })
+      mo.observe(document.body, { childList: true, subtree: true })
+    }
   }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', start)
