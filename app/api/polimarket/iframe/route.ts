@@ -19,6 +19,36 @@ function stripRestrictiveCsp(csp: string | null): string | null {
 
 const FIX_IMAGES_SCRIPT = `<script>
 (function () {
+  var PM_ORIGIN = 'https://polymarket.com'
+  var CLOB_ORIGIN = 'https://clob.polymarket.com'
+  var PROXY_PREFIX = '/api/polimarket/iframe'
+  function rebase(pathname) {
+    if (pathname.indexOf(PROXY_PREFIX) === 0) return null
+    if (pathname === '/prices-history' || pathname.indexOf('/prices-history?') === 0) {
+      return CLOB_ORIGIN + pathname
+    }
+    return PM_ORIGIN + pathname
+  }
+  var origFetch = window.fetch
+  window.fetch = function (input, init) {
+    if (typeof input === 'string' && input.indexOf('/') === 0) {
+      var r = rebase(input)
+      if (r) input = r
+    } else if (input instanceof URL && input.origin === location.origin) {
+      var p = input.pathname + input.search
+      var r2 = rebase(input.pathname)
+      if (r2) input = r2 + input.search
+    }
+    return origFetch.call(this, input, init)
+  }
+  var origOpen = XMLHttpRequest.prototype.open
+  XMLHttpRequest.prototype.open = function (method, url) {
+    if (typeof url === 'string' && url.indexOf('/') === 0) {
+      var r = rebase(url)
+      if (r) url = r
+    }
+    return origOpen.apply(this, arguments)
+  }
   function decodeNextImage(u) {
     if (!u || u.indexOf('/_next/image') !== 0) return null
     var m = u.match(/\\?url=([^&]+)/)
