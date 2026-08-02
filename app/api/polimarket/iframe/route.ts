@@ -27,7 +27,9 @@ const CHART_SCRIPT = `<script>
     })
   }
   function getSlug() {
-    var m = location.pathname.match(/\\/event\\/([^\\/?&#]+)/)
+    var q = new URLSearchParams(location.search)
+    var u = q.get('url') || location.pathname
+    var m = String(u).match(/\\/event\\/([^\\/?&#]+)/)
     return m ? decodeURIComponent(m[1]) : null
   }
   function findHost() {
