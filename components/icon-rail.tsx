@@ -59,13 +59,13 @@ export function IconRail({
       <button
         aria-label={t.catChatWorkspaceLabel}
         onClick={() => onSelectView?.('chat')}
-        className={`flex size-10 shrink-0 items-center justify-center overflow-hidden transition-all ${
+        className={`flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-xl transition-all ${
           !activeView || activeView === 'chat'
             ? 'scale-105 opacity-100'
             : 'opacity-70 hover:opacity-100 hover:scale-105'
         }`}
       >
-        <img src="/cat-chat-logo.png" alt="CatChat Logo" className="h-full w-full object-cover" />
+        <img src="/cat-chat-logo.png" alt="CatChat Logo" className="h-full w-full object-contain" />
       </button>
 
       <div className="my-1 h-[1px] w-6 bg-border/40" />
