@@ -17,60 +17,126 @@ function stripRestrictiveCsp(csp: string | null): string | null {
     .join('; ') || null
 }
 
-const DIAG_SCRIPT = `<script>
+const CHART_SCRIPT = `<script>
 (function () {
-  var errors = []
-  var resourceFails = []
-  var prevError = window.onerror
-  window.onerror = function (msg, src, line, col, err) {
-    errors.push((msg || '').substring(0, 140) + ' @' + line)
-    if (prevError) return prevError.apply(this, arguments)
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+    })
   }
-  window.addEventListener('unhandledrejection', function (e) {
-    var r = e.reason
-    errors.push('rejection: ' + (r && r.message ? r.message : String(r)).substring(0, 140))
-  })
-  window.addEventListener('error', function (e) {
-    if (e.target && (e.target.tagName === 'SCRIPT' || e.target.tagName === 'LINK')) {
-      var u = e.target.src || e.target.href || ''
-      resourceFails.push((e.target.tagName) + ':' + u.replace(/^https?:\/\/[^\/]+/, '').substring(0, 90))
+  function parseMoney(txt) {
+    var m = txt.match(/(\\d+([.,]\\d+)?)¢/)
+    return m ? parseFloat(m[1].replace(',', '.')) : null
+  }
+  function extractOutcomes() {
+    var out = []
+    var cards = document.querySelectorAll('button.trading-button')
+    for (var i = 0; i < cards.length; i++) {
+      var btn = cards[i]
+      var txt = (btn.innerText || btn.textContent || '')
+        .replace(/\\s+/g, ' ')
+        .trim()
+      if (!txt) continue
+      var price = parseMoney(txt)
+      if (price == null) continue
+      var label = txt
+        .replace(/\\s*\\d+([.,]\\d+)?¢\\s*/g, '')
+        .replace(/^\\s+/, '')
+        .trim()
+      if (!label) continue
+      var bg = btn.style.getPropertyValue('--btn-background')
+      out.push({
+        label: label,
+        price: price,
+        color: bg ? bg.trim() : '',
+        sel: btn.hasAttribute('data-selected'),
+      })
     }
-  }, true)
-  var seen = false
-  function noteContainer(tag) {
-    var c = document.getElementById('group-chart-container')
-    if (!c) {
-      if (!seen) {
-        seen = true
-        errors.push('container missing @' + tag)
+    return out
+  }
+  function groupByMarket(items) {
+    var groups = []
+    var current = null
+    var currentKey = null
+    for (var i = 0; i < items.length; i++) {
+      var it = items[i]
+      if (it.sel) {
+        if (current && current.items.length) groups.push(current)
+        current = { title: it.label, items: [] }
+        currentKey = it.label
+      } else if (current) {
+        current.items.push(it)
       }
     }
+    if (current && current.items.length) groups.push(current)
+    return groups
   }
-  function report() {
-    var c = document.getElementById('group-chart-container')
-    var info = []
-    if (!c) {
-      info.push('NO chart container')
-    } else {
-      var r = c.getBoundingClientRect()
-      info.push('chart rect: ' + Math.round(r.width) + 'x' + Math.round(r.height))
-      info.push('canvases: ' + c.querySelectorAll('canvas').length)
-      info.push('children: ' + c.children.length)
-      info.push('bodychildren: ' + document.body.children.length)
+  function buildChart() {
+    var all = extractOutcomes()
+    if (!all.length) return null
+    var groups = groupByMarket(all)
+    var rows = ''
+    var palette = ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#ef4444']
+    var ci = 0
+    for (var g = 0; g < groups.length; g++) {
+      var grp = groups[g]
+      rows += '<div class="ccg">'
+      rows += '<div class="ccg-title">' + escapeHtml(grp.title) + '</div>'
+      for (var i = 0; i < grp.items.length; i++) {
+        var it = grp.items[i]
+        var pct = Math.max(3, Math.min(100, it.price))
+        var color = it.color || palette[ci++ % palette.length]
+        rows +=
+          '<div class="cc-row">' +
+          '<span class="cc-name">' + escapeHtml(it.label) + '</span>' +
+          '<div class="cc-track"><div class="cc-fill" style="width:' + pct + '%;background:' + color + '"></div></div>' +
+          '<span class="cc-price">' + it.price + '¢</span>' +
+          '</div>'
+      }
+      rows += '</div>'
     }
-    info.push('errors: ' + (errors.length ? errors.slice(0, 4).join(' || ') : 'none'))
-    info.push('resfails: ' + (resourceFails.length ? resourceFails.slice(0, 6).join(' || ') : 'none'))
-    var d = document.createElement('div')
-    d.style.cssText = 'position:fixed;top:6px;left:6px;z-index:99999;background:#111;color:#0f0;font:10px monospace;padding:6px;border-radius:4px;max-width:560px;white-space:pre-wrap;word-break:break-all'
-    d.textContent = '[DIAG] ' + info.join(' | ')
-    document.body.appendChild(d)
+    return '<div class="cc-wrap">' + rows + '</div>'
   }
-  noteContainer('init')
-  window.addEventListener('DOMContentLoaded', function () { noteContainer('dcl') })
-  window.addEventListener('load', function () {
-    setTimeout(function () { report(); noteContainer('t2.5') }, 2500)
-    setTimeout(function () { report(); noteContainer('t8') }, 8000)
-  })
+  function inject() {
+    var host = document.getElementById('group-chart-container')
+    if (!host) return false
+    var chart = buildChart()
+    if (!chart) return false
+    if (host.getAttribute('data-cc-injected') === '1') return true
+    host.setAttribute('data-cc-injected', '1')
+    host.innerHTML = chart
+    if (!document.getElementById('cc-style')) {
+      var style = document.createElement('style')
+      style.id = 'cc-style'
+      style.textContent = [
+        '#group-chart-container{overflow:hidden}',
+        '.cc-wrap{padding:8px 10px;display:flex;flex-direction:column;gap:10px;font-family:inherit;width:100%;box-sizing:border-box}',
+        '.ccg{display:flex;flex-direction:column;gap:5px}',
+        '.ccg-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;opacity:.55;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+        '.cc-row{display:flex;align-items:center;gap:8px}',
+        '.cc-name{width:52px;flex:none;font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+        '.cc-track{flex:1;height:12px;border-radius:9999px;background:rgba(127,127,127,.18);overflow:hidden}',
+        '.cc-fill{height:100%;border-radius:9999px;min-width:4px;transition:width .5s ease}',
+        '.cc-price{width:38px;flex:none;text-align:right;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums}',
+      ].join('')
+      document.head.appendChild(style)
+    }
+    return true
+  }
+  function start() {
+    inject()
+    var tries = 0
+    var timer = setInterval(function () {
+      tries++
+      if (inject() || tries > 30) clearInterval(timer)
+    }, 1000)
+    setTimeout(function () { inject() }, 3000)
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', start)
+  } else {
+    start()
+  }
 })();
 <\/script>`
 
@@ -274,7 +340,7 @@ export async function GET(req: NextRequest) {
     if (isHtml) {
       let html = await upstream.text()
       html = rewriteHtmlUrls(html, parsed.toString())
-      html = html.replace('</head>', `${DIAG_SCRIPT}${FIX_IMAGES_SCRIPT}</head>`)
+      html = html.replace('</head>', `${CHART_SCRIPT}${FIX_IMAGES_SCRIPT}</head>`)
       body = html
       if (!resHeaders.has('content-type')) {
         resHeaders.set('content-type', 'text/html; charset=utf-8')
