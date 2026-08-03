@@ -64,7 +64,7 @@ function loadPluginIdList(key: string): string[] {
     const saved = localStorage.getItem(key)
     if (!saved) return []
     const parsed = JSON.parse(saved) as string[]
-    return Array.isArray(parsed) ? parsed.filter((id) => id !== 'survivor-shooter') : []
+    return Array.isArray(parsed) ? parsed.filter((id) => id !== 'survivor-shooter' && id !== 'tps-shooter' && id !== 'fortnite-builder') : []
   } catch {
     return []
   }
@@ -120,9 +120,17 @@ export function PluginProvider({ children, user }: { children: React.ReactNode; 
       }
       localStorage.removeItem('cz-plugin-ver-survivor-shooter')
       localStorage.removeItem('cz-plugin-data-survivor-shooter')
+      localStorage.removeItem('cz-plugin-ver-tps-shooter')
+      localStorage.removeItem('cz-plugin-data-tps-shooter')
+      localStorage.removeItem('cz-plugin-ver-fortnite-builder')
+      localStorage.removeItem('cz-plugin-data-fortnite-builder')
       if (userId) {
         localStorage.removeItem(`cz-plugin-ver-survivor-shooter-${userId}`)
         localStorage.removeItem(`cz-plugin-data-survivor-shooter-${userId}`)
+        localStorage.removeItem(`cz-plugin-ver-tps-shooter-${userId}`)
+        localStorage.removeItem(`cz-plugin-data-tps-shooter-${userId}`)
+        localStorage.removeItem(`cz-plugin-ver-fortnite-builder-${userId}`)
+        localStorage.removeItem(`cz-plugin-data-fortnite-builder-${userId}`)
       }
     } catch {
       // Ignore storage write errors

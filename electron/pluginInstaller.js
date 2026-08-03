@@ -97,14 +97,17 @@ function writeInstallRecord(pluginId, version, installDir) {
 }
 
 function registerPluginInstallerIPC(mainWindow) {
-  // Purge legacy survivor-shooter plugin from installed-plugins directory on disk
+  // Purge legacy survivor-shooter and tps-shooter plugins from installed-plugins directory on disk
   try {
-    const legacyDir = path.join(getPluginsRoot(), 'survivor-shooter')
-    if (fs.existsSync(legacyDir)) {
-      fs.rmSync(legacyDir, { recursive: true, force: true })
+    const legacyDirs = ['survivor-shooter', 'tps-shooter', 'fortnite-builder']
+    for (const legacyId of legacyDirs) {
+      const legacyDirPath = path.join(getPluginsRoot(), legacyId)
+      if (fs.existsSync(legacyDirPath)) {
+        fs.rmSync(legacyDirPath, { recursive: true, force: true })
+      }
     }
   } catch (err) {
-    console.error('Failed to purge legacy survivor-shooter plugin dir:', err)
+    console.error('Failed to purge legacy plugin dirs:', err)
   }
 
   ipcMain.handle('plugin:install', async (_event, payload) => {
