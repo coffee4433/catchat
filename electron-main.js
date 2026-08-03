@@ -145,7 +145,7 @@ function createSplashWindow() {
     }
   })
 
-  splashWindow.loadFile(path.join(appDir, 'build', 'splash.html')).catch(err => {
+  splashWindow.loadFile(path.join(appDir, 'build', 'splash.html'), { query: { v: Date.now() } }).catch(err => {
     console.error('Error loading splash.html:', err)
   })
   splashWindow.on('closed', () => {
