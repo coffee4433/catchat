@@ -179,10 +179,14 @@ function createWindow() {
   registerPluginInstallerIPC(mainWindow)
   registerMinecraftServerIPC(mainWindow)
 
-  // Auto-grant media permissions for local origin
+  // Auto-grant media + game permissions (pointer lock for the embedded game)
+  mainWindow.webContents.session.setPermissionCheckHandler((_wc, permission, _origin, _details) => {
+    if (permission === 'pointerLock' || permission === 'fullscreen') return true
+    return true
+  })
   mainWindow.webContents.session.setPermissionRequestHandler(
     (webContents, permission, callback) => {
-      const allowedPermissions = ['media', 'mediaKeySystem']
+      const allowedPermissions = ['media', 'mediaKeySystem', 'pointerLock', 'fullscreen']
       callback(allowedPermissions.includes(permission))
     },
   )
