@@ -5,6 +5,7 @@ const http = require('http')
 const { autoUpdater } = require('electron-updater')
 const { registerCommandRunnerIPC } = require('./electron/commandRunner')
 const { registerPluginInstallerIPC } = require('./electron/pluginInstaller')
+const { registerMinecraftServerIPC } = require('./electron/minecraftServer')
 
 // Use overlay scrollbars on Windows/Linux (no native arrow buttons)
 if (process.platform === 'win32') {
@@ -176,6 +177,7 @@ function createWindow() {
   // Register command runner IPC handlers
   registerCommandRunnerIPC(mainWindow)
   registerPluginInstallerIPC(mainWindow)
+  registerMinecraftServerIPC(mainWindow)
 
   // Auto-grant media permissions for local origin
   mainWindow.webContents.session.setPermissionRequestHandler(

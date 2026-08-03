@@ -5,6 +5,7 @@ import type { CatChatPlugin, PluginRailTab } from './plugin-types'
 import { catMusicPlugin } from './cat-music'
 import { polimarketPlugin } from './polimarket'
 import { tpsControlsPlugin } from './tps-controls'
+import { reactMinecraftPlugin } from './react-minecraft'
 import { getRegisteredPlugins, registerPlugin, unregisterPlugin } from './plugin-registry'
 import { getPluginInstaller } from './plugin-installer-client'
 
@@ -48,6 +49,7 @@ const BUNDLED_PLUGINS: Record<string, CatChatPlugin> = {
   'cat-music': catMusicPlugin,
   polimarket: polimarketPlugin,
   'tps-controls': tpsControlsPlugin,
+  'react-minecraft': reactMinecraftPlugin,
 }
 
 const BUNDLED_PLUGIN_IDS = Object.keys(BUNDLED_PLUGINS)

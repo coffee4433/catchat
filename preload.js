@@ -62,3 +62,20 @@ contextBridge.exposeInMainWorld("screenShare", {
   },
   select: (sourceId) => ipcRenderer.invoke("screen-share:select", sourceId),
 });
+
+contextBridge.exposeInMainWorld("minecraftServer", {
+  installDeps: () => ipcRenderer.invoke("minecraft:install-deps"),
+  start: () => ipcRenderer.invoke("minecraft:start"),
+  stop: () => ipcRenderer.invoke("minecraft:stop"),
+  status: () => ipcRenderer.invoke("minecraft:status"),
+  onStatus: (callback) => {
+    const listener = (_event, payload) => callback(payload);
+    ipcRenderer.on("minecraft:status", listener);
+    return () => ipcRenderer.removeListener("minecraft:status", listener);
+  },
+  onOutput: (callback) => {
+    const listener = (_event, payload) => callback(payload);
+    ipcRenderer.on("minecraft:output", listener);
+    return () => ipcRenderer.removeListener("minecraft:output", listener);
+  },
+});
