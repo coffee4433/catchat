@@ -5,7 +5,6 @@ import type { CatChatPlugin, PluginRailTab } from './plugin-types'
 import { catMusicPlugin } from './cat-music'
 import { polimarketPlugin } from './polimarket'
 import { tpsControlsPlugin } from './tps-controls'
-import { reactMinecraftPlugin } from './react-minecraft'
 import { getRegisteredPlugins, registerPlugin, unregisterPlugin } from './plugin-registry'
 import { getPluginInstaller } from './plugin-installer-client'
 
@@ -49,7 +48,6 @@ const BUNDLED_PLUGINS: Record<string, CatChatPlugin> = {
   'cat-music': catMusicPlugin,
   polimarket: polimarketPlugin,
   'tps-controls': tpsControlsPlugin,
-  'react-minecraft': reactMinecraftPlugin,
 }
 
 const BUNDLED_PLUGIN_IDS = Object.keys(BUNDLED_PLUGINS)
@@ -232,8 +230,7 @@ export function PluginProvider({ children, user }: { children: React.ReactNode; 
     const installer = getPluginInstaller()
     const targetVersion = pluginUpdates[id]?.newVersion || liveVersionMap[id] || 'v0.0.1'
 
-    // Bundled plugins ship their code inside the app — no package download needed
-    if (installer && !bundled) {
+    if (installer) {
       let downloadUrl = pluginUpdates[id]?.downloadUrl || liveDownloadMap[id] || `/plugins/${id}/release.zip`
       if (downloadUrl.startsWith('/')) {
         downloadUrl = `${window.location.origin}${downloadUrl}`
