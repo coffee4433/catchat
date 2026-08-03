@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import { Play, Square, Loader2, Package } from 'lucide-react'
+import { Play, Square, Loader2, Package, Box } from 'lucide-react'
 import { isElectronEnv } from '@/lib/plugins/plugin-provider'
 
 type LogEntry = { stream: 'stdout' | 'stderr'; text: string }

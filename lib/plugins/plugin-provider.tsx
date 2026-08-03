@@ -232,7 +232,8 @@ export function PluginProvider({ children, user }: { children: React.ReactNode; 
     const installer = getPluginInstaller()
     const targetVersion = pluginUpdates[id]?.newVersion || liveVersionMap[id] || 'v0.0.1'
 
-    if (installer) {
+    // Bundled plugins ship their code inside the app — no package download needed
+    if (installer && !bundled) {
       let downloadUrl = pluginUpdates[id]?.downloadUrl || liveDownloadMap[id] || `/plugins/${id}/release.zip`
       if (downloadUrl.startsWith('/')) {
         downloadUrl = `${window.location.origin}${downloadUrl}`
