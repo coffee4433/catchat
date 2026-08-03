@@ -34,12 +34,25 @@ function ChatAppInner({
   const [activeView, setActiveView] = useState<string>('chat')
   const [searchOpen, setSearchOpen] = useState(false)
   const [newChatOpen, setNewChatOpen] = useState(false)
-  const [infoOpen, setInfoOpen] = useState(true)
+  const [infoOpen, setInfoOpen] = useState<boolean>(false)
   const [activeConversationId, setActiveConversationId] = useState<number | null>(
     initialConversations[0]?.id ?? null,
   )
 
   const { isPluginEnabled, getActiveRailTabs } = usePlugins()
+
+  // Restore saved info panel state (collapsed by default on first launch)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const saved = localStorage.getItem('cz-info-panel')
+    if (saved === 'open') setInfoOpen(true)
+  }, [])
+
+  // Persist info panel preference so it survives app restarts
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    localStorage.setItem('cz-info-panel', infoOpen ? 'open' : 'closed')
+  }, [infoOpen])
 
   // Restore saved active view after hydration on mount
   useEffect(() => {
