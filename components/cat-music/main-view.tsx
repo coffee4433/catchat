@@ -119,7 +119,12 @@ export function CatMusicMainView({ onOpenSettings }: PluginViewProps) {
 
   useEffect(() => {
     return subscribeFullscreenChange(() => {
-      setIsFullscreen(Boolean(getFullscreenElement()))
+      const fullEl = getFullscreenElement()
+      if (fullEl) {
+        setIsFullscreen(true)
+      } else {
+        setIsFullscreen(false)
+      }
     })
   }, [])
 
@@ -130,7 +135,9 @@ export function CatMusicMainView({ onOpenSettings }: PluginViewProps) {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setIsFullscreen(false)
-        exitDocumentFullscreen().catch(() => {})
+        if (getFullscreenElement()) {
+          exitDocumentFullscreen().catch(() => {})
+        }
       }
     }
     window.addEventListener('keydown', onKeyDown)
@@ -150,12 +157,14 @@ export function CatMusicMainView({ onOpenSettings }: PluginViewProps) {
     const root = rootRef.current
     if (!root) return
 
-    if (isFullscreen || getFullscreenElement()) {
+    if (isFullscreen) {
       setIsFullscreen(false)
-      try {
-        await exitDocumentFullscreen()
-      } catch {
-        // CSS immersive mode still exits via state
+      if (getFullscreenElement()) {
+        try {
+          await exitDocumentFullscreen()
+        } catch {
+          // CSS mode exits via state
+        }
       }
       return
     }
@@ -164,7 +173,7 @@ export function CatMusicMainView({ onOpenSettings }: PluginViewProps) {
     try {
       await requestElementFullscreen(root)
     } catch {
-      // Immersive CSS mode (fixed overlay) still applies via isFullscreen
+      // Immersive CSS mode (fixed inset-0 z-[9999]) still applies via isFullscreen state
     }
   }
 
