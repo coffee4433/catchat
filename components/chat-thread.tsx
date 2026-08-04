@@ -1213,7 +1213,7 @@ export function ChatThread({
             return (
               <div 
                 onClick={() => handleJumpToMessage(replyOriginal.id)}
-                className="flex items-center gap-1.5 text-[11px] text-muted-foreground/80 pl-[52px] mb-0.5 max-w-[85%] hover:text-foreground cursor-pointer transition-colors group/reply"
+                className="flex items-center gap-1.5 text-[11px] text-muted-foreground/80 pl-13 mb-0.5 max-w-[85%] hover:text-foreground cursor-pointer transition-colors group/reply"
               >
                 <div className="w-6 h-2.5 border-t-2 border-l-2 border-border/80 rounded-tl-md mr-1.5 mt-2 shrink-0 group-hover/reply:border-primary/60 transition-colors" />
                 <Reply className="size-3 shrink-0 text-muted-foreground/60 mr-0.5 group-hover/reply:text-primary transition-colors" />
@@ -1234,7 +1234,7 @@ export function ChatThread({
                 <span className="font-semibold text-foreground/70 group-hover/reply:text-primary transition-colors">{replyOriginal.senderName}</span>
                 <span className="truncate opacity-75 group-hover/reply:opacity-100 transition-opacity">{replyOriginal.content}</span>
                 {replyReactions.length > 0 && (
-                  <div className="flex items-center gap-0.5 shrink-0 ml-1.5 bg-secondary/50 px-1 py-0.25 rounded text-[10px]">
+                  <div className="flex items-center gap-0.5 shrink-0 ml-1.5 bg-secondary/50 px-1 py-px rounded text-[10px]">
                     {replyReactions.map((r) => r.emoji).join('')}
                   </div>
                 )}
@@ -1251,7 +1251,7 @@ export function ChatThread({
               editingMessage?.id === msg.id 
                 ? 'bg-secondary/40 ring-1 ring-ring/30 rounded-lg' 
                 : msg.replyToId 
-                  ? 'bg-primary/[0.04] border-l-2 border-primary/40 rounded-lg pl-3.5' 
+                  ? 'bg-primary/4 border-l-2 border-primary/40 rounded-lg pl-3.5' 
                   : 'rounded-lg'
             }`}
           >
@@ -1412,7 +1412,7 @@ export function ChatThread({
                   return (
                     <div className="flex gap-2.5 mt-1.5">
                       {/* Borde izquierdo gris estilo Discord */}
-                      <div className="w-[3px] bg-[#4e5058] rounded-full shrink-0 my-0.5" />
+                      <div className="w-0.75 bg-[#4e5058] rounded-full shrink-0 my-0.5" />
                       <div className="flex flex-col gap-0.5 min-w-0">
                         {/* Etiqueta cursiva con flecha de reenvío */}
                         <div className="flex items-center gap-1.5 text-[11px] text-[#949ba4] font-medium italic select-none">
@@ -1742,7 +1742,7 @@ export function ChatThread({
                 animate={{ opacity: 1, y: 0, x: '-50%' }}
                 exit={{ opacity: 0, y: 12, x: '-50%' }}
                 transition={{ duration: 0.18, ease: 'easeOut' }}
-                className="absolute bottom-[72px] left-1/2 z-20 flex items-center gap-3.5 bg-[#242528]/95 border border-[#1a1b1e]/50 pl-5 pr-1.5 py-0.5 rounded-full shadow-2xl backdrop-blur-sm select-none whitespace-nowrap"
+                className="absolute bottom-18 left-1/2 z-20 flex items-center gap-3.5 bg-[#242528]/95 border border-[#1a1b1e]/50 pl-5 pr-1.5 py-0.5 rounded-full shadow-2xl backdrop-blur-sm select-none whitespace-nowrap"
               >
                 <span className="text-[11.5px] text-[#dbdee1] font-medium tracking-wide whitespace-nowrap">
                   {t.olderMessagesAlert}
@@ -1785,7 +1785,7 @@ export function ChatThread({
                           <span>{t.replyingTo}</span>
                           <strong className="font-semibold text-foreground">{replyingTo.senderName}</strong>
                           {repReactions.length > 0 && (
-                            <span className="flex items-center gap-0.5 ml-2 bg-[#2b2d31]/50 border border-border/40 px-1 py-0.25 rounded shrink-0">
+                            <span className="flex items-center gap-0.5 ml-2 bg-[#2b2d31]/50 border border-border/40 px-1 py-px rounded shrink-0">
                               {repReactions.map(r => r.emoji).join('')}
                             </span>
                           )}
@@ -1837,7 +1837,7 @@ export function ChatThread({
                     transition={{ duration: 0.18, ease: 'easeInOut' }}
                     className="overflow-hidden"
                   >
-                    <div className="flex items-center justify-between px-3.5 py-1.5 border-b border-border/50 bg-gradient-to-r from-[#5865F2]/10 via-transparent to-transparent">
+                    <div className="flex items-center justify-between px-3.5 py-1.5 border-b border-border/50 bg-linear-to-r from-[#5865F2]/10 via-transparent to-transparent">
                       <span className="text-[10.5px] text-muted-foreground flex items-center gap-1.5 select-none">
                         <Languages className="size-3 text-[#5865F2]" />
                         <span>{t.translatorActive}</span>
@@ -1913,7 +1913,7 @@ export function ChatThread({
                       <>
                         {/* Invisible backdrop to close menu */}
                         <div
-                          className="fixed inset-0 z-[60]"
+                          className="fixed inset-0 z-60"
                           onClick={() => setTranslatorMenuOpen(false)}
                         />
                         <motion.div
@@ -1922,7 +1922,7 @@ export function ChatThread({
                           exit={{ opacity: 0, y: 6, scale: 0.95 }}
                           transition={{ duration: 0.15, ease: 'easeOut' }}
                           style={{ top: translatorMenuPos.top, left: translatorMenuPos.left, maxHeight: 380 }}
-                          className="fixed z-[70] w-68 rounded-xl border border-border bg-popover shadow-2xl overflow-hidden backdrop-blur-sm flex flex-col"
+                          className="fixed z-70 w-68 rounded-xl border border-border bg-popover shadow-2xl overflow-hidden backdrop-blur-sm flex flex-col"
                         >
                           {/* Search bar */}
                           <div className="px-3 pt-2.5 pb-2">
@@ -2111,7 +2111,7 @@ export function ChatThread({
                   aria-label={t.typeMessage}
                   disabled={sending || translating}
                   rows={1}
-                  className="w-full bg-transparent text-[13px] outline-none placeholder:text-muted-foreground disabled:opacity-60 resize-none max-h-40 py-[7px]"
+                  className="w-full bg-transparent text-[13px] outline-none placeholder:text-muted-foreground disabled:opacity-60 resize-none max-h-40 py-1.75"
                 />
               </div>
             </div>
@@ -2217,7 +2217,7 @@ export function ChatThread({
                                 {msgReactions.map((r) => (
                                   <div
                                     key={r.emoji}
-                                    className="flex items-center gap-0.5 px-1 py-0.25 rounded bg-secondary border border-border/40 text-[9.5px] text-foreground/80"
+                                    className="flex items-center gap-0.5 px-1 py-px rounded bg-secondary border border-border/40 text-[9.5px] text-foreground/80"
                                   >
                                     <span>{r.emoji}</span>
                                     <span className="font-medium">{r.usernames.length}</span>
@@ -2407,7 +2407,7 @@ export function ChatThread({
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="w-full max-w-[420px] rounded-[5px] border border-[#2b2d31] bg-[#313338] p-5 shadow-2xl"
+              className="w-full max-w-105 rounded-[5px] border border-[#2b2d31] bg-[#313338] p-5 shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between border-b border-[#2b2d31] pb-3 mb-4">
@@ -2520,7 +2520,7 @@ export function ChatThread({
       <AnimatePresence>
         {pinnedModalOpen && (
           <div 
-            className="absolute right-4 top-14 z-50 w-full max-w-[420px] rounded-lg border border-border bg-popover text-popover-foreground p-4 shadow-2xl animate-in fade-in slide-in-from-top-3 duration-150 select-none text-left"
+            className="absolute right-4 top-14 z-50 w-full max-w-105 rounded-lg border border-border bg-popover text-popover-foreground p-4 shadow-2xl animate-in fade-in slide-in-from-top-3 duration-150 select-none text-left"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Popover Header */}
@@ -2532,7 +2532,7 @@ export function ChatThread({
             </div>
 
             {/* Popover Body */}
-            <div className="space-y-2.5 max-h-[350px] overflow-y-auto thin-scroll pr-1">
+            <div className="space-y-2.5 max-h-87.5 overflow-y-auto thin-scroll pr-1">
               {pinnedMessages.length === 0 ? (
                 <p className="text-xs text-muted-foreground py-8 text-center">
                   {lang === 'es' ? 'No hay mensajes fijados en este chat.' : 'No pinned messages in this chat.'}
@@ -2750,7 +2750,7 @@ export function ChatThread({
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.15 }}
-                className="w-full max-w-[440px] rounded-lg bg-[#313338] text-foreground p-4 shadow-2xl relative border border-border/20"
+                className="w-full max-w-110 rounded-lg bg-[#313338] text-foreground p-4 shadow-2xl relative border border-border/20"
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Close X Button */}
@@ -2882,7 +2882,7 @@ export function ChatThread({
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.15 }}
-                className="w-full max-w-[440px] rounded-lg bg-popover text-popover-foreground p-4 shadow-2xl relative border border-border/20"
+                className="w-full max-w-110 rounded-lg bg-popover text-popover-foreground p-4 shadow-2xl relative border border-border/20"
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Close X Button */}
@@ -2978,7 +2978,7 @@ export function ChatThread({
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.15 }}
-                className="w-full max-w-[440px] rounded-lg bg-popover text-popover-foreground p-4 shadow-2xl relative border border-border/20"
+                className="w-full max-w-110 rounded-lg bg-popover text-popover-foreground p-4 shadow-2xl relative border border-border/20"
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Close X Button */}

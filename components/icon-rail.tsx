@@ -68,7 +68,7 @@ export function IconRail({
         <img src="/cat-chat-logo.png" alt="CatChat Logo" className="h-full w-full object-contain" />
       </button>
 
-      <div className="my-1 h-[1px] w-6 bg-border/40" />
+      <div className="my-1 h-px w-6 bg-border/40" />
 
       {pluginTabs.map((tab) => {
         const isSelected = activeView === tab.id

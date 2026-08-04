@@ -134,7 +134,7 @@ function ChatAppInner({
         {/* WORKSPACE & PLUGINS AREA */}
         <div className="relative flex flex-1 min-w-0 h-full">
           {/* Centered top title text in empty space above workspace/plugins */}
-          <div className="absolute -top-[25px] left-0 right-0 flex items-center justify-center text-center pointer-events-none select-none z-20">
+          <div className="absolute -top-6.25 left-0 right-0 flex items-center justify-center text-center pointer-events-none select-none z-20">
             <span className="text-[14px] font-bold text-foreground/80 tracking-wide truncate">
               {activeView === 'chat'
                 ? (activeConversation?.title || (lang === 'es' ? 'Chat' : 'Chat'))

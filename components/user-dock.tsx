@@ -476,7 +476,7 @@ export function UserDock({
                 {hasUpdate ? (
                   /* Update panel */
                   <div className="w-64">
-                    <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-border/60 bg-gradient-to-r from-[#5865F2]/10 via-transparent to-transparent">
+                    <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-border/60 bg-linear-to-r from-[#5865F2]/10 via-transparent to-transparent">
                       <div className="flex items-center gap-2">
                         <Download className="size-4 text-[#5865F2]" />
                         <span className="text-[12px] font-semibold text-foreground">
@@ -568,7 +568,7 @@ export function UserDock({
                 ) : hasPluginUpdate && activePluginUpdate ? (
                   /* Plugin Update panel (same spot as CatChat app update) */
                   <div className="w-64">
-                    <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-border/60 bg-gradient-to-r from-emerald-500/10 via-transparent to-transparent">
+                    <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-border/60 bg-linear-to-r from-emerald-500/10 via-transparent to-transparent">
                       <div className="flex items-center gap-2">
                         <Download className="size-4 text-emerald-400 animate-pulse" />
                         <span className="text-[12px] font-semibold text-foreground">
@@ -626,7 +626,7 @@ export function UserDock({
                     className="relative flex flex-col items-center px-4 pb-4 pt-10 rounded-t-2xl overflow-hidden"
                     style={user.banner ? { backgroundImage: `url(${user.banner})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}
                   >
-                    {user.banner && <div className="absolute inset-0 bg-gradient-to-b from-black/40 to-black/70" />}
+                    {user.banner && <div className="absolute inset-0 bg-linear-to-b from-black/40 to-black/70" />}
                     <span className="relative mb-3 flex size-16 shrink-0 items-center justify-center rounded-full bg-secondary text-xl font-semibold text-muted-foreground ring-2 ring-white/20">
                       {user.image ? (
                         <img src={user.image || '/placeholder.svg'} alt={user.name} className="size-16 rounded-full object-cover" />

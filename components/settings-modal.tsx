@@ -161,10 +161,10 @@ export function SettingsModal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 10 }}
             transition={{ type: 'spring', stiffness: 400, damping: 34 }}
-            className="relative flex h-[92dvh] max-h-[860px] w-full max-w-5xl overflow-hidden rounded-2xl border border-border/80 bg-card shadow-2xl"
+            className="relative flex h-[92dvh] max-h-215 w-full max-w-5xl overflow-hidden rounded-2xl border border-border/80 bg-card shadow-2xl"
           >
             {/* ── Discord Left Sidebar ─────────────────── */}
-            <nav className="hidden w-[240px] shrink-0 flex-col border-r border-border/60 bg-background/80 sm:flex select-none">
+            <nav className="hidden w-60 shrink-0 flex-col border-r border-border/60 bg-background/80 sm:flex select-none">
               {/* User mini profile card header */}
               <div className="p-3 border-b border-border/40">
                 <div className="flex items-center gap-3">
