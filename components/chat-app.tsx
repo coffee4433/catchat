@@ -18,6 +18,7 @@ import { CallProvider } from '@/components/calls/call-provider'
 import { PluginProvider, usePlugins } from '@/lib/plugins/plugin-provider'
 import { CatMusicPlayerBar } from '@/components/cat-music/player-bar'
 import { themes } from '@/lib/themes'
+import { useLanguage } from '@/lib/i18n'
 
 export type AppUser = { id: string; name: string; email: string; image?: string | null; banner?: string | null }
 export type Conversation = ConversationListItem
@@ -40,6 +41,7 @@ function ChatAppInner({
   )
 
   const { isPluginEnabled, getActiveRailTabs } = usePlugins()
+  const { lang } = useLanguage()
 
   // Restore saved info panel state (collapsed by default on first launch)
   useEffect(() => {
@@ -125,63 +127,75 @@ function ChatAppInner({
 
   return (
     <CallProvider user={user}>
-      <main className="relative flex h-dvh bg-background p-3 pl-0">
+      <main className="relative flex h-dvh bg-background pt-7 pb-0 pl-0 pr-0">
         <ChatBackground />
         <IconRail activeView={activeView} onSelectView={setActiveView} />
 
-        {/* VIEW 1: Main CatChat Workspace */}
-        {activeView === 'chat' && (
-          <div className="flex flex-1 min-w-0 h-full">
-            <div className="hidden h-full lg:block ml-3">
-              <Sidebar
-                onOpenNewChat={() => setNewChatOpen(true)}
-                conversations={conversations}
-                activeConversationId={activeConversationId}
-                onSelectConversation={setActiveConversationId}
-                onConversationsChange={() => mutateConversations()}
-                currentUserId={user.id}
-              />
-            </div>
-            <ChatThread
-              infoOpen={infoOpen}
-              onToggleInfo={() => setInfoOpen((v) => !v)}
-              user={user}
-              conversation={activeConversation}
-              onConversationChange={(id) => {
-                setActiveConversationId(id)
-                mutateConversations()
-              }}
-              onConversationInfoChange={mutateConversationInfo}
-            />
-            <AnimatePresence initial={false}>
-              {infoOpen && activeConversation && (
-                <motion.div
-                  key="info-panel"
-                  initial={{ width: 0, opacity: 0, x: 32, marginLeft: 0 }}
-                  animate={{ width: 288, opacity: 1, x: 0, marginLeft: 12 }}
-                  exit={{ width: 0, opacity: 0, x: 32, marginLeft: 0 }}
-                  transition={{ type: 'spring', stiffness: 300, damping: 34 }}
-                  className="hidden h-full overflow-hidden rounded-3xl lg:block"
-                >
-                  <InfoPanel conversation={activeConversation} currentUserId={user.id} />
-                </motion.div>
-              )}
-            </AnimatePresence>
+        {/* WORKSPACE & PLUGINS AREA */}
+        <div className="relative flex flex-1 min-w-0 h-full">
+          {/* Centered top title text in empty space above workspace/plugins */}
+          <div className="absolute -top-[25px] left-0 right-0 flex items-center justify-center text-center pointer-events-none select-none z-20">
+            <span className="text-[14px] font-bold text-foreground/80 tracking-wide truncate">
+              {activeView === 'chat'
+                ? (activeConversation?.title || (lang === 'es' ? 'Chat' : 'Chat'))
+                : (activePluginTab?.label || activeView)}
+            </span>
           </div>
-        )}
 
-        {/* VIEW 2: Active Plugin View (e.g. CatMusic) */}
-        {activeView !== 'chat' && PluginViewComponent && (
-          <div
-            className={`flex-1 min-w-0 h-full overflow-hidden ml-3 ${
-              activeView === 'cat-music'
-                ? 'rounded-3xl'
-                : 'rounded-3xl border border-border/40 bg-card/40 backdrop-blur-xl'
-            }`}
-          >
-            <PluginViewComponent user={user} onOpenSettings={onOpenSettings} />
-          </div>
-        )}
+          {/* VIEW 1: Main CatChat Workspace */}
+          {activeView === 'chat' && (
+            <div className="flex flex-1 min-w-0 h-full">
+              <div className="hidden h-full lg:block ml-3">
+                <Sidebar
+                  onOpenNewChat={() => setNewChatOpen(true)}
+                  conversations={conversations}
+                  activeConversationId={activeConversationId}
+                  onSelectConversation={setActiveConversationId}
+                  onConversationsChange={() => mutateConversations()}
+                  currentUserId={user.id}
+                />
+              </div>
+              <ChatThread
+                infoOpen={infoOpen}
+                onToggleInfo={() => setInfoOpen((v) => !v)}
+                user={user}
+                conversation={activeConversation}
+                onConversationChange={(id) => {
+                  setActiveConversationId(id)
+                  mutateConversations()
+                }}
+                onConversationInfoChange={mutateConversationInfo}
+              />
+              <AnimatePresence initial={false}>
+                {infoOpen && activeConversation && (
+                  <motion.div
+                    key="info-panel"
+                    initial={{ width: 0, opacity: 0, x: 32, marginLeft: 0 }}
+                    animate={{ width: 288, opacity: 1, x: 0, marginLeft: 12 }}
+                    exit={{ width: 0, opacity: 0, x: 32, marginLeft: 0 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 34 }}
+                    className="hidden h-full overflow-hidden rounded-3xl lg:block"
+                  >
+                    <InfoPanel conversation={activeConversation} currentUserId={user.id} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+
+          {/* VIEW 2: Active Plugin View (e.g. CatMusic) */}
+          {activeView !== 'chat' && PluginViewComponent && (
+            <div
+              className={`flex-1 min-w-0 h-full overflow-hidden ml-3 ${
+                activeView === 'cat-music'
+                  ? 'rounded-3xl'
+                  : 'rounded-3xl border border-border/40 bg-card/40 backdrop-blur-xl'
+              }`}
+            >
+              <PluginViewComponent user={user} onOpenSettings={onOpenSettings} />
+            </div>
+          )}
+        </div>
 
         {/* Persistent YouTube Player Bar for CatMusic (shown ONLY in CatMusic view) */}
         {isPluginEnabled('cat-music') && activeView === 'cat-music' && <CatMusicPlayerBar />}

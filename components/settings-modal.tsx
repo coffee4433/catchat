@@ -87,10 +87,13 @@ export function SettingsModal({
   ]
 
   const scrollToSubItem = (id: string) => {
-    const el = document.getElementById(id)
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }
+    setActive('account')
+    setTimeout(() => {
+      const el = document.getElementById(id)
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    }, 50)
   }
 
   // Grouped navigation matching Discord exactly
@@ -228,8 +231,8 @@ export function SettingsModal({
                               </div>
                             </button>
 
-                            {/* Active section sub-navigation tree (like Discord screenshot) */}
-                            {isSelected && s.id === 'account' && (
+                            {/* Account sub-navigation tree (always visible) */}
+                            {s.id === 'account' && (
                               <div className="relative ml-5 my-1 pl-3 border-l-2 border-border/80 space-y-1">
                                 {accountSubItems.map((sub) => (
                                   <button

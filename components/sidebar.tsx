@@ -140,7 +140,7 @@ export function Sidebar({
   }
 
   return (
-    <aside className="flex h-full w-60 shrink-0 flex-col rounded-2xl border border-border bg-card shadow-sm">
+    <aside className="flex h-full w-60 shrink-0 flex-col rounded-tl-2xl border border-border bg-card shadow-sm">
       <nav className="thin-scroll flex-1 overflow-y-auto px-2 pb-3" aria-label={t.conversationsLabel}>
         <FriendRequestsPanel currentUserId={currentUserId} onChatWithUser={(id) => onSelectConversation(id)} />
         <div className="mt-1 mb-1 flex items-center justify-between px-2">
