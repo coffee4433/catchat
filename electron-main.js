@@ -6,6 +6,14 @@ const { autoUpdater } = require('electron-updater')
 const { registerCommandRunnerIPC } = require('./electron/commandRunner')
 const { registerPluginInstallerIPC } = require('./electron/pluginInstaller')
 
+process.on('uncaughtException', (error) => {
+  console.error('[Main] Uncaught Exception:', error)
+})
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[Main] Unhandled Rejection:', reason)
+})
+
 // Use overlay scrollbars on Windows/Linux (no native arrow buttons)
 if (process.platform === 'win32') {
   app.commandLine.appendSwitch('enable-features', 'OverlayScrollbar,FluentOverlayScrollbar')
@@ -221,17 +229,32 @@ function createWindow() {
     console.log('Electron console:', level, message, line, sourceId)
   })
 
-  // Cuando la app web haya cargado y esté lista para mostrarse
-  mainWindow.once('ready-to-show', () => {
-    // Damos un pequeño retraso (1.2 segundos) para que la animación del splash se luzca
-    setTimeout(() => {
-      if (splashWindow) {
-        splashWindow.close()
-      }
+  // Garantizar que la ventana principal se muestre primero antes de cerrar el splash
+  let hasShownWindow = false
+  const showMainAppWindow = () => {
+    if (hasShownWindow) return
+    hasShownWindow = true
+    if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.show()
       mainWindow.focus()
+    }
+    if (splashWindow && !splashWindow.isDestroyed()) {
+      try {
+        splashWindow.close()
+      } catch {}
+    }
+  }
+
+  mainWindow.once('ready-to-show', () => {
+    setTimeout(() => {
+      showMainAppWindow()
     }, 1200)
   })
+
+  // Fallback de seguridad: si ready-to-show tarda más de 3.5s en dispararse, forzar mostrar la ventana principal
+  setTimeout(() => {
+    showMainAppWindow()
+  }, 3500)
 
   mainWindow.on('closed', function () {
     mainWindow = null
@@ -286,12 +309,12 @@ app.on('ready', async () => {
       }
     }
 
-    setTimeout(checkUpdate, 6000)
-    setInterval(checkUpdate, 10 * 1000)
+    setTimeout(checkUpdate, 8000)
+    setInterval(checkUpdate, 2 * 60 * 60 * 1000)
   } catch (error) {
     console.error('Failed to start Next.js server:', error)
     const { dialog } = require('electron')
-    if (splashWindow) {
+    if (splashWindow && !splashWindow.isDestroyed()) {
       splashWindow.close()
     }
     dialog.showErrorBox(
@@ -303,6 +326,10 @@ app.on('ready', async () => {
 })
 
 app.on('window-all-closed', function () {
+  // No cerrar el proceso si la ventana principal aún existe o está cargando
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    return
+  }
   if (process.platform !== 'darwin') {
     app.quit()
   }
