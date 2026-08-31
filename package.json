@@ -1,6 +1,6 @@
 {
   "name": "catchat",
-  "version": "0.3.46",
+  "version": "0.3.47",
   "private": true,
   "author": "CatChat <dev@catchat.app>",
   "description": "Team collaboration messenger with threads, channels and lightning-fast command search",
@@ -13,6 +13,9 @@
     "build:webpack": "next build --webpack",
     "start": "next start",
     "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "migrate": "node scripts/apply-migration.mjs",
     "db:verify": "node scripts/verify-db.mjs",
     "supabase:setup": "node scripts/setup-supabase.mjs",
@@ -128,13 +131,18 @@
     "@types/react-dom": "^19",
     "electron": "^43.1.0",
     "electron-builder": "^26.15.3",
+    "eslint": "9.39.0",
+    "eslint-config-next": "16.2.6",
     "postcss": "^8.5",
     "tailwindcss": "^4.2.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "3.2.4"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
-      "electron-winstaller"
+      "electron-winstaller",
+      "esbuild",
+      "unrs-resolver"
     ],
     "overrides": {
       "hono": "4.12.25"
