@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useCallback, useMemo, useRef, type CSSProperties } from 'react'
+import { createPortal } from 'react-dom'
 import {
   Bell,
   BellOff,
@@ -15,7 +16,6 @@ import {
   Plus,
   Radio,
   Search,
-  Settings,
   Sparkles,
   Trash2,
   User,
@@ -142,7 +142,7 @@ function CardSkeletons({
 }
 
 
-export function CatMusicMainView({ onOpenSettings }: PluginViewProps) {
+export function CatMusicMainView(_props: PluginViewProps) {
   const rootRef = useRef<HTMLDivElement>(null)
   const [activeTab, setActiveTab] = useState<Tab>('home')
   const [searchQuery, setSearchQuery] = useState('')
@@ -161,6 +161,11 @@ export function CatMusicMainView({ onOpenSettings }: PluginViewProps) {
   const [showNotifications, setShowNotifications] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [notifPermission, setNotifPermission] = useState<NotificationPermission | 'unsupported'>('default')
+
+  /** Anchor for the floating activity menu, and the layer it is painted into. */
+  const bellRef = useRef<HTMLButtonElement>(null)
+  const [overlayHost, setOverlayHost] = useState<HTMLElement | null>(null)
+  const [notifAnchor, setNotifAnchor] = useState<{ top: number; right: number } | null>(null)
 
   const [selectedTrackDetail, setSelectedTrackDetail] = useState<Track | null>(null)
   const [selectedArtistName, setSelectedArtistName] = useState<string | null>(null)
@@ -205,6 +210,52 @@ export function CatMusicMainView({ onOpenSettings }: PluginViewProps) {
       setIsFullscreen(isFullscreenActive())
     })
   }, [])
+
+  // The plugin shell itself hosts every floating layer. Painting them into
+  // `document.body` would work in a window but vanish the moment the shell is
+  // promoted to the fullscreen element — only that subtree is rendered then.
+  useEffect(() => {
+    setOverlayHost(rootRef.current)
+  }, [])
+
+  /**
+   * Pins the activity menu under the bell in viewport coordinates. It is
+   * `position: fixed` in its own layer rather than absolutely positioned inside
+   * the header, so no ancestor's `overflow: hidden` or stacking context can clip
+   * or bury it.
+   */
+  const placeNotifications = useCallback(() => {
+    const anchor = bellRef.current
+    if (!anchor) return
+    const rect = anchor.getBoundingClientRect()
+    setNotifAnchor({
+      top: Math.round(rect.bottom + 8),
+      right: Math.round(Math.max(12, window.innerWidth - rect.right)),
+    })
+  }, [])
+
+  useEffect(() => {
+    if (!showNotifications) return
+    placeNotifications()
+
+    const reposition = () => placeNotifications()
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setShowNotifications(false)
+        bellRef.current?.focus()
+      }
+    }
+
+    window.addEventListener('resize', reposition)
+    // Capture phase: the menu has to follow the button when any scroller moves.
+    window.addEventListener('scroll', reposition, true)
+    window.addEventListener('keydown', onKeyDown)
+    return () => {
+      window.removeEventListener('resize', reposition)
+      window.removeEventListener('scroll', reposition, true)
+      window.removeEventListener('keydown', onKeyDown)
+    }
+  }, [showNotifications, placeNotifications])
 
   useEffect(() => {
     if (!isFullscreen) return
@@ -509,10 +560,14 @@ export function CatMusicMainView({ onOpenSettings }: PluginViewProps) {
             </div>
           </div>
 
-          <div className="hidden md:flex items-center gap-1 shrink-0 relative">
+          <div className="hidden md:flex items-center gap-1 shrink-0">
             <button
+              ref={bellRef}
+              type="button"
               onClick={() => setShowNotifications((v) => !v)}
               aria-label={t.recentActivity}
+              aria-expanded={showNotifications}
+              aria-haspopup="dialog"
               className={`cm-focus rounded-full p-2 transition-colors ${
                 showNotifications
                   ? 'cm-tint text-[var(--cm-accent-hi)]'
@@ -520,13 +575,6 @@ export function CatMusicMainView({ onOpenSettings }: PluginViewProps) {
               }`}
             >
               <Bell className="size-4" />
-            </button>
-            <button
-              onClick={() => onOpenSettings?.()}
-              aria-label={t.openSettings}
-              className="cm-focus rounded-full p-2 text-white/40 hover:bg-white/10 hover:text-white transition-colors"
-            >
-              <Settings className="size-4" />
             </button>
             <button
               type="button"
@@ -541,55 +589,6 @@ export function CatMusicMainView({ onOpenSettings }: PluginViewProps) {
             >
               {isFullscreen ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
             </button>
-
-            {showNotifications && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)} />
-                <GlassPanel variant="strong" className="absolute right-0 top-full z-50 mt-2 w-72 p-3 shadow-2xl">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-white/40 mb-3">{t.recentActivity}</p>
-                  {history.length > 0 ? (
-                    <div className="max-h-48 overflow-y-auto thin-scroll space-y-1 mb-3">
-                      {history.slice(0, 6).map((entry, idx) => (
-                        <button
-                          key={`${entry.id}-${idx}`}
-                          onClick={() => {
-                            playTrack(entry.track, history.map((h) => h.track))
-                            setShowNotifications(false)
-                          }}
-                          className="flex w-full items-center gap-2 rounded-xl px-2 py-2 text-left hover:bg-white/5 transition-colors"
-                        >
-                          <div className="size-8 shrink-0 overflow-hidden rounded-lg">
-                            <img src={entry.track.artworkUrl} alt="" className="size-full object-cover" />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-[12px] font-semibold">{entry.track.title}</p>
-                            <p className="truncate text-[10px] text-white/40">{entry.track.artist}</p>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-[12px] text-white/40 mb-3">{t.noHistory}</p>
-                  )}
-
-                  {notifPermission !== 'granted' && notifPermission !== 'unsupported' && (
-                    <button
-                      onClick={requestNotifications}
-                      className="cm-btn cm-btn-ghost w-full px-3 py-2 text-[12px]"
-                    >
-                      <Bell className="size-3.5" />
-                      {t.enableNotifications}
-                    </button>
-                  )}
-                  {notifPermission === 'denied' && (
-                    <p className="mt-2 flex items-center gap-1.5 text-[11px] text-rose-400/80">
-                      <BellOff className="size-3.5 shrink-0" />
-                      {t.notificationsBlocked}
-                    </p>
-                  )}
-                </GlassPanel>
-              </>
-            )}
           </div>
         </header>
 
@@ -1098,6 +1097,68 @@ export function CatMusicMainView({ onOpenSettings }: PluginViewProps) {
           </GlassPanel>
           </form>
         </div>
+      )}
+
+      {/* Floating activity menu. Lives in its own fixed layer inside the plugin
+          shell so it hovers over the whole view — including in fullscreen — and
+          is pinned to the bell rather than to the header's box. */}
+      {showNotifications && notifAnchor && overlayHost && createPortal(
+        <div
+          className="fixed inset-0 z-[220]"
+          onMouseDown={() => setShowNotifications(false)}
+        >
+          <GlassPanel
+            variant="strong"
+            role="dialog"
+            aria-label={t.recentActivity}
+            style={{ top: notifAnchor.top, right: notifAnchor.right }}
+            onMouseDown={(e) => e.stopPropagation()}
+            className="fixed w-72 p-3 shadow-2xl animate-in fade-in slide-in-from-top-2 duration-150"
+          >
+            <p className="text-[11px] font-bold uppercase tracking-wider text-white/40 mb-3">{t.recentActivity}</p>
+            {history.length > 0 ? (
+              <div className="max-h-48 overflow-y-auto thin-scroll space-y-1 mb-3">
+                {history.slice(0, 6).map((entry, idx) => (
+                  <button
+                    key={`${entry.id}-${idx}`}
+                    onClick={() => {
+                      playTrack(entry.track, history.map((h) => h.track))
+                      setShowNotifications(false)
+                    }}
+                    className="flex w-full items-center gap-2 rounded-xl px-2 py-2 text-left hover:bg-white/5 transition-colors"
+                  >
+                    <div className="size-8 shrink-0 overflow-hidden rounded-lg">
+                      <img src={entry.track.artworkUrl} alt="" className="size-full object-cover" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[12px] font-semibold">{entry.track.title}</p>
+                      <p className="truncate text-[10px] text-white/40">{entry.track.artist}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="text-[12px] text-white/40 mb-3">{t.noHistory}</p>
+            )}
+
+            {notifPermission !== 'granted' && notifPermission !== 'unsupported' && (
+              <button
+                onClick={requestNotifications}
+                className="cm-btn cm-btn-ghost w-full px-3 py-2 text-[12px]"
+              >
+                <Bell className="size-3.5" />
+                {t.enableNotifications}
+              </button>
+            )}
+            {notifPermission === 'denied' && (
+              <p className="mt-2 flex items-center gap-1.5 text-[11px] text-rose-400/80">
+                <BellOff className="size-3.5 shrink-0" />
+                {t.notificationsBlocked}
+              </p>
+            )}
+          </GlassPanel>
+        </div>,
+        overlayHost,
       )}
     </>
   )

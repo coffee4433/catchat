@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import {
   Heart,
   ListMusic,
@@ -19,6 +20,7 @@ import { useLibrary } from '@/lib/plugins/cat-music/library-context'
 import { useAccentScopeStyle } from '@/lib/plugins/cat-music/accent-store'
 import { formatDuration } from '@/lib/plugins/cat-music/youtube'
 import { useLanguage } from '@/lib/i18n'
+import { getFullscreenElement, subscribeFullscreenChange } from '@/lib/fullscreen'
 import { QueuePanel } from './queue-panel'
 
 export function CatMusicPlayerBar() {
@@ -32,6 +34,18 @@ export function CatMusicPlayerBar() {
   // own accent scope instead of inheriting one. Each fixed layer below is a
   // separate root, so each one carries it.
   const accentScope = useAccentScopeStyle()
+
+  /**
+   * Promoting an element to fullscreen renders *only* that subtree, so a bar
+   * sitting outside it disappears the moment the plugin view goes fullscreen.
+   * Re-parenting it into whatever element is fullscreen keeps it on screen.
+   */
+  const [fullscreenHost, setFullscreenHost] = useState<Element | null>(null)
+  useEffect(() => {
+    const sync = () => setFullscreenHost(getFullscreenElement())
+    sync()
+    return subscribeFullscreenChange(sync)
+  }, [])
 
   if (!player || !library) return null
 
@@ -58,7 +72,7 @@ export function CatMusicPlayerBar() {
   const dur = playerState.duration || 180
   const progressPct = Math.min(100, Math.max(0, (pos / dur) * 100))
 
-  return (
+  const bar = (
     <>
       {showQueue && (
         <div
@@ -90,8 +104,14 @@ export function CatMusicPlayerBar() {
 
       {/* Floating glass player bar. The 288px inset only clears the sidebar,
           which is itself hidden below `lg` — without the breakpoint the bar hung
-          off the right edge on tablets and phones. */}
-      <div style={accentScope} className="cm-scope fixed bottom-4 left-4 right-4 z-40 lg:left-[288px]">
+          off the right edge on tablets and phones. In fullscreen the chat rail
+          is gone, so it tucks in to the plugin's own sidebar instead. */}
+      <div
+        style={accentScope}
+        className={`cm-scope fixed bottom-4 left-4 right-4 z-40 ${
+          fullscreenHost ? 'lg:left-[248px]' : 'lg:left-[288px]'
+        }`}
+      >
         <div className="cm-glass-strong cm-player-float mx-auto max-w-[1600px] rounded-[24px] overflow-hidden">
           {playerState.error === 'unavailable' && (
             <div
@@ -297,4 +317,6 @@ export function CatMusicPlayerBar() {
       </div>
     </>
   )
+
+  return fullscreenHost ? createPortal(bar, fullscreenHost) : bar
 }

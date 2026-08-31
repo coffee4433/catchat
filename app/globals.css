@@ -820,6 +820,19 @@ body::-webkit-scrollbar-corner,
   background: transparent;
 }
 
+/* Custom window frame (desktop build). The OS caption strip is hidden, so the
+   in-app title bar has to declare which parts drag the window — and anything
+   clickable inside it has to opt back out. No-ops in a browser. */
+.app-drag {
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+
+.app-no-drag {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
 /* Thin-scroll alias — explicit opt-in + full webkit rules */
 .thin-scroll {
   scrollbar-width: thin;

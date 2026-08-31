@@ -144,6 +144,31 @@ function registerWindowIPC() {
     const win = BrowserWindow.fromWebContents(event.sender)
     return Boolean(win && !win.isDestroyed() && win.isFullScreen())
   })
+
+  // The frame is drawn by the renderer (see components/window-titlebar.tsx), so
+  // the buttons it paints need the real window operations behind them.
+  ipcMain.handle('window:minimize', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (win && !win.isDestroyed()) win.minimize()
+  })
+
+  ipcMain.handle('window:toggle-maximize', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (!win || win.isDestroyed()) return false
+    if (win.isMaximized()) win.unmaximize()
+    else win.maximize()
+    return win.isMaximized()
+  })
+
+  ipcMain.handle('window:is-maximized', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    return Boolean(win && !win.isDestroyed() && win.isMaximized())
+  })
+
+  ipcMain.handle('window:close', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (win && !win.isDestroyed()) win.close()
+  })
 }
 
 function getAppDir() {
@@ -192,6 +217,11 @@ function createWindow() {
     icon: path.join(appDir, 'build', 'icon.png'),
     autoHideMenuBar: true,
     show: false,
+    // The OS title bar is replaced by the in-app one. `hidden` (rather than
+    // `frame: false`) keeps the native resize borders, shadow and snap
+    // behaviour — only the caption strip goes away.
+    titleBarStyle: 'hidden',
+    backgroundColor: '#0d0e14',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
@@ -222,6 +252,15 @@ function createWindow() {
   })
   mainWindow.on('leave-full-screen', () => {
     mainWindow?.webContents.send('window:fullscreen-changed', false)
+  })
+
+  // Same for maximise: double-clicking the drag region, Win+Up and the OS snap
+  // gestures all bypass the in-app button, and its icon has to follow.
+  mainWindow.on('maximize', () => {
+    mainWindow?.webContents.send('window:maximize-changed', true)
+  })
+  mainWindow.on('unmaximize', () => {
+    mainWindow?.webContents.send('window:maximize-changed', false)
   })
 
   // Set up display media request handler for screen sharing

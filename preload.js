@@ -55,7 +55,8 @@ contextBridge.exposeInMainWorld("pluginInstaller", {
 });
 
 // Native window controls. The web fullscreen API only ever fills the window;
-// this is what lets the renderer take the whole monitor.
+// this is what lets the renderer take the whole monitor. The minimise/maximise/
+// close trio backs the in-app title bar, which replaces the OS one.
 contextBridge.exposeInMainWorld("desktopWindow", {
   setFullscreen: (flag) => ipcRenderer.invoke("window:set-fullscreen", flag),
   isFullscreen: () => ipcRenderer.invoke("window:is-fullscreen"),
@@ -63,6 +64,15 @@ contextBridge.exposeInMainWorld("desktopWindow", {
     const listener = (_event, value) => callback(value);
     ipcRenderer.on("window:fullscreen-changed", listener);
     return () => ipcRenderer.removeListener("window:fullscreen-changed", listener);
+  },
+  minimize: () => ipcRenderer.invoke("window:minimize"),
+  toggleMaximize: () => ipcRenderer.invoke("window:toggle-maximize"),
+  isMaximized: () => ipcRenderer.invoke("window:is-maximized"),
+  close: () => ipcRenderer.invoke("window:close"),
+  onMaximizeChange: (callback) => {
+    const listener = (_event, value) => callback(value);
+    ipcRenderer.on("window:maximize-changed", listener);
+    return () => ipcRenderer.removeListener("window:maximize-changed", listener);
   },
 });
 

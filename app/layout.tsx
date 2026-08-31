@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next'
+import { TitlebarProvider } from '@/components/window-titlebar'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -40,7 +41,7 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans antialiased thin-scroll" suppressHydrationWarning>
-        {children}
+        <TitlebarProvider>{children}</TitlebarProvider>
         <script
           dangerouslySetInnerHTML={{
             __html: `if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').then(r=>r.update()).catch(()=>{});}`,

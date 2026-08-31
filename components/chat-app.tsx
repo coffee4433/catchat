@@ -17,8 +17,8 @@ import { ChatBackground } from '@/components/chat-background'
 import { CallProvider } from '@/components/calls/call-provider'
 import { PluginProvider, usePlugins } from '@/lib/plugins/plugin-provider'
 import { CatMusicPlayerBar } from '@/components/cat-music/player-bar'
+import { useWindowTitle } from '@/components/window-titlebar'
 import { themes } from '@/lib/themes'
-import { useLanguage } from '@/lib/i18n'
 
 export type AppUser = { id: string; name: string; email: string; image?: string | null; banner?: string | null }
 export type Conversation = ConversationListItem
@@ -41,7 +41,6 @@ function ChatAppInner({
   )
 
   const { isPluginEnabled, getActiveRailTabs } = usePlugins()
-  const { lang } = useLanguage()
 
   // Restore saved info panel state (collapsed by default on first launch)
   useEffect(() => {
@@ -125,23 +124,22 @@ function ChatAppInner({
   const activePluginTab = getActiveRailTabs().find((t) => t.id === activeView)
   const PluginViewComponent = activePluginTab?.component
 
+  // The window frame shows what the user is looking at, so the old floating
+  // caption above the workspace is gone.
+  useWindowTitle(
+    activeView === 'chat'
+      ? activeConversation?.title || 'Chat'
+      : activePluginTab?.label || activeView,
+  )
+
   return (
     <CallProvider user={user}>
-      <main className="relative flex h-dvh bg-background pt-7 pb-0 pl-0 pr-0">
+      <main className="relative flex h-dvh bg-background pt-9 pb-0 pl-0 pr-0">
         <ChatBackground />
         <IconRail activeView={activeView} onSelectView={setActiveView} />
 
         {/* WORKSPACE & PLUGINS AREA */}
         <div className="relative flex flex-1 min-w-0 h-full">
-          {/* Centered top title text in empty space above workspace/plugins */}
-          <div className="absolute -top-6.25 left-0 right-0 flex items-center justify-center text-center pointer-events-none select-none z-20">
-            <span className="text-[14px] font-bold text-foreground/80 tracking-wide truncate">
-              {activeView === 'chat'
-                ? (activeConversation?.title || (lang === 'es' ? 'Chat' : 'Chat'))
-                : (activePluginTab?.label || activeView)}
-            </span>
-          </div>
-
           {/* VIEW 1: Main CatChat Workspace */}
           {activeView === 'chat' && (
             <div className="flex flex-1 min-w-0 h-full">

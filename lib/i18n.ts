@@ -288,6 +288,12 @@ export const translations = {
     workspacesLabel: 'Workspaces',
     catChatWorkspaceLabel: 'CatChat workspace',
 
+    // Window frame
+    windowMinimize: 'Minimize',
+    windowMaximize: 'Maximize',
+    windowRestore: 'Restore down',
+    windowClose: 'Close',
+
     // Chat Thread - additional
     newConversationTitle: 'New Conversation',
     startVoiceCall: 'Start Voice Call',
@@ -691,6 +697,12 @@ export const translations = {
     // Icon Rail
     workspacesLabel: 'Workspaces',
     catChatWorkspaceLabel: 'Espacio de CatChat',
+
+    // Window frame
+    windowMinimize: 'Minimizar',
+    windowMaximize: 'Maximizar',
+    windowRestore: 'Restaurar',
+    windowClose: 'Cerrar',
 
     // Chat Thread - additional
     newConversationTitle: 'Nueva conversación',
