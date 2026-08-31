@@ -1,7 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@/lib/auth'
+import { createRateLimiter } from '@/lib/rate-limit'
+import { headers } from 'next/headers'
 
 const DEEPL_API_KEY = process.env.DEEPL_API_KEY || ''
 const DEEPL_API_URL = process.env.DEEPL_API_URL || 'https://api-free.deepl.com/v2/translate'
+
+/** Max characters accepted per request, so the shared DeepL quota can't be drained in one call. */
+const MAX_TEXT_LENGTH = 5000
+
+/** Per-user request budget, enforced per server instance. */
+const limiter = createRateLimiter({ windowMs: 60_000, maxRequests: 60 })
 
 const LANG_MAP: Record<string, string> = {
   bg: 'BG', cs: 'CS', da: 'DA', de: 'DE',
@@ -15,6 +24,19 @@ const LANG_MAP: Record<string, string> = {
 }
 
 export async function POST(request: NextRequest) {
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const limit = limiter.check(session.user.id)
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { error: 'Too many translation requests' },
+      { status: 429, headers: { 'Retry-After': String(limit.retryAfter) } },
+    )
+  }
+
   if (!DEEPL_API_KEY) {
     return NextResponse.json(
       { error: 'DeepL API key not configured' },
@@ -29,6 +51,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Missing text or target_lang' },
         { status: 400 }
+      )
+    }
+
+    if (typeof text !== 'string' || typeof target_lang !== 'string') {
+      return NextResponse.json(
+        { error: 'text and target_lang must be strings' },
+        { status: 400 }
+      )
+    }
+
+    if (text.length > MAX_TEXT_LENGTH) {
+      return NextResponse.json(
+        { error: `Text too long (max ${MAX_TEXT_LENGTH} characters)` },
+        { status: 413 }
       )
     }
 
@@ -56,8 +92,9 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text()
+      console.error(`DeepL API error ${response.status}: ${errorText}`)
       return NextResponse.json(
-        { error: `DeepL API error: ${response.status} - ${errorText}` },
+        { error: 'Translation provider error' },
         { status: response.status }
       )
     }
@@ -67,9 +104,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ translatedText })
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown error'
+    console.error('Translation failed:', err)
     return NextResponse.json(
-      { error: `Translation failed: ${message}` },
+      { error: 'Translation failed' },
       { status: 500 }
     )
   }

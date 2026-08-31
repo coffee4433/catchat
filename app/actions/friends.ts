@@ -3,6 +3,7 @@
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { friendRequests, user } from '@/lib/db/schema'
+import { ensureDirectConversation } from '@/lib/db/conversations'
 import { and, desc, eq, inArray } from 'drizzle-orm'
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
@@ -47,8 +48,6 @@ export async function sendFriendRequest(toUserId: string) {
   revalidatePath('/')
   return request
 }
-
-import { ensureDirectConversation } from '@/app/actions/chat'
 
 export async function acceptFriendRequest(requestId: string) {
   const userId = await getUserId()

@@ -60,13 +60,20 @@ export type DownloadJob = {
   completedAt?: string
 }
 
+/**
+ * Only settings the player actually honors live here.
+ *
+ * `audioQuality`, `crossfadeSeconds`, `downloadBitrate` and `explicitAllowed`
+ * used to be declared but nothing read them: playback goes through a single
+ * YouTube IFrame player, which exposes no bitrate selection and no second
+ * audio pipeline to crossfade with, and there is no download feature. They
+ * were removed rather than left as settings that silently do nothing.
+ */
 export type CatMusicSettings = {
-  audioQuality: 'normal' | 'high' | 'very_high'
+  /** Advance to the next queue item when a track finishes. */
   autoplay: boolean
-  crossfadeSeconds: number
+  /** Volume applied on first run, before the user has touched the slider. */
   defaultVolume: number
-  explicitAllowed: boolean
-  downloadBitrate: number
 }
 
 export type RepeatMode = 'off' | 'all' | 'one'

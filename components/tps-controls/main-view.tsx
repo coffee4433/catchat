@@ -159,14 +159,26 @@ function Game({
             { x: camera.position.x, y: camera.position.y, z: camera.position.z },
             { x: dir.x, y: dir.y, z: dir.z },
           )
-          const hit = world.castRay(ray, 200, true, undefined, undefined, undefined, (collider) => {
-            const b = collider.parent()
-            return b ? b.userData?.remotePlayerId !== undefined : false
-          })
+          // castRay takes (ray, maxToi, solid, filterFlags, filterGroups,
+          // filterExcludeCollider, filterExcludeRigidBody, filterPredicate) — the
+          // predicate has to sit in the 8th slot or it is silently ignored.
+          const hit = world.castRay(
+            ray,
+            200,
+            true,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            (collider) => {
+              const b = collider.parent()
+              return b ? (b.userData as { remotePlayerId?: string })?.remotePlayerId !== undefined : false
+            },
+          )
 
           if (hit && hit.collider.parent()) {
             const hitBody = hit.collider.parent()!
-            const targetId = hitBody.userData?.remotePlayerId
+            const targetId = (hitBody.userData as { remotePlayerId?: string })?.remotePlayerId
             if (targetId && targetId !== userId) {
               sendDamage({
                 fromId: userId,

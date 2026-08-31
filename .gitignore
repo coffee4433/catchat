@@ -17,3 +17,9 @@ cat-music-player.zip
 android/.gradle/
 android/release.keystore
 android/local.properties
+
+# Secrets — never commit real values (keep .env.production.example instead)
+.env
+.env.local
+.env.production
+.env.*.local

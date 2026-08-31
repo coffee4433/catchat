@@ -13,10 +13,17 @@
 
 import type { Track } from './types'
 
-const INNERTUBE_KEY = 'AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8'
-const CLIENT_VERSION = '2.20240401.00.00'
+const INNERTUBE_KEY = process.env.YOUTUBE_INNERTUBE_KEY || 'AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8'
+const CLIENT_VERSION = process.env.YOUTUBE_CLIENT_VERSION || '2.20250801.00.00'
 const UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+
+/** How long a successful InnerTube payload stays reusable. */
+const CACHE_TTL_MS = 5 * 60 * 1000
+/** Hard ceiling on cached payloads, so a search-spamming client can't grow the heap. */
+const CACHE_MAX_ENTRIES = 200
+/** Network attempts per call: one try plus two retries with backoff. */
+const MAX_ATTEMPTS = 3
 
 export type YtPlaylist = {
   id: string
@@ -36,6 +43,13 @@ export type YtChannel = {
   bannerUrl?: string
 }
 
+/**
+ * Every high-level helper reports whether YouTube actually answered.
+ * Without this an upstream outage is indistinguishable from "no results",
+ * and the UI ends up lying to the user with an empty state.
+ */
+export type Upstream<T> = T & { ok: boolean }
+
 /** Search filter params (protobuf, url-encoded) */
 export const SEARCH_FILTER = {
   video: 'EgIQAQ%3D%3D',
@@ -45,45 +59,142 @@ export const SEARCH_FILTER = {
 
 export type SearchFilter = keyof typeof SEARCH_FILTER
 
-/** Low-level InnerTube POST with timeout. */
-async function innertube(endpoint: string, body: Record<string, unknown>, timeoutMs = 8000) {
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), timeoutMs)
+type InnertubeResult = { ok: boolean; json: any | null }
 
-  try {
-    const res = await fetch(
-      `https://www.youtube.com/youtubei/v1/${endpoint}?key=${INNERTUBE_KEY}&prettyPrint=false`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'User-Agent': UA,
-          'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
-          Origin: 'https://www.youtube.com',
-        },
-        body: JSON.stringify({
-          context: {
-            client: {
-              clientName: 'WEB',
-              clientVersion: CLIENT_VERSION,
-              hl: 'es',
-              gl: 'ES',
-            },
-          },
-          ...body,
-        }),
-        signal: controller.signal,
-        cache: 'no-store',
-      },
-    )
+const cache = new Map<string, { json: any; expiresAt: number }>()
 
-    if (!res.ok) return null
-    return (await res.json()) as any
-  } catch {
+function cacheGet(key: string): any | null {
+  const hit = cache.get(key)
+  if (!hit) return null
+  if (Date.now() >= hit.expiresAt) {
+    cache.delete(key)
     return null
-  } finally {
-    clearTimeout(timer)
   }
+  // Refresh insertion order so the LRU eviction below drops cold entries first.
+  cache.delete(key)
+  cache.set(key, hit)
+  return hit.json
+}
+
+function cacheSet(key: string, json: any) {
+  cache.set(key, { json, expiresAt: Date.now() + CACHE_TTL_MS })
+  while (cache.size > CACHE_MAX_ENTRIES) {
+    const oldest = cache.keys().next().value
+    if (oldest === undefined) break
+    cache.delete(oldest)
+  }
+}
+
+/** Exposed for tests and for an eventual admin "flush caches" action. */
+export function clearInnertubeCache() {
+  cache.clear()
+}
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+/**
+ * Low-level InnerTube POST: timeout, retry with backoff, and a TTL cache.
+ *
+ * Retries only on network errors and 5xx/429 — a 4xx means the request itself
+ * is wrong, so hammering it again just wastes the budget.
+ */
+async function innertube(
+  endpoint: string,
+  body: Record<string, unknown>,
+  timeoutMs = 8000,
+): Promise<InnertubeResult> {
+  const cacheKey = `${endpoint}:${JSON.stringify(body)}`
+  const cached = cacheGet(cacheKey)
+  if (cached) return { ok: true, json: cached }
+
+  let retryable = true
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), timeoutMs)
+
+    try {
+      const res = await fetch(
+        `https://www.youtube.com/youtubei/v1/${endpoint}?key=${INNERTUBE_KEY}&prettyPrint=false`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'User-Agent': UA,
+            'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
+            Origin: 'https://www.youtube.com',
+          },
+          body: JSON.stringify({
+            context: {
+              client: {
+                clientName: 'WEB',
+                clientVersion: CLIENT_VERSION,
+                hl: 'es',
+                gl: 'ES',
+              },
+            },
+            ...body,
+          }),
+          signal: controller.signal,
+          cache: 'no-store',
+        },
+      )
+
+      if (!res.ok) {
+        // 429 and 5xx are worth another attempt; the rest are not.
+        retryable = res.status === 429 || res.status >= 500
+        if (!retryable) return { ok: false, json: null }
+      } else {
+        const json = (await res.json()) as any
+        cacheSet(cacheKey, json)
+        return { ok: true, json }
+      }
+    } catch {
+      // Network failure or timeout — retryable.
+      retryable = true
+    } finally {
+      clearTimeout(timer)
+    }
+
+    if (attempt < MAX_ATTEMPTS && retryable) {
+      await sleep(250 * 2 ** (attempt - 1))
+    }
+  }
+
+  return { ok: false, json: null }
+}
+
+/**
+ * Single-pass recursive collector.
+ *
+ * The previous implementation walked the whole payload once per key, so
+ * `extractVideos` traversed a multi-megabyte tree eight times. This walks it
+ * once and buckets every interesting node by key.
+ */
+function deepCollect(node: any, keys: readonly string[]): Map<string, any[]> {
+  const out = new Map<string, any[]>()
+  for (const key of keys) out.set(key, [])
+  const wanted = out
+
+  const walk = (current: any) => {
+    if (!current || typeof current !== 'object') return
+
+    if (Array.isArray(current)) {
+      for (const item of current) walk(item)
+      return
+    }
+
+    for (const k of Object.keys(current)) {
+      const bucket = wanted.get(k)
+      if (bucket) bucket.push(current[k])
+      // Descend even into matched nodes: renderers can nest, and the
+      // per-key dedupe downstream makes an extra hit harmless.
+      walk(current[k])
+    }
+  }
+
+  walk(node)
+  return out
 }
 
 /** Recursively collect every value stored under `key`. */
@@ -137,24 +248,46 @@ function durationFromLockup(lockup: any): number {
   return 0
 }
 
-/** Title + subtitle out of lockupMetadataViewModel. */
-function metaFromLockup(lockup: any): { title: string; subtitle: string } {
+/**
+ * Title + subtitle out of lockupMetadataViewModel.
+ *
+ * `subtitle` skips rows that start with a digit, because in video lockups the
+ * first row is the view count and the channel name comes after it. `rows` keeps
+ * every row verbatim for callers where a leading digit is the point (a channel
+ * lockup's subtitle *is* its subscriber count).
+ */
+function metaFromLockup(lockup: any): { title: string; subtitle: string; rows: string[] } {
   const meta = lockup?.metadata?.lockupMetadataViewModel
   const title = typeof meta?.title?.content === 'string' ? meta.title.content : ''
 
-  const rows = meta?.metadata?.contentMetadataViewModel?.metadataRows
-  let subtitle = ''
-  if (Array.isArray(rows)) {
-    for (const row of rows) {
+  const metadataRows = meta?.metadata?.contentMetadataViewModel?.metadataRows
+  const rows: string[] = []
+  if (Array.isArray(metadataRows)) {
+    for (const row of metadataRows) {
       const part = row?.metadataParts?.[0]?.text?.content
-      if (typeof part === 'string' && part.trim() && !/^\d/.test(part)) {
-        subtitle = part
-        break
-      }
+      if (typeof part === 'string' && part.trim()) rows.push(part)
     }
   }
-  return { title, subtitle }
+
+  const subtitle = rows.find((r) => !/^\d/.test(r)) ?? ''
+  return { title, subtitle, rows }
 }
+
+/** Classic renderer keys that all expose the same `videoId`/`title`/`lengthText` shape. */
+const CLASSIC_VIDEO_KEYS = [
+  'videoRenderer',
+  'playlistVideoRenderer',
+  'compactVideoRenderer',
+  'gridVideoRenderer',
+  'playlistPanelVideoRenderer',
+] as const
+
+const VIDEO_KEYS = [
+  'musicResponsiveListItemRenderer',
+  'musicTwoRowItemRenderer',
+  ...CLASSIC_VIDEO_KEYS,
+  'lockupViewModel',
+] as const
 
 /**
  * Extract playable tracks from ANY InnerTube payload.
@@ -165,6 +298,7 @@ export function extractVideos(json: any, opts: { requireDuration?: boolean } = {
   const { requireDuration = false } = opts
   const tracks: Track[] = []
   const seen = new Set<string>()
+  const nodes = deepCollect(json, VIDEO_KEYS)
 
   const push = (
     id: string,
@@ -189,7 +323,7 @@ export function extractVideos(json: any, opts: { requireDuration?: boolean } = {
   }
 
   // --- YouTube Music renderers (different structure) ---
-  for (const mr of deepFind(json, 'musicResponsiveListItemRenderer')) {
+  for (const mr of nodes.get('musicResponsiveListItemRenderer') ?? []) {
     const flex0 = mr?.flexColumns?.[0]?.musicResponsiveListItemFlexColumnRenderer?.text?.runs
     const flex1 = mr?.flexColumns?.[1]?.musicResponsiveListItemFlexColumnRenderer?.text?.runs
     const titleRun = flex0?.[0]
@@ -204,7 +338,7 @@ export function extractVideos(json: any, opts: { requireDuration?: boolean } = {
     push(id, title, artist, seconds, 'YouTube')
   }
 
-  for (const mr of deepFind(json, 'musicTwoRowItemRenderer')) {
+  for (const mr of nodes.get('musicTwoRowItemRenderer') ?? []) {
     const nav = mr?.navigationEndpoint?.watchEndpoint
     const id = nav?.videoId || mr?.title?.runs?.[0]?.navigationEndpoint?.watchEndpoint?.videoId
     const title = mr?.title?.runs?.[0]?.text || ''
@@ -216,14 +350,8 @@ export function extractVideos(json: any, opts: { requireDuration?: boolean } = {
   }
 
   // --- classic renderers ---
-  for (const key of [
-    'videoRenderer',
-    'playlistVideoRenderer',
-    'compactVideoRenderer',
-    'gridVideoRenderer',
-    'playlistPanelVideoRenderer',
-  ]) {
-    for (const v of deepFind(json, key)) {
+  for (const key of CLASSIC_VIDEO_KEYS) {
+    for (const v of nodes.get(key) ?? []) {
       const id = v?.videoId
       const title = v?.title?.simpleText || v?.title?.runs?.[0]?.text || ''
       const artist =
@@ -245,7 +373,7 @@ export function extractVideos(json: any, opts: { requireDuration?: boolean } = {
   }
 
   // --- modern lockups ---
-  for (const lockup of deepFind(json, 'lockupViewModel')) {
+  for (const lockup of nodes.get('lockupViewModel') ?? []) {
     if (lockup?.contentType && lockup.contentType !== 'LOCKUP_CONTENT_TYPE_VIDEO') continue
 
     const id = isVideoId(lockup?.contentId)
@@ -265,6 +393,7 @@ export function extractVideos(json: any, opts: { requireDuration?: boolean } = {
 export function extractPlaylists(json: any): YtPlaylist[] {
   const results: YtPlaylist[] = []
   const seen = new Set<string>()
+  const nodes = deepCollect(json, ['playlistRenderer', 'gridPlaylistRenderer', 'lockupViewModel'])
 
   const push = (
     playlistId: string,
@@ -289,8 +418,8 @@ export function extractPlaylists(json: any): YtPlaylist[] {
   }
 
   // --- classic renderers ---
-  for (const key of ['playlistRenderer', 'gridPlaylistRenderer']) {
-    for (const p of deepFind(json, key)) {
+  for (const key of ['playlistRenderer', 'gridPlaylistRenderer'] as const) {
+    for (const p of nodes.get(key) ?? []) {
       const firstVideo = p?.navigationEndpoint?.watchEndpoint?.videoId
       const rawThumb =
         p?.thumbnails?.[0]?.thumbnails?.slice(-1)?.[0]?.url ||
@@ -308,7 +437,7 @@ export function extractPlaylists(json: any): YtPlaylist[] {
   }
 
   // --- modern lockups ---
-  for (const lockup of deepFind(json, 'lockupViewModel')) {
+  for (const lockup of nodes.get('lockupViewModel') ?? []) {
     if (lockup?.contentType !== 'LOCKUP_CONTENT_TYPE_PLAYLIST') continue
 
     const { title, subtitle } = metaFromLockup(lockup)
@@ -345,15 +474,16 @@ function normalizeAvatarUrl(url: string): string {
 export function extractChannels(json: any): YtChannel[] {
   const out: YtChannel[] = []
   const seen = new Set<string>()
+  const nodes = deepCollect(json, ['channelRenderer', 'lockupViewModel'])
 
   // --- classic channelRenderer ---
-  for (const c of deepFind(json, 'channelRenderer')) {
+  for (const c of nodes.get('channelRenderer') ?? []) {
     const id = c?.channelId
     const name = c?.title?.simpleText || c?.title?.runs?.[0]?.text || ''
     if (!id || !name || seen.has(id)) continue
     seen.add(id)
 
-    let avatar =
+    const avatar =
       c?.thumbnail?.thumbnails?.slice(-1)?.[0]?.url ||
       c?.avatar?.thumbnails?.slice(-1)?.[0]?.url ||
       ''
@@ -368,11 +498,11 @@ export function extractChannels(json: any): YtChannel[] {
   }
 
   // --- modern lockupViewModel shape (e.g. channel search results) ---
-  for (const lockup of deepFind(json, 'lockupViewModel')) {
+  for (const lockup of nodes.get('lockupViewModel') ?? []) {
     if (lockup?.contentType !== 'LOCKUP_CONTENT_TYPE_CHANNEL') continue
 
     const id = lockup?.contentId
-    const { title, subtitle } = metaFromLockup(lockup)
+    const { title, subtitle, rows } = metaFromLockup(lockup)
     if (!id || !title || seen.has(id)) continue
     seen.add(id)
 
@@ -401,7 +531,9 @@ export function extractChannels(json: any): YtChannel[] {
       id,
       name: (title || '').trim(),
       avatarUrl: normalizeAvatarUrl(avatar) || '/placeholder.svg',
-      subtitle: (subtitle || '').trim(),
+      // A channel's subtitle is usually "120K subscribers", which the
+      // digit-skipping subtitle heuristic throws away — fall back to row 0.
+      subtitle: (subtitle || rows[0] || '').trim(),
       bannerUrl: banner,
     })
   }
@@ -413,44 +545,69 @@ export function extractChannels(json: any): YtChannel[] {
 /* High-level helpers                                                  */
 /* ------------------------------------------------------------------ */
 
-export async function searchVideos(query: string): Promise<Track[]> {
-  const json = await innertube('search', { query, params: SEARCH_FILTER.video })
-  if (!json) return []
-  return extractVideos(json, { requireDuration: true })
+/**
+ * Pull a banner URL out of a payload we already have, instead of spending an
+ * extra browse request on it.
+ */
+export function extractBanner(json: any): string | undefined {
+  if (!json) return undefined
+
+  for (const key of ['banner', 'mobileBanner', 'tvBanner']) {
+    for (const item of deepFind(json, key)) {
+      const url =
+        item?.thumbnails?.slice(-1)?.[0]?.url ||
+        item?.thumbnails?.[0]?.url ||
+        (typeof item?.url === 'string' ? item.url : undefined)
+      if (typeof url === 'string' && url) return normalizeAvatarUrl(url)
+    }
+  }
+
+  return undefined
 }
 
-export async function searchPlaylists(query: string): Promise<YtPlaylist[]> {
-  const json = await innertube('search', { query, params: SEARCH_FILTER.playlist })
-  if (!json) return []
-  return extractPlaylists(json)
+export async function searchVideos(query: string): Promise<Upstream<{ tracks: Track[] }>> {
+  const { ok, json } = await innertube('search', { query, params: SEARCH_FILTER.video })
+  if (!ok || !json) return { ok, tracks: [] }
+  return { ok: true, tracks: extractVideos(json, { requireDuration: true }) }
 }
 
-export async function searchChannels(query: string): Promise<YtChannel[]> {
-  const json = await innertube('search', { query, params: SEARCH_FILTER.channel })
-  if (!json) return []
-  return extractChannels(json)
+export async function searchPlaylists(query: string): Promise<Upstream<{ playlists: YtPlaylist[] }>> {
+  const { ok, json } = await innertube('search', { query, params: SEARCH_FILTER.playlist })
+  if (!ok || !json) return { ok, playlists: [] }
+  return { ok: true, playlists: extractPlaylists(json) }
+}
+
+export async function searchChannels(query: string): Promise<Upstream<{ channels: YtChannel[] }>> {
+  const { ok, json } = await innertube('search', { query, params: SEARCH_FILTER.channel })
+  if (!ok || !json) return { ok, channels: [] }
+  return { ok: true, channels: extractChannels(json) }
 }
 
 /** Tracks inside a playlist. `VL` prefix = "view list". */
 export async function getPlaylistTracks(
   playlistId: string,
-): Promise<{ title: string; tracks: Track[] }> {
+): Promise<Upstream<{ title: string; tracks: Track[] }>> {
   const clean = playlistId.replace(/^VL/, '')
-  const json = await innertube('browse', { browseId: `VL${clean}` })
-  if (!json) return { title: '', tracks: [] }
+  const { ok, json } = await innertube('browse', { browseId: `VL${clean}` })
+  if (!ok || !json) return { ok, title: '', tracks: [] }
 
   const title =
     deepFind(json, 'playlistHeaderRenderer')?.[0]?.title?.simpleText ||
     deepFind(json, 'pageHeaderRenderer')?.[0]?.pageTitle ||
     ''
 
-  return { title, tracks: extractVideos(json) }
+  return { ok: true, title, tracks: extractVideos(json) }
 }
 
-/** A channel's uploads + its official playlists. */
+/**
+ * A channel's uploads + its official playlists + banner.
+ *
+ * The banner is read from the two payloads we already fetch, so an artist page
+ * costs two upstream requests instead of the three it used to.
+ */
 export async function getChannel(
   channelId: string,
-): Promise<{ tracks: Track[]; playlists: YtPlaylist[] }> {
+): Promise<Upstream<{ tracks: Track[]; playlists: YtPlaylist[]; bannerUrl?: string }>> {
   const [videosTab, playlistsTab] = await Promise.all([
     // EgZ2aWRlb3M% = "videos" tab
     innertube('browse', { browseId: channelId, params: 'EgZ2aWRlb3PyBgQKAjoA' }),
@@ -459,34 +616,10 @@ export async function getChannel(
   ])
 
   return {
-    tracks: videosTab ? extractVideos(videosTab) : [],
-    playlists: playlistsTab ? extractPlaylists(playlistsTab) : [],
-  }
-}
-
-export async function getChannelBanner(channelId: string): Promise<string | undefined> {
-  try {
-    const home = await innertube('browse', { browseId: channelId })
-    if (!home) return undefined
-
-    // Try various paths where banner might be found
-    const bannerThumbs =
-      deepFind(home, 'banner')?.[0]?.thumbnails?.[0]?.url ||
-      deepFind(home, 'mobileBanner')?.[0]?.thumbnails?.[0]?.url ||
-      deepFind(home, 'tvBanner')?.[0]?.thumbnails?.[0]?.url ||
-      deepFind(home, 'header')?.[0]?.banner?.thumbnails?.[0]?.url ||
-      deepFind(home, 'c4TabbedHeaderRenderer')?.[0]?.banner?.thumbnails?.[0]?.url ||
-      undefined
-
-    if (typeof bannerThumbs === 'string') return bannerThumbs
-
-    // Try deepFind for any banner thumbnails
-    for (const item of deepFind(home, 'banner')) {
-      if (item?.thumbnails?.[0]?.url) return item.thumbnails[0].url
-    }
-
-    return undefined
-  } catch {
-    return undefined
+    // A channel is only a hard failure when neither tab came back.
+    ok: videosTab.ok || playlistsTab.ok,
+    tracks: videosTab.json ? extractVideos(videosTab.json) : [],
+    playlists: playlistsTab.json ? extractPlaylists(playlistsTab.json) : [],
+    bannerUrl: extractBanner(videosTab.json) ?? extractBanner(playlistsTab.json),
   }
 }

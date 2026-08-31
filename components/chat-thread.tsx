@@ -127,22 +127,26 @@ const PARTICLE_GRADIENTS = [
 ]
 
 function ParticleBurst() {
-  const particles = Array.from({ length: 8 }).map((_, i) => {
-    const angle = (i * 2 * Math.PI) / 8 + (Math.random() - 0.5) * 0.4
-    const distance = 25 + Math.random() * 20
-    const x = Math.cos(angle) * distance
-    const y = Math.sin(angle) * distance
-    const size = 4 + Math.random() * 4
-    const gradient = PARTICLE_GRADIENTS[i % PARTICLE_GRADIENTS.length]
+  // Randomised once per mount: generating this during every render would make the
+  // burst jump around whenever the parent re-renders.
+  const [particles] = useState(() =>
+    Array.from({ length: 8 }).map((_, i) => {
+      const angle = (i * 2 * Math.PI) / 8 + (Math.random() - 0.5) * 0.4
+      const distance = 25 + Math.random() * 20
+      const x = Math.cos(angle) * distance
+      const y = Math.sin(angle) * distance
+      const size = 4 + Math.random() * 4
+      const gradient = PARTICLE_GRADIENTS[i % PARTICLE_GRADIENTS.length]
 
-    return {
-      id: i,
-      x,
-      y,
-      size,
-      gradient,
-    }
-  })
+      return {
+        id: i,
+        x,
+        y,
+        size,
+        gradient,
+      }
+    }),
+  )
 
   return (
     <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
@@ -2584,7 +2588,7 @@ export function ChatThread({
                               </span>
                             )}
                             <span className="font-semibold text-foreground/70">{replyOriginal.senderName}</span>
-                            <span className="truncate italic opacity-85">"{replyDisplay}"</span>
+                            <span className="truncate italic opacity-85">&quot;{replyDisplay}&quot;</span>
                           </div>
                         )
                       })()}

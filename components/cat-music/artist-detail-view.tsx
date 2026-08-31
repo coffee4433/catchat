@@ -5,21 +5,15 @@ import {
   ArrowLeft,
   Heart,
   Music,
-  Pause,
   Play,
-  Plus,
-  Radio,
   ListMusic,
   Sparkles,
-  Clock,
-  Grid3X3,
   Disc,
 } from 'lucide-react'
 import type { Track } from '@/lib/plugins/cat-music/types'
 import type { YtPlaylist, YtChannel } from '@/lib/plugins/cat-music/innertube'
 import { useCatMusicPlayer } from '@/lib/plugins/cat-music/player-context'
-import { useLibrary } from '@/lib/plugins/cat-music/library-context'
-import { formatDuration } from '@/lib/plugins/cat-music/youtube'
+import { useLanguage } from '@/lib/i18n'
 import { TrackRow } from './track-row'
 
 type Tab = 'songs' | 'albums'
@@ -33,8 +27,8 @@ export function ArtistDetailView({
   onBack: () => void
   onSelectTrack: (track: Track) => void
 }) {
-  const { currentTrack, playerState, playTrack, togglePlayPause } = useCatMusicPlayer()
-  const { isFavorite, toggleFavorite, playlists, addTrackToPlaylist } = useLibrary()
+  const { playTrack } = useCatMusicPlayer()
+  const { t } = useLanguage()
 
   const [channel, setChannel] = useState<YtChannel | null>(null)
   const [tracks, setTracks] = useState<Track[]>([])
@@ -83,17 +77,17 @@ export function ArtistDetailView({
         <div className="shrink-0 pt-4 pb-2 px-4">
           <button
             onClick={onBack}
-            aria-label="Volver"
+            aria-label={t.back}
             className="cm-acrylic inline-flex items-center gap-2 rounded-xl px-4 py-2 text-[13px] font-semibold text-white/70 hover:bg-white/[0.12] hover:text-white transition-all"
           >
             <ArrowLeft className="size-4" />
-            <span>Volver</span>
+            <span>{t.back}</span>
           </button>
         </div>
         <div className="flex flex-1 items-center justify-center">
           <div className="flex items-center gap-3">
-            <span className="size-5 animate-spin rounded-full border-2 border-emerald-400 border-t-transparent" />
-            <span className="text-sm text-white/50">Cargando artista...</span>
+            <span className="size-5 animate-spin rounded-full border-2 border-[var(--cm-accent)] border-t-transparent" />
+            <span className="text-sm text-white/50">{t.loadingArtist}</span>
           </div>
         </div>
       </div>
@@ -107,11 +101,11 @@ export function ArtistDetailView({
       <div className="shrink-0 space-y-4 px-4 md:px-8 pt-4 pb-2">
         <button
           onClick={onBack}
-          aria-label="Volver"
+          aria-label={t.back}
           className="cm-acrylic inline-flex items-center gap-2 rounded-xl px-4 py-2 text-[13px] font-semibold text-white/70 hover:bg-white/[0.12] hover:text-white transition-all"
         >
           <ArrowLeft className="size-4" />
-          <span>Volver</span>
+          <span>{t.back}</span>
         </button>
 
         {/* Hero */}
@@ -119,10 +113,10 @@ export function ArtistDetailView({
           {channel?.bannerUrl && (
             <img src={channel.bannerUrl} alt="" className="absolute inset-0 size-full object-cover opacity-25 blur-sm" />
           )}
-          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-[var(--cm-accent-veil)] rounded-full blur-3xl pointer-events-none" />
           <div className="relative z-10">
             <div className="flex flex-col md:flex-row items-center gap-6">
-              <div className="relative size-32 md:size-40 shrink-0 overflow-hidden rounded-full shadow-2xl ring-2 ring-emerald-400/30">
+              <div className="relative size-32 md:size-40 shrink-0 overflow-hidden rounded-full shadow-2xl ring-2 ring-[var(--cm-accent-edge)]">
                 <img
                   src={channel?.avatarUrl || '/placeholder.svg'}
                   alt={artistName}
@@ -131,19 +125,19 @@ export function ArtistDetailView({
                 />
               </div>
               <div className="flex-1 space-y-2 text-center md:text-left min-w-0">
-                <span className="rounded-full bg-emerald-500/20 px-3 py-0.5 text-[11px] font-bold text-emerald-400">Artista</span>
+                <span className="rounded-full bg-[var(--cm-accent-veil)] px-3 py-0.5 text-[11px] font-bold text-[var(--cm-accent-hi)]">{t.artist}</span>
                 <h1 className="text-2xl md:text-3xl font-black tracking-tight text-white truncate">{channel?.name || artistName}</h1>
                 {channel?.subtitle && <p className="text-sm text-white/40">{channel.subtitle}</p>}
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 pt-1">
                   {tracks.length > 0 && (
-                    <button onClick={() => playTrack(tracks[0], tracks)} className="flex items-center gap-2 rounded-2xl bg-emerald-500 px-5 py-2.5 text-[13px] font-extrabold text-white shadow-xl shadow-emerald-500/25 transition-all hover:bg-emerald-400 hover:scale-105 active:scale-95">
+                    <button onClick={() => playTrack(tracks[0], tracks)} className="flex items-center gap-2 rounded-2xl bg-[var(--cm-accent)] px-5 py-2.5 text-[13px] font-extrabold text-white shadow-xl shadow-[var(--cm-halo)] transition-all hover:bg-[var(--cm-accent-hi)] hover:scale-105 active:scale-95">
                       <Play className="size-4 fill-current" />
-                      <span>Reproducir todo</span>
+                      <span>{t.playAll}</span>
                     </button>
                   )}
                   <button className="flex items-center gap-2 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-[13px] font-bold text-white/70 transition-all hover:bg-white/[0.08] hover:text-white hover:scale-105 active:scale-95">
                     <Heart className="size-4" />
-                    <span>Seguir</span>
+                    <span>{t.followChannel}</span>
                   </button>
                 </div>
               </div>
@@ -153,11 +147,11 @@ export function ArtistDetailView({
 
         {/* Tabs */}
         <div className="flex items-center gap-1 rounded-2xl bg-white/[0.04] p-1 border border-white/[0.06] w-fit">
-          <button onClick={() => setTab('songs')} className={`rounded-xl px-4 py-2 text-[12.5px] font-semibold transition-all ${tab === 'songs' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'text-white/50 hover:text-white'}`}>
-            <Music className="size-3.5 inline mr-1.5" />Canciones
+          <button onClick={() => setTab('songs')} className={`rounded-xl px-4 py-2 text-[12.5px] font-semibold transition-all ${tab === 'songs' ? 'bg-[var(--cm-accent-hi)] text-[#08090b] shadow-lg shadow-[var(--cm-halo)]' : 'text-white/50 hover:text-white'}`}>
+            <Music className="size-3.5 inline mr-1.5" />{t.songs}
           </button>
-          <button onClick={() => setTab('albums')} className={`rounded-xl px-4 py-2 text-[12.5px] font-semibold transition-all ${tab === 'albums' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'text-white/50 hover:text-white'}`}>
-            <Disc className="size-3.5 inline mr-1.5" />Álbumes
+          <button onClick={() => setTab('albums')} className={`rounded-xl px-4 py-2 text-[12.5px] font-semibold transition-all ${tab === 'albums' ? 'bg-[var(--cm-accent-hi)] text-[#08090b] shadow-lg shadow-[var(--cm-halo)]' : 'text-white/50 hover:text-white'}`}>
+            <Disc className="size-3.5 inline mr-1.5" />{t.albums}
           </button>
         </div>
 
@@ -165,13 +159,13 @@ export function ArtistDetailView({
         <div className="cm-acrylic flex items-center gap-2 rounded-xl px-4 py-3">
           {tab === 'songs' ? (
             <>
-              <Sparkles className="size-4 text-emerald-400" />
-              <h3 className="text-base font-bold text-white">Canciones populares</h3>
+              <Sparkles className="size-4 text-[var(--cm-accent-hi)]" />
+              <h3 className="text-base font-bold text-white">{t.popularSongs}</h3>
             </>
           ) : (
             <>
-              <Disc className="size-4 text-emerald-400" />
-              <h3 className="text-base font-bold text-white">Álbumes</h3>
+              <Disc className="size-4 text-[var(--cm-accent-hi)]" />
+              <h3 className="text-base font-bold text-white">{t.albums}</h3>
             </>
           )}
         </div>
@@ -183,42 +177,42 @@ export function ArtistDetailView({
           <div className="space-y-4 pt-4">
             <button onClick={() => setSelectedAlbum(null)} className="cm-acrylic inline-flex items-center gap-2 rounded-xl px-4 py-2 text-[13px] font-semibold text-white/70 hover:bg-white/[0.12] hover:text-white transition-all mb-2">
               <ArrowLeft className="size-4" />
-              <span>Volver al artista</span>
+              <span>{t.backToArtist}</span>
             </button>
             <div className="flex flex-col sm:flex-row items-center gap-6 rounded-3xl cm-acrylic p-6">
               <img src={selectedAlbum.coverUrl} alt={selectedAlbum.title} className="size-40 rounded-2xl object-cover shadow-lg ring-1 ring-white/10 shrink-0" onError={(e) => { (e.target as HTMLElement).setAttribute('src', '/placeholder.svg') }} />
               <div className="space-y-3 text-center sm:text-left min-w-0">
-                <span className="rounded-full bg-emerald-500/20 px-3 py-0.5 text-[11px] font-bold text-emerald-400">Álbum</span>
+                <span className="rounded-full bg-[var(--cm-accent-veil)] px-3 py-0.5 text-[11px] font-bold text-[var(--cm-accent-hi)]">{t.albumLabel}</span>
                 <h2 className="text-2xl font-extrabold text-white truncate">{selectedAlbum.title}</h2>
-                <p className="text-sm text-white/40">{selectedAlbum.artist} · {albumTracks.length} canciones</p>
+                <p className="text-sm text-white/40">{selectedAlbum.artist} · {albumTracks.length} {t.playlistsCount}</p>
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
                   {albumTracks.length > 0 && (
-                    <button onClick={() => playTrack(albumTracks[0], albumTracks)} className="flex items-center gap-2 rounded-2xl bg-emerald-500 px-5 py-2.5 text-xs font-extrabold text-white shadow-lg shadow-emerald-500/25 hover:bg-emerald-400 transition-all">
-                      <Play className="size-4 fill-current" />Reproducir Álbum
+                    <button onClick={() => playTrack(albumTracks[0], albumTracks)} className="flex items-center gap-2 rounded-2xl bg-[var(--cm-accent)] px-5 py-2.5 text-xs font-extrabold text-white shadow-lg shadow-[var(--cm-halo)] hover:bg-[var(--cm-accent-hi)] transition-all">
+                      <Play className="size-4 fill-current" />{t.playAlbum}
                     </button>
                   )}
                 </div>
               </div>
             </div>
             <div className="cm-acrylic flex items-center gap-2 rounded-xl px-4 py-3">
-              <ListMusic className="size-4 text-emerald-400" />
-              <h3 className="text-base font-bold text-white">Canciones del álbum</h3>
+              <ListMusic className="size-4 text-[var(--cm-accent-hi)]" />
+              <h3 className="text-base font-bold text-white">{t.albumSongs}</h3>
             </div>
             {albumLoading ? (
               <div className="flex items-center justify-center gap-3 py-16">
-                <span className="size-5 animate-spin rounded-full border-2 border-emerald-400 border-t-transparent" />
-                <span className="text-sm text-white/50">Cargando canciones...</span>
+                <span className="size-5 animate-spin rounded-full border-2 border-[var(--cm-accent)] border-t-transparent" />
+                <span className="text-sm text-white/50">{t.loadingSongs}</span>
               </div>
             ) : albumTracks.length > 0 ? (
               <div className="cm-acrylic rounded-2xl divide-y divide-white/[0.04]">
-                {albumTracks.map((t, idx) => (
-                  <TrackRow key={`${t.id}-${idx}`} track={t} index={idx + 1} queue={albumTracks} onSelectArtist={() => {}} onSelectTrack={onSelectTrack} />
+                {albumTracks.map((item, idx) => (
+                  <TrackRow key={`${item.id}-${idx}`} track={item} index={idx + 1} queue={albumTracks} onSelectTrack={onSelectTrack} />
                 ))}
               </div>
             ) : (
               <div className="cm-acrylic rounded-2xl py-16 text-center">
                 <Music className="mx-auto size-10 text-white/20 mb-3" />
-                <p className="text-sm text-white/40">No se encontraron canciones en este álbum</p>
+                <p className="text-sm text-white/40">{t.noSongsInAlbum}</p>
               </div>
             )}
           </div>
@@ -228,14 +222,14 @@ export function ArtistDetailView({
           <div className="space-y-3">
             {tracks.length > 0 ? (
               <div className="cm-acrylic rounded-2xl divide-y divide-white/[0.04]">
-                {tracks.map((t, idx) => (
-                  <TrackRow key={`${t.id}-${idx}`} track={t} index={idx + 1} queue={tracks} onSelectArtist={() => {}} onSelectTrack={onSelectTrack} />
+                {tracks.map((item, idx) => (
+                  <TrackRow key={`${item.id}-${idx}`} track={item} index={idx + 1} queue={tracks} onSelectTrack={onSelectTrack} />
                 ))}
               </div>
             ) : (
               <div className="cm-acrylic rounded-2xl py-16 text-center">
                 <Music className="mx-auto size-10 text-white/20 mb-3" />
-                <p className="text-sm text-white/40">No se encontraron canciones para este artista</p>
+                <p className="text-sm text-white/40">{t.noSongsFound}</p>
               </div>
             )}
           </div>
@@ -250,17 +244,17 @@ export function ArtistDetailView({
                     <div className="relative aspect-square overflow-hidden rounded-xl bg-white/[0.04]">
                       <img src={pl.coverUrl || '/placeholder.svg'} alt={pl.title} className="size-full object-cover transition-transform group-hover:scale-105" onError={(e) => { (e.target as HTMLElement).setAttribute('src', '/placeholder.svg') }} />
                       <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <div className="flex size-10 items-center justify-center rounded-full bg-emerald-500 text-white shadow-lg"><Play className="size-5 fill-current ml-0.5" /></div>
+                        <div className="flex size-10 items-center justify-center rounded-full bg-[var(--cm-accent-hi)] text-[#08090b] shadow-lg"><Play className="size-5 fill-current ml-0.5" /></div>
                       </div>
                     </div>
-                    <div><h4 className="font-bold text-white text-sm line-clamp-2">{pl.title}</h4><p className="text-xs text-white/40 mt-0.5">Playlist · {pl.artist}</p></div>
+                    <div><h4 className="font-bold text-white text-sm line-clamp-2">{pl.title}</h4><p className="text-xs text-white/40 mt-0.5">{t.playlist} · {pl.artist}</p></div>
                   </button>
                 ))}
               </div>
             ) : (
               <div className="cm-acrylic rounded-2xl py-16 text-center">
                 <Disc className="mx-auto size-10 text-white/20 mb-3" />
-                <p className="text-sm text-white/40">No se encontraron álbumes para este artista</p>
+                <p className="text-sm text-white/40">{t.noAlbumsFound}</p>
               </div>
             )}
           </div>

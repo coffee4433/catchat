@@ -379,7 +379,7 @@ function decodeNextImage(value: string): string | null {
 function rewriteUrl(value: string, baseUrl: string): string {
   if (!value || value.startsWith('data:') || value.startsWith('blob:')) return value
   const nextImage = decodeNextImage(value)
-  let target = nextImage || value
+  const target = nextImage || value
   if (target.startsWith('http')) return target
   const base = new URL(baseUrl).origin
   if (target.startsWith('//')) return `${base}${target}`

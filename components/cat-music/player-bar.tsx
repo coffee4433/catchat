@@ -13,17 +13,25 @@ import {
   SkipForward,
   Volume2,
   VolumeX,
-  Mic2,
-  MonitorSpeaker,
 } from 'lucide-react'
 import { useCatMusicPlayer } from '@/lib/plugins/cat-music/player-context'
 import { useLibrary } from '@/lib/plugins/cat-music/library-context'
+import { useAccentScopeStyle } from '@/lib/plugins/cat-music/accent-store'
 import { formatDuration } from '@/lib/plugins/cat-music/youtube'
+import { useLanguage } from '@/lib/i18n'
 import { QueuePanel } from './queue-panel'
 
 export function CatMusicPlayerBar() {
   const player = useCatMusicPlayer()
   const library = useLibrary()
+  const { t } = useLanguage()
+  // Hooks must run before any early return, so they stay above the guards below.
+  const [showQueue, setShowQueue] = useState(false)
+  const [expanded, setExpanded] = useState(false)
+  // The bar is a sibling of the plugin view, not a descendant, so it opens its
+  // own accent scope instead of inheriting one. Each fixed layer below is a
+  // separate root, so each one carries it.
+  const accentScope = useAccentScopeStyle()
 
   if (!player || !library) return null
 
@@ -41,8 +49,6 @@ export function CatMusicPlayerBar() {
   } = player
 
   const { isFavorite, toggleFavorite } = library
-  const [showQueue, setShowQueue] = useState(false)
-  const [expanded, setExpanded] = useState(false)
 
   if (!currentTrack) return null
 
@@ -55,14 +61,18 @@ export function CatMusicPlayerBar() {
   return (
     <>
       {showQueue && (
-        <div className="fixed right-4 bottom-24 z-50 animate-in fade-in slide-in-from-bottom-5 md:bottom-28">
+        <div
+          style={accentScope}
+          className="cm-scope fixed right-4 bottom-24 z-50 animate-in fade-in slide-in-from-bottom-5 md:bottom-28"
+        >
           <QueuePanel onClose={() => setShowQueue(false)} />
         </div>
       )}
 
       {expanded && (
         <div
-          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/95 backdrop-blur-2xl md:hidden"
+          style={accentScope}
+          className="cm-scope fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/95 backdrop-blur-2xl md:hidden"
           onClick={() => setExpanded(false)}
         >
           <div className="size-64 overflow-hidden rounded-[28px] shadow-2xl ring-1 ring-white/10">
@@ -78,13 +88,24 @@ export function CatMusicPlayerBar() {
         </div>
       )}
 
-      {/* Floating glass player bar */}
-      <div className="fixed bottom-4 left-[288px] right-4 z-40">
+      {/* Floating glass player bar. The 288px inset only clears the sidebar,
+          which is itself hidden below `lg` — without the breakpoint the bar hung
+          off the right edge on tablets and phones. */}
+      <div style={accentScope} className="cm-scope fixed bottom-4 left-4 right-4 z-40 lg:left-[288px]">
         <div className="cm-glass-strong cm-player-float mx-auto max-w-[1600px] rounded-[24px] overflow-hidden">
+          {playerState.error === 'unavailable' && (
+            <div
+              role="status"
+              className="bg-rose-500/15 px-4 py-1.5 text-center text-[11px] font-medium text-rose-200"
+            >
+              {t.trackUnavailable}
+            </div>
+          )}
+
           {/* Progress bar on top edge */}
           <div className="relative h-1 bg-white/[0.06]">
             <div
-              className="h-full bg-[#1DB954] transition-all duration-300"
+              className="h-full bg-[var(--cm-accent)] transition-all duration-300"
               style={{ width: `${progressPct}%` }}
             />
             <input
@@ -93,6 +114,8 @@ export function CatMusicPlayerBar() {
               max={dur || 100}
               value={pos}
               onChange={(e) => seekTo(parseFloat(e.target.value))}
+              aria-label={t.playerSeek}
+              aria-valuetext={`${formatDuration(pos)} / ${formatDuration(dur)}`}
               className="absolute inset-0 size-full opacity-0 cursor-pointer"
             />
           </div>
@@ -102,6 +125,16 @@ export function CatMusicPlayerBar() {
             <div
               className="flex items-center gap-3 min-w-0 flex-1 md:w-1/4 cursor-pointer"
               onClick={() => setExpanded(!expanded)}
+              role="button"
+              tabIndex={0}
+              aria-label={t.playerExpand}
+              aria-expanded={expanded}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  setExpanded((v) => !v)
+                }
+              }}
             >
               <div className="relative size-12 shrink-0 overflow-hidden rounded-xl bg-white/5 shadow-md ring-1 ring-white/10">
                 <img
@@ -111,10 +144,10 @@ export function CatMusicPlayerBar() {
                   onError={(e) => { (e.target as HTMLElement).setAttribute('src', '/placeholder.svg') }}
                 />
                 {isPlaying && (
-                  <div className="absolute inset-0 flex items-end justify-center gap-0.5 pb-1.5 bg-black/20">
-                    <span className="w-0.5 bg-[#1DB954] animate-pulse h-2 rounded-full" />
-                    <span className="w-0.5 bg-[#1DB954] animate-pulse h-3 delay-75 rounded-full" />
-                    <span className="w-0.5 bg-[#1DB954] animate-pulse h-1.5 delay-150 rounded-full" />
+                  <div className="absolute inset-0 flex items-end justify-center bg-black/20 pb-1.5">
+                    <span className="cm-eq h-3 text-[var(--cm-accent-hi)]" aria-hidden="true">
+                      <i /><i /><i /><i />
+                    </span>
                   </div>
                 )}
               </div>
@@ -124,7 +157,8 @@ export function CatMusicPlayerBar() {
               </div>
               <button
                 onClick={(e) => { e.stopPropagation(); toggleFavorite(currentTrack) }}
-                aria-label={fav ? 'Quitar de favoritos' : 'Añadir a favoritos'}
+                aria-label={fav ? t.removeFavorite : t.addFavorite}
+                aria-pressed={fav}
                 className={`hidden sm:flex shrink-0 rounded-xl p-1.5 transition-colors ${
                   fav ? 'text-rose-400' : 'text-white/30 hover:text-white/70'
                 }`}
@@ -138,9 +172,10 @@ export function CatMusicPlayerBar() {
               <div className="flex items-center gap-1 md:gap-3">
                 <button
                   onClick={toggleShuffle}
-                  aria-label="Aleatorio"
+                  aria-label={t.playerShuffle}
+                  aria-pressed={playerState.shuffle}
                   className={`hidden sm:flex rounded-xl p-1.5 transition-colors ${
-                    playerState.shuffle ? 'text-[#1DB954]' : 'text-white/30 hover:text-white/60'
+                    playerState.shuffle ? 'text-[var(--cm-accent-hi)]' : 'text-white/30 hover:text-white/60'
                   }`}
                 >
                   <Shuffle className="size-[18px]" />
@@ -148,7 +183,7 @@ export function CatMusicPlayerBar() {
 
                 <button
                   onClick={previousTrack}
-                  aria-label="Anterior"
+                  aria-label={t.playerPrevious}
                   className="rounded-xl p-1.5 text-white/50 hover:text-white transition-colors"
                 >
                   <SkipBack className="size-[20px] fill-current" />
@@ -156,7 +191,7 @@ export function CatMusicPlayerBar() {
 
                 <button
                   onClick={togglePlayPause}
-                  aria-label={isPlaying ? 'Pausar' : 'Reproducir'}
+                  aria-label={isPlaying ? t.playerPause : t.playerPlay}
                   className="flex size-10 items-center justify-center rounded-full bg-white text-black shadow-lg transition-transform hover:scale-105 active:scale-95"
                 >
                   {isPlaying ? (
@@ -168,7 +203,7 @@ export function CatMusicPlayerBar() {
 
                 <button
                   onClick={nextTrack}
-                  aria-label="Siguiente"
+                  aria-label={t.playerNext}
                   className="rounded-xl p-1.5 text-white/50 hover:text-white transition-colors"
                 >
                   <SkipForward className="size-[20px] fill-current" />
@@ -176,9 +211,16 @@ export function CatMusicPlayerBar() {
 
                 <button
                   onClick={cycleRepeat}
-                  aria-label="Repetir"
+                  aria-label={
+                    playerState.repeat === 'one'
+                      ? t.playerRepeatOne
+                      : playerState.repeat === 'all'
+                        ? t.playerRepeatAll
+                        : t.playerRepeat
+                  }
+                  aria-pressed={playerState.repeat !== 'off'}
                   className={`hidden sm:flex rounded-xl p-1.5 transition-colors ${
-                    playerState.repeat !== 'off' ? 'text-[#1DB954]' : 'text-white/30 hover:text-white/60'
+                    playerState.repeat !== 'off' ? 'text-[var(--cm-accent-hi)]' : 'text-white/30 hover:text-white/60'
                   }`}
                 >
                   {playerState.repeat === 'one' ? <Repeat1 className="size-[17px]" /> : <Repeat className="size-[17px]" />}
@@ -187,23 +229,26 @@ export function CatMusicPlayerBar() {
 
               <div className="hidden md:flex w-full items-center gap-2 text-[10px] font-mono text-white/30 max-w-[500px]">
                 <span className="w-9 text-right shrink-0">{formatDuration(pos)}</span>
-                <div className="group relative flex-1 h-1 cursor-pointer items-center rounded-full bg-white/[0.08]">
-                  <div
-                    className="absolute inset-y-0 left-0 rounded-full bg-white group-hover:bg-[#1DB954] transition-colors"
-                    style={{ width: `${progressPct}%` }}
-                  />
-                  <div
-                    className="absolute top-1/2 -translate-y-1/2 size-3 rounded-full bg-white opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
-                    style={{ left: `calc(${progressPct}% - 6px)` }}
-                  />
-                  <input
-                    type="range"
-                    min={0}
-                    max={dur || 100}
-                    value={pos}
-                    onChange={(e) => seekTo(parseFloat(e.target.value))}
-                    className="absolute inset-0 size-full opacity-0 cursor-pointer"
-                  />
+                {/* Fixed-height rail so the scrubber can thicken on hover
+                    without nudging the timestamps around it. */}
+                <div className="flex h-3 flex-1 items-center">
+                  <div className="cm-scrub w-full cursor-pointer">
+                    <div className="cm-scrub-fill" style={{ width: `${progressPct}%` }} />
+                    <div className="cm-scrub-knob" style={{ left: `${progressPct}%` }} />
+                    <input
+                      type="range"
+                      min={0}
+                      max={dur || 100}
+                      value={pos}
+                      onChange={(e) => seekTo(parseFloat(e.target.value))}
+                      // Visual duplicate of the top-edge slider, which is present
+                      // at every width. Exposing both would announce two
+                      // identical seek controls.
+                      aria-hidden="true"
+                      tabIndex={-1}
+                      className="absolute inset-0 size-full opacity-0 cursor-pointer"
+                    />
+                  </div>
                 </div>
                 <span className="w-9 shrink-0">{formatDuration(dur)}</span>
               </div>
@@ -211,15 +256,10 @@ export function CatMusicPlayerBar() {
 
             {/* Right: Extra controls */}
             <div className="flex items-center justify-end gap-0.5 md:gap-1 flex-1 md:w-1/4">
-              <button className="hidden lg:flex rounded-xl p-1.5 text-white/30 hover:text-white/70 transition-colors" aria-label="Letra">
-                <Mic2 className="size-[17px]" />
-              </button>
-              <button className="hidden lg:flex rounded-xl p-1.5 text-white/30 hover:text-white/70 transition-colors" aria-label="Dispositivo">
-                <MonitorSpeaker className="size-[17px]" />
-              </button>
               <button
                 onClick={toggleMute}
-                aria-label={playerState.muted ? 'Activar sonido' : 'Silenciar'}
+                aria-label={playerState.muted ? t.playerUnmute : t.playerMute}
+                aria-pressed={playerState.muted}
                 className="hidden sm:flex rounded-xl p-1.5 text-white/30 hover:text-white/70 transition-colors"
               >
                 {playerState.muted || playerState.volume === 0 ? (
@@ -235,15 +275,18 @@ export function CatMusicPlayerBar() {
                   max={100}
                   value={playerState.muted ? 0 : playerState.volume}
                   onChange={(e) => setVolume(parseInt(e.target.value))}
-                  className="h-1 w-full cursor-pointer accent-[#1DB954] rounded-lg"
+                  aria-label={t.playerVolume}
+                  aria-valuetext={`${playerState.muted ? 0 : playerState.volume}%`}
+                  className="cm-range h-1 w-full cursor-pointer rounded-lg"
                 />
               </div>
 
               <button
                 onClick={() => setShowQueue((v) => !v)}
-                aria-label="Cola de reproducción"
+                aria-label={t.playerQueue}
+                aria-pressed={showQueue}
                 className={`rounded-xl p-1.5 transition-colors ${
-                  showQueue ? 'text-[#1DB954] bg-[#1DB954]/10' : 'text-white/30 hover:text-white/70'
+                  showQueue ? 'text-[var(--cm-accent-hi)] bg-[var(--cm-accent-veil)]' : 'text-white/30 hover:text-white/70'
                 }`}
               >
                 <ListMusic className="size-[18px]" />

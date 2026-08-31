@@ -6,12 +6,16 @@ export function AuthBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
+    const el = canvasRef.current
+    if (!el) return
+    const context = el.getContext('2d')
+    if (!context) return
+    // Non-nullable aliases: the closures below (resize/draw/spawnStar) don't inherit
+    // the narrowing from the guards above, which is why every use needed a `!`.
+    const canvas: HTMLCanvasElement = el
+    const ctx: CanvasRenderingContext2D = context
 
-    let dots: {
+    const dots: {
       x: number; y: number; r: number; vx: number; vy: number
       o: number; pulse: number
     }[] = []
@@ -19,8 +23,8 @@ export function AuthBackground() {
     const COUNT = 50
 
     function resize() {
-      canvas!.width = innerWidth
-      canvas!.height = innerHeight
+      canvas.width = innerWidth
+      canvas.height = innerHeight
     }
     resize()
     window.addEventListener('resize', resize)
@@ -38,7 +42,7 @@ export function AuthBackground() {
     }
 
     // shooting stars
-    let stars: {
+    const stars: {
       x: number; y: number; vx: number; vy: number
       life: number; decay: number; len: number
     }[] = []
@@ -46,9 +50,9 @@ export function AuthBackground() {
     function spawnStar() {
       const angle = Math.random() * Math.PI * 2
       const speed = 2 + Math.random() * 3
-      const cx = canvas!.width / 2
-      const cy = canvas!.height / 2
-      const radius = Math.max(canvas!.width, canvas!.height) * 0.7
+      const cx = canvas.width / 2
+      const cy = canvas.height / 2
+      const radius = Math.max(canvas.width, canvas.height) * 0.7
       stars.push({
         x: cx + Math.cos(angle) * radius,
         y: cy + Math.sin(angle) * radius,
@@ -65,7 +69,7 @@ export function AuthBackground() {
 
     let raf: number
     function draw() {
-      ctx!.clearRect(0, 0, canvas!.width, canvas!.height)
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
 
       // shooting stars
       for (let i = stars.length - 1; i >= 0; i--) {
@@ -77,15 +81,15 @@ export function AuthBackground() {
         const a = Math.atan2(s.vy, s.vx)
         const ex = s.x - Math.cos(a) * s.len
         const ey = s.y - Math.sin(a) * s.len
-        const grad = ctx!.createLinearGradient(s.x, s.y, ex, ey)
+        const grad = ctx.createLinearGradient(s.x, s.y, ex, ey)
         grad.addColorStop(0, `rgba(255,255,255,${s.life})`)
         grad.addColorStop(1, 'rgba(255,255,255,0)')
-        ctx!.beginPath()
-        ctx!.moveTo(s.x, s.y)
-        ctx!.lineTo(ex, ey)
-        ctx!.strokeStyle = grad
-        ctx!.lineWidth = 1.2
-        ctx!.stroke()
+        ctx.beginPath()
+        ctx.moveTo(s.x, s.y)
+        ctx.lineTo(ex, ey)
+        ctx.strokeStyle = grad
+        ctx.lineWidth = 1.2
+        ctx.stroke()
       }
 
       // particles
@@ -98,10 +102,10 @@ export function AuthBackground() {
         if (d.y > canvas.height) d.y = 0
         d.pulse += 0.015
         const alpha = d.o + Math.sin(d.pulse) * 0.2
-        ctx!.beginPath()
-        ctx!.arc(d.x, d.y, d.r, 0, Math.PI * 2)
-        ctx!.fillStyle = `rgba(255,255,255,${alpha})`
-        ctx!.fill()
+        ctx.beginPath()
+        ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2)
+        ctx.fillStyle = `rgba(255,255,255,${alpha})`
+        ctx.fill()
       }
 
       // connections
@@ -111,12 +115,12 @@ export function AuthBackground() {
           const dy = dots[i].y - dots[j].y
           const dist = Math.sqrt(dx * dx + dy * dy)
           if (dist < 100) {
-            ctx!.beginPath()
-            ctx!.moveTo(dots[i].x, dots[i].y)
-            ctx!.lineTo(dots[j].x, dots[j].y)
-            ctx!.strokeStyle = `rgba(255,255,255,${0.04 * (1 - dist / 100)})`
-            ctx!.lineWidth = 0.5
-            ctx!.stroke()
+            ctx.beginPath()
+            ctx.moveTo(dots[i].x, dots[i].y)
+            ctx.lineTo(dots[j].x, dots[j].y)
+            ctx.strokeStyle = `rgba(255,255,255,${0.04 * (1 - dist / 100)})`
+            ctx.lineWidth = 0.5
+            ctx.stroke()
           }
         }
       }

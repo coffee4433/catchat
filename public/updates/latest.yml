@@ -1,48 +1,11 @@
-version: 0.3.46
+version: 0.3.47
 files:
-  - url: https://github.com/coffee4433/catchat/releases/download/v0.3.46/CatChat-Setup-0.3.46.exe
-    sha512: Dv3bIo+2WbAiwGoCT76pWhHXv/K9Hvja0tUNfd19H/mBmYUZ0c99B9sxdDUU+5+nX+UDURbOljwUpVNxJPIRvw==
-    size: 372964941
-path: CatChat-Setup-0.3.46.exe
-sha512: Dv3bIo+2WbAiwGoCT76pWhHXv/K9Hvja0tUNfd19H/mBmYUZ0c99B9sxdDUU+5+nX+UDURbOljwUpVNxJPIRvw==
-releaseDate: '2026-08-04T17:09:27.787Z'
+  - url: https://github.com/coffee4433/catchat/releases/download/v0.3.47/CatChat-Setup-0.3.47.exe
+    sha512: ZW07wEWeMX30eNwbgLYuhTk+zruzbwPHEr0deTwABlwF4gxe6nl995mzMwahbSDI1gQW/RHgJXwT6Y3lZcznyA==
+    size: 372870157
+path: CatChat-Setup-0.3.47.exe
+sha512: ZW07wEWeMX30eNwbgLYuhTk+zruzbwPHEr0deTwABlwF4gxe6nl995mzMwahbSDI1gQW/RHgJXwT6Y3lZcznyA==
+releaseDate: '2026-08-31T00:39:39.745Z'
 showReleaseModal: true
 releaseNotes: |
-  ## ✨ Novedades Destacadas
-  
-  > [!NOTE]  
-  > Esta versión trae integración completa con Polymarket, una nueva experiencia de panel flotante y mejoras significativas en la UI.
-  
-  - **[NUEVO]** Panel flotante de **Polymarket** con vista completa del evento, iframe animado con deslizamiento y transparencia con bordes redondeados.  
-  - **[NUEVO]** Gráfico de barras horizontales en las tarjetas de predicción, alimentado con datos reales desde la API de Polymarket.  
-  - **[MEJORA]** Tarjetas de alerta de Polymarket: ahora un solo botón hover marca como leído y abre el panel completo.  
-  - **[NUEVO]** Splash screen con **resplandor en forma del logo**, animación de respiración y ventana arrastrable (clic izquierdo).  
-  - **[MEJORA]** InfoPanel colapsado por defecto, con preferencia de estado persistida en `localStorage`.  
-  - **[NUEVO]** Limpieza automática de plugins huérfanos (survivor-shooter, tps-shooter, fortnite-builder) del estado y del disco.
-  
-  ## 🐛 Correcciones y Ajustes
-  
-  - **[FIX]** Congelamiento de la aplicación provocado por bucles infinitos del `MutationObserver` en el iframe del gráfico (se eliminó el observador).  
-  - **[FIX]** Fallos en la renderización del gráfico: detección del contenedor, resolución de URLs relativas y carga de recursos.  
-  - **[FIX]** Errores de parseo en `srcset`/`src` de imágenes con espacios, implementando una reparación automática y proxy para imágenes de Next.js.  
-  - **[FIX]** Proxy backend que permite incrustar la página completa de Polymarket sin problemas de CORS ni cabeceras `Referer`.  
-  - **[FIX]** Crash en la compilación de Next 16.2.6 por configuración de `webpack output.hashFunction` (eliminado).  
-  
-  ## ⚡ Rendimiento y Optimización
-  
-  - **[MEJORA]** Clases de Tailwind CSS v4 optimizadas y advertencias de linter resueltas.  
-  - **[MEJORA]** Desenfoque del `backdrop-filter` reducido de 22 px a 6 px, mejorando la fluidez y la visibilidad de las partículas del fondo.  
-  - **[MEJORA]** Eliminadas restricciones de `overflow-hidden` que impedían el efecto glass y la correcta percepción del fondo.  
-  - **[MEJORA]** Persistencia del estado colapsado del InfoPanel evita re-renders innecesarios en cada carga.
-  
-  ## 🎨 UI & Experiencia de Usuario
-  
-  - **[DISEÑO]** Panel de chat **transparente** con efecto glass en **todos los temas**.  
-  - **[DISEÑO]** Sidebar rail ampliado (logo de CatChat a `size-20`, botones de plugins a `size-12`) y logo con `object-contain` para evitar recortes.  
-  - **[DISEÑO]** Cabecera del workspace renovada: altura ajustada, título centrado, bordes redondeados.  
-  - **[DISEÑO]** Logo del splash utilizado también en el rail del workspace.  
-  - **[DISEÑO]** Eliminada la etiqueta “CatChat” y el botón de búsqueda del sidebar para un look más limpio.  
-  - **[DISEÑO]** Botones del rail desplazados hacia la parte superior.  
-  - **[DISEÑO]** Tarjetas de evento y alerta de Polymarket fijadas a **300×168.5** píxeles.  
-  - **[DISEÑO]** Iconos de hub de Cat-Music y Polymarket con bordes redondeados.  
-  - **[DISEÑO]** Logo de Polymarket actualizado al icono azul correcto.
+  CatChat v0.3.47

@@ -25,15 +25,96 @@ const LibraryContext = createContext<LibraryContextType | null>(null)
 const STORAGE_KEY = 'catmusic-library-v1'
 
 const DEFAULT_SETTINGS: CatMusicSettings = {
-  audioQuality: 'high',
   autoplay: true,
-  crossfadeSeconds: 0,
   defaultVolume: 80,
-  explicitAllowed: true,
-  downloadBitrate: 320,
 }
 
 const DEFAULT_PLAYLISTS: Playlist[] = []
+
+/** The history is capped so the persisted blob can't grow without bound. */
+const HISTORY_LIMIT = 100
+
+function newerIso(a?: string, b?: string): boolean {
+  const ta = a ? Date.parse(a) : NaN
+  const tb = b ? Date.parse(b) : NaN
+  if (Number.isNaN(ta)) return false
+  if (Number.isNaN(tb)) return true
+  return ta > tb
+}
+
+/**
+ * Union by id, local order first.
+ *
+ * Length was the old tie-breaker ("prefer whichever side has more"), which
+ * dropped items added on this device whenever the server copy happened to be
+ * longer. Without delete tombstones a union is the only merge that can't lose
+ * data; the cost is that a removal on another device can come back.
+ */
+function mergeById<T extends { id?: string }>(local: T[], remote: T[]): T[] {
+  const out: T[] = []
+  const seen = new Set<string>()
+  for (const item of [...local, ...remote]) {
+    const id = item?.id
+    if (!id || seen.has(id)) continue
+    seen.add(id)
+    out.push(item)
+  }
+  return out
+}
+
+/** Same union, but a playlist present on both sides resolves by `updatedAt`. */
+function mergePlaylists(local: Playlist[], remote: Playlist[]): Playlist[] {
+  const byId = new Map<string, Playlist>()
+  for (const pl of local) {
+    if (pl?.id) byId.set(pl.id, pl)
+  }
+  for (const pl of remote) {
+    if (!pl?.id) continue
+    const mine = byId.get(pl.id)
+    if (!mine) {
+      byId.set(pl.id, pl)
+      continue
+    }
+    const winner = newerIso(pl.updatedAt, mine.updatedAt) ? pl : mine
+    byId.set(pl.id, {
+      ...winner,
+      // Tracks union either way: a song added on one device shouldn't vanish
+      // just because the other device touched the playlist later.
+      tracks: mergeById(mine.tracks || [], pl.tracks || []),
+    })
+  }
+  // Keep local ordering, then anything only the server knew about.
+  const ordered: Playlist[] = []
+  const emitted = new Set<string>()
+  for (const pl of [...local, ...remote]) {
+    if (!pl?.id || emitted.has(pl.id)) continue
+    emitted.add(pl.id)
+    const merged = byId.get(pl.id)
+    if (merged) ordered.push(merged)
+  }
+  return ordered
+}
+
+function mergeHistory(local: PlayHistoryEntry[], remote: PlayHistoryEntry[]): PlayHistoryEntry[] {
+  return mergeById(local, remote)
+    .sort((a, b) => Date.parse(b.playedAt || '') - Date.parse(a.playedAt || ''))
+    .slice(0, HISTORY_LIMIT)
+}
+
+/**
+ * Keeps only settings the player honors, so keys from a removed feature don't
+ * ride along in storage forever.
+ */
+function sanitizeSettings(raw: unknown): CatMusicSettings {
+  const patch = (raw || {}) as Partial<CatMusicSettings>
+  const volume = Number(patch.defaultVolume)
+  return {
+    autoplay: typeof patch.autoplay === 'boolean' ? patch.autoplay : DEFAULT_SETTINGS.autoplay,
+    defaultVolume: Number.isFinite(volume)
+      ? Math.max(0, Math.min(100, Math.round(volume)))
+      : DEFAULT_SETTINGS.defaultVolume,
+  }
+}
 
 export function LibraryProvider({
   children,
@@ -54,17 +135,31 @@ export function LibraryProvider({
       const saved = localStorage.getItem(STORAGE_KEY)
       if (saved) {
         const parsed = JSON.parse(saved)
-        if (parsed.favorites) {
-          const migrated = parsed.favorites.map((f: unknown) =>
-            typeof f === 'string' ? { id: f, title: f, artist: '', durationSeconds: 0, artworkUrl: '', source: 'youtube' as const } : f
-          )
+        if (Array.isArray(parsed.favorites)) {
+          // Early versions stored bare video ids.
+          const migrated = parsed.favorites
+            .map((f: unknown) =>
+              typeof f === 'string'
+                ? {
+                    id: f,
+                    title: f,
+                    artist: '',
+                    durationSeconds: 0,
+                    artworkUrl: '',
+                    source: 'youtube' as const,
+                  }
+                : f,
+            )
+            .filter((f: Track | null) => f && f.id)
           setFavorites(migrated)
         }
-        if (parsed.playlists) setPlaylists(parsed.playlists)
-        if (parsed.history) setHistory(parsed.history)
-        if (parsed.settings) setSettings({ ...DEFAULT_SETTINGS, ...parsed.settings })
+        if (Array.isArray(parsed.playlists)) setPlaylists(parsed.playlists)
+        if (Array.isArray(parsed.history)) setHistory(parsed.history)
+        if (parsed.settings) setSettings(sanitizeSettings(parsed.settings))
       }
-    } catch {}
+    } catch {
+      // Corrupt or unreadable storage: start from the defaults.
+    }
     loadedRef.current = true
   }, [active])
 
@@ -73,31 +168,20 @@ export function LibraryProvider({
     if (!active || typeof window === 'undefined' || !loadedRef.current) return
     loadCatMusicLibrary()
       .then((remote) => {
-        if (remote.favorites && remote.favorites.length > 0) {
-          setFavorites((prev) => {
-            const merged = [...prev]
-            for (const r of remote.favorites) {
-              const track = r as Track
-              if (track.id && !merged.some((t) => t.id === track.id)) {
-                merged.push(track)
-              }
-            }
-            // Prefer remote if it has items
-            return remote.favorites.length > prev.length ? (remote.favorites as Track[]) : merged
-          })
+        if (Array.isArray(remote.favorites) && remote.favorites.length > 0) {
+          const incoming = (remote.favorites as Track[]).filter((t) => t && t.id)
+          setFavorites((prev) => mergeById(prev, incoming))
         }
-        if (remote.playlists && remote.playlists.length > 0) {
-          setPlaylists((prev) =>
-            remote.playlists.length > prev.length ? (remote.playlists as Playlist[]) : prev
-          )
+        if (Array.isArray(remote.playlists) && remote.playlists.length > 0) {
+          const incoming = (remote.playlists as Playlist[]).filter((p) => p && p.id)
+          setPlaylists((prev) => mergePlaylists(prev, incoming))
         }
-        if (remote.history && remote.history.length > 0) {
-          setHistory((prev) =>
-            remote.history.length > prev.length ? (remote.history as PlayHistoryEntry[]) : prev
-          )
+        if (Array.isArray(remote.history) && remote.history.length > 0) {
+          const incoming = (remote.history as PlayHistoryEntry[]).filter((h) => h && h.id)
+          setHistory((prev) => mergeHistory(prev, incoming))
         }
         if (remote.settings && Object.keys(remote.settings).length > 0) {
-          setSettings((prev) => ({ ...prev, ...(remote.settings as Partial<CatMusicSettings>) }))
+          setSettings((prev) => sanitizeSettings({ ...prev, ...(remote.settings as object) }))
         }
       })
       .catch(() => {})
@@ -130,7 +214,12 @@ export function LibraryProvider({
   useEffect(() => {
     if (!active || typeof window === 'undefined' || !loadedRef.current) return
     const snapshot = { favorites, playlists, history, settings }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot))
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot))
+    } catch {
+      // Quota exceeded or private mode: the Supabase copy below is still the
+      // durable one, so losing the local cache must not break the UI.
+    }
     saveToSupabase()
   }, [active, favorites, playlists, history, settings, saveToSupabase])
 
@@ -149,7 +238,7 @@ export function LibraryProvider({
   const createPlaylist = (name: string, description?: string): Playlist => {
     const newPl: Playlist = {
       id: `pl-${Date.now()}`,
-      name: name.trim() || 'Nueva Playlist',
+      name: name.trim() || 'Playlist',
       description,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -194,17 +283,18 @@ export function LibraryProvider({
     )
   }
 
-  const recordPlay = (track: Track, msPlayed: number, completed: boolean) => {
+  const recordPlay = useCallback((track: Track, msPlayed: number, completed: boolean) => {
+    if (!track?.id) return
     const entry: PlayHistoryEntry = {
-      id: `hist-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      id: `hist-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       trackId: track.id,
       track,
       playedAt: new Date().toISOString(),
       msPlayed,
       completed,
     }
-    setHistory((prev) => [entry, ...prev.slice(0, 99)])
-  }
+    setHistory((prev) => [entry, ...prev].slice(0, HISTORY_LIMIT))
+  }, [])
 
   const clearHistory = () => {
     setHistory([])
@@ -242,12 +332,8 @@ const defaultLibraryContext: LibraryContextType = {
   playlists: [],
   history: [],
   settings: {
-    audioQuality: 'high',
     autoplay: false,
-    crossfadeSeconds: 0,
     defaultVolume: 80,
-    explicitAllowed: true,
-    downloadBitrate: 320,
   },
   isFavorite: () => false,
   toggleFavorite: () => {},

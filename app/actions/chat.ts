@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { account, conversationParticipants, conversations, messages, session, user } from '@/lib/db/schema'
 import { supabase } from '@/lib/supabase/server'
+import { assertParticipant, ensureDirectConversation } from '@/lib/db/conversations'
 import { and, asc, desc, eq, ilike, inArray, ne, or, sql } from 'drizzle-orm'
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
@@ -14,19 +15,8 @@ async function getUserId() {
   return session.user.id
 }
 
-/** Throws if the current user is not a participant of the conversation. */
-async function assertParticipant(conversationId: number, userId: string) {
-  const [row] = await db
-    .select({ id: conversationParticipants.id })
-    .from(conversationParticipants)
-    .where(
-      and(
-        eq(conversationParticipants.conversationId, conversationId),
-        eq(conversationParticipants.userId, userId),
-      ),
-    )
-  if (!row) throw new Error('Conversation not found')
-}
+/** Upper bound on stored message text, enforced server-side. */
+const MAX_MESSAGE_LENGTH = 4000
 
 export type ConversationListItem = {
   id: number
@@ -110,40 +100,6 @@ export async function createConversation(title?: string) {
   return conversation
 }
 
-export async function ensureDirectConversation(userA: string, userB: string) {
-  if (userA === userB) return null
-
-  const mine = db
-    .select({ conversationId: conversationParticipants.conversationId })
-    .from(conversationParticipants)
-    .where(eq(conversationParticipants.userId, userA))
-  const existing = await db
-    .select({ conversationId: conversationParticipants.conversationId })
-    .from(conversationParticipants)
-    .where(
-      and(
-        eq(conversationParticipants.userId, userB),
-        inArray(conversationParticipants.conversationId, mine),
-      ),
-    )
-
-  if (existing.length > 0) {
-    return { id: existing[0].conversationId, existing: true }
-  }
-
-  const [conversation] = await db
-    .insert(conversations)
-    .values({ userId: userA, title: 'Direct message' })
-    .returning()
-
-  await db.insert(conversationParticipants).values([
-    { conversationId: conversation.id, userId: userA },
-    { conversationId: conversation.id, userId: userB },
-  ])
-  revalidatePath('/')
-  return { id: conversation.id, existing: false }
-}
-
 /**
  * Creates (or reuses) a direct 1:1 conversation with another user.
  */
@@ -223,8 +179,22 @@ export async function getMessages(conversationId: number): Promise<MessageWithSe
 
 export async function sendMessage(conversationId: number, content: string, replyToId?: number) {
   const userId = await getUserId()
+  await assertParticipant(conversationId, userId)
   const trimmed = content.trim()
   if (!trimmed) throw new Error('Message cannot be empty')
+  if (trimmed.length > MAX_MESSAGE_LENGTH) {
+    throw new Error(`Message is too long (max ${MAX_MESSAGE_LENGTH} characters)`)
+  }
+
+  if (replyToId != null) {
+    const [parent] = await db
+      .select({ conversationId: messages.conversationId })
+      .from(messages)
+      .where(eq(messages.id, replyToId))
+    if (!parent || parent.conversationId !== conversationId) {
+      throw new Error('Reply target not found in this conversation')
+    }
+  }
 
   const [message] = await db
     .insert(messages)
@@ -649,6 +619,9 @@ export async function editMessage(messageId: number, content: string) {
   const userId = await getUserId()
   const trimmed = content.trim()
   if (!trimmed) throw new Error('El mensaje no puede estar vacío')
+  if (trimmed.length > MAX_MESSAGE_LENGTH) {
+    throw new Error(`El mensaje es demasiado largo (máx. ${MAX_MESSAGE_LENGTH} caracteres)`)
+  }
 
   // Verify message exists and belongs to the user
   const [msg] = await db.select().from(messages).where(eq(messages.id, messageId))

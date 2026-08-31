@@ -136,4 +136,10 @@ export const SEED_TRACKS: Track[] = [
   },
 ]
 
-export const GENRES = ['Todos', 'Pop', 'Rock', 'Lo-Fi', 'Synthwave', 'Cat Beats']
+/**
+ * Sentinel for "no genre filter". Kept out of `GENRES` as a value the UI can
+ * compare against without hardcoding a Spanish word — it renders as `t.allGenres`.
+ */
+export const ALL_GENRES = '__all__'
+
+export const GENRES = [ALL_GENRES, 'Pop', 'Rock', 'Lo-Fi', 'Synthwave', 'Cat Beats']

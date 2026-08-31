@@ -38,7 +38,6 @@ export function ChatBackground() {
     const dots: Dot[] = []
     const stars: Star[] = []
     let raf = 0
-    let starTimer: ReturnType<typeof setInterval>
 
     function size() {
       const dpr = Math.min(window.devicePixelRatio || 1, 2)
@@ -82,7 +81,7 @@ export function ChatBackground() {
       })
     }
 
-    starTimer = setInterval(spawnStar, STAR_INTERVAL)
+    const starTimer = setInterval(spawnStar, STAR_INTERVAL)
     spawnStar()
     setTimeout(spawnStar, 300)
 
