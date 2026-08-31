@@ -54,6 +54,18 @@ contextBridge.exposeInMainWorld("pluginInstaller", {
   },
 });
 
+// Native window controls. The web fullscreen API only ever fills the window;
+// this is what lets the renderer take the whole monitor.
+contextBridge.exposeInMainWorld("desktopWindow", {
+  setFullscreen: (flag) => ipcRenderer.invoke("window:set-fullscreen", flag),
+  isFullscreen: () => ipcRenderer.invoke("window:is-fullscreen"),
+  onFullscreenChange: (callback) => {
+    const listener = (_event, value) => callback(value);
+    ipcRenderer.on("window:fullscreen-changed", listener);
+    return () => ipcRenderer.removeListener("window:fullscreen-changed", listener);
+  },
+});
+
 contextBridge.exposeInMainWorld("screenShare", {
   onSources: (cb) => {
     const listener = (_e, sources) => cb(sources);

@@ -127,6 +127,25 @@ function setupAutoUpdater() {
   })
 }
 
+/**
+ * The window controls the renderer is allowed to drive. Registered once at
+ * startup and resolved through `fromWebContents`, so it survives windows being
+ * closed and recreated (`app.on('activate')`).
+ */
+function registerWindowIPC() {
+  ipcMain.handle('window:set-fullscreen', (event, flag) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (!win || win.isDestroyed()) return false
+    win.setFullScreen(Boolean(flag))
+    return win.isFullScreen()
+  })
+
+  ipcMain.handle('window:is-fullscreen', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    return Boolean(win && !win.isDestroyed() && win.isFullScreen())
+  })
+}
+
 function getAppDir() {
   if (app.isPackaged) {
     return app.getAppPath()
@@ -185,13 +204,25 @@ function createWindow() {
   registerCommandRunnerIPC(mainWindow)
   registerPluginInstallerIPC(mainWindow)
 
-  // Auto-grant media permissions for local origin
+  // Auto-grant the permissions the app itself asks for. `fullscreen` belongs
+  // here: Chromium routes `element.requestFullscreen()` through this handler,
+  // so leaving it out made every HTML fullscreen request reject and the UI fell
+  // back to filling the window instead of the monitor.
   mainWindow.webContents.session.setPermissionRequestHandler(
     (webContents, permission, callback) => {
-      const allowedPermissions = ['media', 'mediaKeySystem']
+      const allowedPermissions = ['media', 'mediaKeySystem', 'fullscreen']
       callback(allowedPermissions.includes(permission))
     },
   )
+
+  // Keep the renderer in step with the window when fullscreen is toggled from
+  // outside the page (F11, the title bar, the OS).
+  mainWindow.on('enter-full-screen', () => {
+    mainWindow?.webContents.send('window:fullscreen-changed', true)
+  })
+  mainWindow.on('leave-full-screen', () => {
+    mainWindow?.webContents.send('window:fullscreen-changed', false)
+  })
 
   // Set up display media request handler for screen sharing
   session.defaultSession.setDisplayMediaRequestHandler(
@@ -295,6 +326,7 @@ app.on('ready', async () => {
   createSplashWindow()
   try {
     setupAutoUpdater()
+    registerWindowIPC()
     if (process.env.USE_LOCAL_NEXT_SERVER) {
       await startNextServer()
     }

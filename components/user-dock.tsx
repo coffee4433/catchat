@@ -1,7 +1,7 @@
 'use client'
 
 import { motion, AnimatePresence } from 'framer-motion'
-import { LogOut, Settings, Download, RotateCw, AlertCircle, Radio, Activity, PhoneOff, Mic, MicOff, Video, VideoOff, MonitorUp, MonitorOff, Sparkles } from 'lucide-react'
+import { LogOut, Settings, Download, RotateCw, AlertCircle, Radio, Activity, PhoneOff, Mic, MicOff, Video, VideoOff, MonitorUp, MonitorOff, Sparkles, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { authClient } from '@/lib/auth-client'
@@ -25,6 +25,15 @@ function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+/** Remaining download time as `m:ss`, or null while the rate is still unknown. */
+function formatEta(progress: DownloadProgress): string | null {
+  const remaining = progress.total - progress.transferred
+  if (remaining <= 0 || progress.bytesPerSecond <= 0) return null
+  const seconds = Math.round(remaining / progress.bytesPerSecond)
+  if (seconds < 60) return `${seconds}s`
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
 }
 
 type UpdateInfo = {
@@ -474,150 +483,200 @@ export function UserDock({
                 className="overflow-hidden"
               >
                 {hasUpdate ? (
-                  /* Update panel */
-                  <div className="w-64">
-                    <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-border/60 bg-linear-to-r from-[#5865F2]/10 via-transparent to-transparent">
-                      <div className="flex items-center gap-2">
-                        <Download className="size-4 text-[#5865F2]" />
-                        <span className="text-[12px] font-semibold text-foreground">
-                          {update.phase === 'available' && 'Update Available'}
-                          {update.phase === 'downloading' && 'Downloading...'}
-                          {update.phase === 'downloaded' && 'Ready to Install'}
-                          {update.phase === 'error' && 'Update Error'}
-                        </span>
-                      </div>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleDismiss() }}
-                        className="text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded-full hover:bg-secondary/60"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-                      </button>
-                    </div>
+                  /* App update card. `data-phase` swaps the palette; the parts
+                     themselves are shared with the plugin card below. */
+                  <div className="w-64 p-2">
+                    <div
+                      className="upd-card upd-sheen"
+                      data-phase={update.phase}
+                      role="status"
+                      aria-live="polite"
+                    >
+                      <div className="upd-aurora" aria-hidden="true" />
 
-                    <div className="px-3.5 py-3">
-                      {update.phase === 'available' && (
-                        <div className="space-y-3">
-                          <div className="space-y-1">
-                            <span className="text-[12px] text-muted-foreground">Version {update.info.version}</span>
-                            {update.info.files?.[0]?.size != null && (
-                              <span className="block text-[11px] text-muted-foreground/70">{formatSize(update.info.files[0].size)}</span>
-                            )}
+                      <div className="relative z-4 flex items-start gap-2.5 px-3 pt-3">
+                        <span className="upd-orb shrink-0" aria-hidden="true">
+                          {update.phase === 'error' ? (
+                            <AlertCircle className="size-4" />
+                          ) : update.phase === 'downloaded' ? (
+                            <Sparkles className="size-4" />
+                          ) : (
+                            <Download className="size-4" />
+                          )}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[12.5px] font-bold leading-tight text-white">
+                            {update.phase === 'available' && (lang === 'es' ? 'Actualización disponible' : 'Update available')}
+                            {update.phase === 'downloading' && (lang === 'es' ? 'Descargando' : 'Downloading')}
+                            {update.phase === 'downloaded' && (lang === 'es' ? 'Listo para instalar' : 'Ready to install')}
+                            {update.phase === 'error' && (lang === 'es' ? 'Error de actualización' : 'Update error')}
+                          </p>
+                          <p className="mt-0.5 truncate text-[10.5px] leading-tight text-white/45">
+                            {update.phase === 'error'
+                              ? (lang === 'es' ? 'No se pudo completar' : 'Could not complete')
+                              : `${appVersion ? `v${appVersion} → ` : ''}v${update.info.version}`}
+                          </p>
+                        </div>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleDismiss() }}
+                          aria-label={lang === 'es' ? 'Descartar' : 'Dismiss'}
+                          className="upd-x shrink-0"
+                        >
+                          <X className="size-3.5" />
+                        </button>
+                      </div>
+
+                      <div className="relative z-4 px-3 pb-3 pt-2.5">
+                        {update.phase === 'available' && (
+                          <div className="space-y-2.5">
+                            <div className="flex items-center gap-2">
+                              <span className="upd-pill">v{update.info.version}</span>
+                              {update.info.files?.[0]?.size != null && (
+                                <span className="upd-stat">{formatSize(update.info.files[0].size)}</span>
+                              )}
+                            </div>
                             {update.info.releaseNotes && (
-                              <p className="text-[11px] text-muted-foreground/80 mt-1.5 leading-relaxed max-h-16 overflow-y-auto thin-scroll">
+                              <p className="upd-notes thin-scroll text-[11px] leading-relaxed text-white/55">
                                 {update.info.releaseNotes.replace(/<[^>]*>/g, '').trim()}
                               </p>
                             )}
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleInstall() }}
+                              className="upd-cta"
+                            >
+                              <Download className="size-3.5" />
+                              {lang === 'es' ? 'Instalar ahora' : 'Install now'}
+                            </button>
                           </div>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleInstall() }}
-                            className="w-full flex items-center justify-center gap-2 rounded-lg bg-[#5865F2] px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-[#5865F2]/90 transition-all active:scale-[0.98] shadow-lg shadow-[#5865F2]/25"
-                          >
-                            <Download className="size-3.5" /> Install
-                          </button>
-                        </div>
-                      )}
+                        )}
 
-                      {update.phase === 'downloading' && (
-                        <div className="space-y-2.5">
-                          <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                            <span>Downloading update...</span>
-                            <span>{Math.round(update.progress.percent)}%</span>
+                        {update.phase === 'downloading' && (
+                          <div className="space-y-2">
+                            <div className="flex items-baseline justify-between">
+                              <span className="text-[11px] font-medium text-white/55">
+                                {lang === 'es' ? 'Descargando…' : 'Downloading…'}
+                              </span>
+                              <span className="text-[13px] font-bold tabular-nums text-white">
+                                {Math.round(update.progress.percent)}%
+                              </span>
+                            </div>
+                            <div className="upd-track">
+                              <div className="upd-fill" style={{ width: `${Math.round(update.progress.percent)}%` }} />
+                            </div>
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="upd-stat">
+                                {update.progress.total > 0
+                                  ? `${formatSize(update.progress.transferred)} / ${formatSize(update.progress.total)}`
+                                  : formatSize(update.progress.transferred)}
+                              </span>
+                              {update.progress.bytesPerSecond > 0 && (
+                                <span className="upd-stat">
+                                  {formatSize(update.progress.bytesPerSecond)}/s
+                                  {formatEta(update.progress) ? ` · ${formatEta(update.progress)}` : ''}
+                                </span>
+                              )}
+                            </div>
                           </div>
-                          <div className="h-2 rounded-full bg-secondary overflow-hidden">
-                            <motion.div
-                              className="h-full rounded-full bg-[#5865F2]"
-                              initial={{ width: 0 }}
-                              animate={{ width: `${Math.round(update.progress.percent)}%` }}
-                              transition={{ duration: 0.3, ease: 'easeOut' }}
-                            />
-                          </div>
-                          {update.progress.bytesPerSecond > 0 && (
-                            <span className="text-[10px] text-muted-foreground/60">{formatSize(update.progress.bytesPerSecond)}/s</span>
-                          )}
-                        </div>
-                      )}
+                        )}
 
-                      {update.phase === 'downloaded' && (
-                        <div className="space-y-3">
-                          <span className="text-[12px] text-muted-foreground">Update downloaded. Restart to apply.</span>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleRestart() }}
-                            className="w-full flex items-center justify-center gap-2 rounded-lg bg-[#5865F2] px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-[#5865F2]/90 transition-all active:scale-[0.98] shadow-lg shadow-[#5865F2]/25"
-                          >
-                            <RotateCw className="size-3.5" /> Restart Now
-                          </button>
-                        </div>
-                      )}
-
-                      {update.phase === 'error' && (
-                        <div className="space-y-3">
-                          <div className="flex items-start gap-2">
-                            <AlertCircle className="size-4 text-red-400 shrink-0 mt-0.5" />
-                            <span className="text-[12px] text-muted-foreground">{update.message}</span>
+                        {update.phase === 'downloaded' && (
+                          <div className="space-y-2.5">
+                            <p className="text-[11.5px] leading-relaxed text-white/55">
+                              {lang === 'es'
+                                ? 'Descarga completa. Reinicia para aplicar la actualización.'
+                                : 'Download complete. Restart to apply the update.'}
+                            </p>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleRestart() }}
+                              className="upd-cta"
+                            >
+                              <RotateCw className="size-3.5" />
+                              {lang === 'es' ? 'Reiniciar ahora' : 'Restart now'}
+                            </button>
                           </div>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setUpdate({ phase: 'idle' }) }}
-                            className="w-full flex items-center justify-center gap-2 rounded-lg bg-secondary px-4 py-2 text-[12.5px] font-semibold text-foreground hover:bg-secondary/80 transition-all"
-                          >
-                            Dismiss
-                          </button>
-                        </div>
-                      )}
+                        )}
+
+                        {update.phase === 'error' && (
+                          <div className="space-y-2.5">
+                            <p className="upd-notes thin-scroll text-[11px] leading-relaxed text-white/55">
+                              {update.message}
+                            </p>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setUpdate({ phase: 'idle' }) }}
+                              className="upd-cta upd-cta-ghost"
+                            >
+                              {lang === 'es' ? 'Entendido' : 'Dismiss'}
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ) : hasPluginUpdate && activePluginUpdate ? (
                   /* Plugin Update panel (same spot as CatChat app update) */
-                  <div className="w-64">
-                    <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-border/60 bg-linear-to-r from-emerald-500/10 via-transparent to-transparent">
-                      <div className="flex items-center gap-2">
-                        <Download className="size-4 text-emerald-400 animate-pulse" />
-                        <span className="text-[12px] font-semibold text-foreground">
-                          {lang === 'es' ? 'Actualización de Plugin' : 'Plugin Update Available'}
-                        </span>
-                      </div>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); activePluginUpdateId && dismissPluginUpdate(activePluginUpdateId) }}
-                        className="text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded-full hover:bg-secondary/60"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-                      </button>
-                    </div>
+                  <div className="w-64 p-2">
+                    <div
+                      className="upd-card upd-sheen"
+                      data-phase="plugin"
+                      role="status"
+                      aria-live="polite"
+                    >
+                      <div className="upd-aurora" aria-hidden="true" />
 
-                    <div className="px-3.5 py-3 space-y-3">
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[12.5px] font-bold text-foreground">{activePluginUpdate.name}</span>
-                          <span className="font-mono text-[10px] font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-1.5 py-0.5 rounded">{activePluginUpdate.newVersion}</span>
+                      <div className="relative z-4 flex items-start gap-2.5 px-3 pt-3">
+                        <span className="upd-orb shrink-0" aria-hidden="true">
+                          <Sparkles className="size-4" />
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[12.5px] font-bold leading-tight text-white">
+                            {lang === 'es' ? 'Actualización de plugin' : 'Plugin update'}
+                          </p>
+                          <p className="mt-0.5 truncate text-[10.5px] leading-tight text-white/45">
+                            {activePluginUpdate.name}
+                          </p>
+                        </div>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); activePluginUpdateId && dismissPluginUpdate(activePluginUpdateId) }}
+                          aria-label={lang === 'es' ? 'Descartar' : 'Dismiss'}
+                          className="upd-x shrink-0"
+                        >
+                          <X className="size-3.5" />
+                        </button>
+                      </div>
+
+                      <div className="relative z-4 space-y-2.5 px-3 pb-3 pt-2.5">
+                        <div className="flex items-center gap-2">
+                          <span className="upd-pill">v{activePluginUpdate.newVersion}</span>
                         </div>
                         {activePluginUpdate.releaseNotes && (
-                          <p className="text-[11px] text-muted-foreground/80 mt-1.5 leading-relaxed max-h-16 overflow-y-auto thin-scroll">
+                          <p className="upd-notes thin-scroll text-[11px] leading-relaxed text-white/55">
                             {activePluginUpdate.releaseNotes.replace(/<[^>]*>/g, '').trim()}
                           </p>
                         )}
+                        {isPluginUpdating ? (
+                          <div className="space-y-2">
+                            <div className="flex items-baseline justify-between">
+                              <span className="text-[11px] font-medium text-white/55">
+                                {lang === 'es' ? 'Descargando…' : 'Downloading…'}
+                              </span>
+                              <span className="text-[13px] font-bold tabular-nums text-white">
+                                {pluginUpdateProgress}%
+                              </span>
+                            </div>
+                            <div className="upd-track">
+                              <div className="upd-fill" style={{ width: `${pluginUpdateProgress}%` }} />
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); activePluginUpdateId && updatePlugin(activePluginUpdateId) }}
+                            className="upd-cta"
+                          >
+                            <Download className="size-3.5" />
+                            {lang === 'es' ? 'Actualizar plugin' : 'Update plugin'}
+                          </button>
+                        )}
                       </div>
-                      {isPluginUpdating ? (
-                        <div className="space-y-2.5">
-                          <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                            <span>{lang === 'es' ? 'Descargando actualización…' : 'Downloading update…'}</span>
-                            <span>{pluginUpdateProgress}%</span>
-                          </div>
-                          <div className="h-2 rounded-full bg-secondary overflow-hidden">
-                            <motion.div
-                              className="h-full rounded-full bg-emerald-500"
-                              initial={{ width: 0 }}
-                              animate={{ width: `${pluginUpdateProgress}%` }}
-                              transition={{ duration: 0.3, ease: 'easeOut' }}
-                            />
-                          </div>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); activePluginUpdateId && updatePlugin(activePluginUpdateId) }}
-                          className="w-full flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-emerald-500 transition-all active:scale-[0.98] shadow-lg shadow-emerald-600/25"
-                        >
-                          <Download className="size-3.5" /> {lang === 'es' ? 'Actualizar Plugin' : 'Update Plugin'}
-                        </button>
-                      )}
                     </div>
                   </div>
                 ) : (

@@ -39,7 +39,7 @@ import type { Track } from '@/lib/plugins/cat-music/types'
 import type { YtPlaylist, YtChannel } from '@/lib/plugins/cat-music/innertube'
 import {
   exitDocumentFullscreen,
-  getFullscreenElement,
+  isFullscreenActive,
   requestElementFullscreen,
   subscribeFullscreenChange,
 } from '@/lib/fullscreen'
@@ -202,12 +202,7 @@ export function CatMusicMainView({ onOpenSettings }: PluginViewProps) {
 
   useEffect(() => {
     return subscribeFullscreenChange(() => {
-      const fullEl = getFullscreenElement()
-      if (fullEl) {
-        setIsFullscreen(true)
-      } else {
-        setIsFullscreen(false)
-      }
+      setIsFullscreen(isFullscreenActive())
     })
   }, [])
 
@@ -218,9 +213,7 @@ export function CatMusicMainView({ onOpenSettings }: PluginViewProps) {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setIsFullscreen(false)
-        if (getFullscreenElement()) {
-          exitDocumentFullscreen().catch(() => {})
-        }
+        exitDocumentFullscreen().catch(() => {})
       }
     }
     window.addEventListener('keydown', onKeyDown)
@@ -242,12 +235,10 @@ export function CatMusicMainView({ onOpenSettings }: PluginViewProps) {
 
     if (isFullscreen) {
       setIsFullscreen(false)
-      if (getFullscreenElement()) {
-        try {
-          await exitDocumentFullscreen()
-        } catch {
-          // CSS mode exits via state
-        }
+      try {
+        await exitDocumentFullscreen()
+      } catch {
+        // CSS mode exits via state
       }
       return
     }
