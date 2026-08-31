@@ -97,9 +97,15 @@ function writeInstallRecord(pluginId, version, installDir) {
 }
 
 function registerPluginInstallerIPC(mainWindow) {
-  // Purge legacy survivor-shooter and tps-shooter plugins from installed-plugins directory on disk
+  // Purge plugins that no longer ship from the installed-plugins directory on disk
   try {
-    const legacyDirs = ['survivor-shooter', 'tps-shooter', 'fortnite-builder']
+    const legacyDirs = [
+      'survivor-shooter',
+      'tps-shooter',
+      'fortnite-builder',
+      'polimarket',
+      'tps-controls',
+    ]
     for (const legacyId of legacyDirs) {
       const legacyDirPath = path.join(getPluginsRoot(), legacyId)
       if (fs.existsSync(legacyDirPath)) {

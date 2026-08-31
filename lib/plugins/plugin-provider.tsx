@@ -3,8 +3,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import type { CatChatPlugin, PluginRailTab } from './plugin-types'
 import { catMusicPlugin } from './cat-music'
-import { polimarketPlugin } from './polimarket'
-import { tpsControlsPlugin } from './tps-controls'
 import { getRegisteredPlugins, registerPlugin, unregisterPlugin } from './plugin-registry'
 import { getPluginInstaller } from './plugin-installer-client'
 
@@ -46,16 +44,21 @@ const PLUGIN_UPDATE_POLL_MS = 30_000
 
 const BUNDLED_PLUGINS: Record<string, CatChatPlugin> = {
   'cat-music': catMusicPlugin,
-  polimarket: polimarketPlugin,
-  'tps-controls': tpsControlsPlugin,
 }
 
 const BUNDLED_PLUGIN_IDS = Object.keys(BUNDLED_PLUGINS)
 
 const STABLE_ROOT_PROVIDERS = [
   { id: 'cat-music' as const, Provider: catMusicPlugin.rootProvider! },
-  { id: 'polimarket' as const, Provider: polimarketPlugin.rootProvider! },
-  { id: 'tps-controls' as const, Provider: tpsControlsPlugin.rootProvider! },
+]
+
+/** Plugins that no longer ship: dropped from saved state and purged on load. */
+const REMOVED_PLUGIN_IDS = [
+  'survivor-shooter',
+  'tps-shooter',
+  'fortnite-builder',
+  'polimarket',
+  'tps-controls',
 ]
 
 function loadPluginIdList(key: string): string[] {
@@ -64,7 +67,7 @@ function loadPluginIdList(key: string): string[] {
     const saved = localStorage.getItem(key)
     if (!saved) return []
     const parsed = JSON.parse(saved) as string[]
-    return Array.isArray(parsed) ? parsed.filter((id) => id !== 'survivor-shooter' && id !== 'tps-shooter' && id !== 'fortnite-builder') : []
+    return Array.isArray(parsed) ? parsed.filter((id) => !REMOVED_PLUGIN_IDS.includes(id)) : []
   } catch {
     return []
   }
@@ -118,20 +121,18 @@ export function PluginProvider({ children, user }: { children: React.ReactNode; 
         localStorage.removeItem(STORAGE_KEY_INSTALLED)
         localStorage.removeItem(STORAGE_KEY_ENABLED)
       }
-      localStorage.removeItem('cz-plugin-ver-survivor-shooter')
-      localStorage.removeItem('cz-plugin-data-survivor-shooter')
-      localStorage.removeItem('cz-plugin-ver-tps-shooter')
-      localStorage.removeItem('cz-plugin-data-tps-shooter')
-      localStorage.removeItem('cz-plugin-ver-fortnite-builder')
-      localStorage.removeItem('cz-plugin-data-fortnite-builder')
-      if (userId) {
-        localStorage.removeItem(`cz-plugin-ver-survivor-shooter-${userId}`)
-        localStorage.removeItem(`cz-plugin-data-survivor-shooter-${userId}`)
-        localStorage.removeItem(`cz-plugin-ver-tps-shooter-${userId}`)
-        localStorage.removeItem(`cz-plugin-data-tps-shooter-${userId}`)
-        localStorage.removeItem(`cz-plugin-ver-fortnite-builder-${userId}`)
-        localStorage.removeItem(`cz-plugin-data-fortnite-builder-${userId}`)
+      for (const removedId of REMOVED_PLUGIN_IDS) {
+        localStorage.removeItem(`cz-plugin-ver-${removedId}`)
+        localStorage.removeItem(`cz-plugin-data-${removedId}`)
+        if (userId) {
+          localStorage.removeItem(`cz-plugin-ver-${removedId}-${userId}`)
+          localStorage.removeItem(`cz-plugin-data-${removedId}-${userId}`)
+        }
       }
+      // Settings the Polimarket plugin left behind outside its own data key.
+      localStorage.removeItem('cz-polimarket-seen-events')
+      localStorage.removeItem('cz-polimarket-alerts')
+      localStorage.removeItem('cz-polimarket-settings')
     } catch {
       // Ignore storage write errors
     }
@@ -309,11 +310,6 @@ export function PluginProvider({ children, user }: { children: React.ReactNode; 
           localStorage.removeItem('cz-catmusic-playlists')
           localStorage.removeItem('cz-catmusic-favorites')
           localStorage.removeItem('cz-catmusic-history')
-        }
-        if (id === 'polimarket') {
-          localStorage.removeItem('cz-polimarket-seen-events')
-          localStorage.removeItem('cz-polimarket-alerts')
-          localStorage.removeItem('cz-polimarket-settings')
         }
       } catch {
         // Ignore storage purge errors

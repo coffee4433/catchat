@@ -37,7 +37,6 @@
   ],
   "exclude": [
     "node_modules",
-    "TPS-Controls",
     "dist",
     "release-tool/dist"
   ]

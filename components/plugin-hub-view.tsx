@@ -44,15 +44,6 @@ function PluginIcon({ id, className }: { id: string; className?: string }) {
       />
     )
   }
-  if (id === 'polimarket') {
-    return (
-      <img
-        src="/polymarket-icon.png"
-        alt="Polimarket"
-        className="h-full w-full rounded-xl object-cover"
-      />
-    )
-  }
   if (id === 'cat-ai') return <Sparkles className={className} />
   if (id === 'cat-canvas') return <Zap className={className} />
   return <Boxes className={className} />

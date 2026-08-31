@@ -1025,7 +1025,6 @@
                   <select id="pluginSelect" onchange="onPluginSelectChange()">
                     <option value="fortnite-builder">Fortnite Builder 3D (fortnite-builder)</option>
                     <option value="cat-music">CatMusic (cat-music)</option>
-                    <option value="polimarket">Polimarket (polimarket)</option>
                   </select>
                 </div>
                 <div class="field">
@@ -2165,13 +2164,13 @@ function createDemoApi() {
     publishPlugin: async () => {
       const emit = (s, st) => stepCb && stepCb({ step: s, state: st })
       const log = (t) => outputCb && outputCb(t + '\n')
-      await delay(400); log('📦 Packaging and publishing plugin [polimarket]...'); emit('prepare', 'active')
-      await delay(700); log('✓ Plugin manifest created: plugins/polimarket/manifest.json'); emit('prepare', 'done'); emit('build', 'active')
-      await delay(600); log('✓ Plugin release saved: plugins/polimarket/releases/v0.0.1.json')
+      await delay(400); log('📦 Packaging and publishing plugin [cat-music]...'); emit('prepare', 'active')
+      await delay(700); log('✓ Plugin manifest created: plugins/cat-music/manifest.json'); emit('prepare', 'done'); emit('build', 'active')
+      await delay(600); log('✓ Plugin release saved: plugins/cat-music/releases/v0.0.1.json')
       await delay(500); log('✓ Building installer and packaging artifact...')
       await delay(800); log('🚀 Uploading plugin release assets to GitHub...'); emit('build', 'done'); emit('upload', 'active')
-      await delay(900); log('✓ Created git tag: plugin-polimarket-v0.0.1'); emit('upload', 'done'); emit('publish', 'active')
-      await delay(700); log('✓ GitHub Release created for plugin-polimarket-v0.0.1'); emit('publish', 'done'); emit('git', 'active')
+      await delay(900); log('✓ Created git tag: plugin-cat-music-v0.0.1'); emit('upload', 'done'); emit('publish', 'active')
+      await delay(700); log('✓ GitHub Release created for plugin-cat-music-v0.0.1'); emit('publish', 'done'); emit('git', 'active')
       await delay(600); log('✓ Pushed plugin files and tag to GitHub!')
       await delay(400); log('✓ Pushed to git and published plugin!'); emit('git', 'done')
       await delay(200); doneCb && doneCb(true)

@@ -22,7 +22,6 @@ export default [
       'plugins/**',
       'release-tool/dist/**',
       'scratch/**',
-      'TPS-Controls/**',
       'public/**',
       '*-player-script.js',
       'main.js',

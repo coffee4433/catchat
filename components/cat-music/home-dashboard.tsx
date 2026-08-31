@@ -47,8 +47,6 @@ export function HomeDashboard({
   favoritesCount,
   playlistsCount,
   historyCount,
-  currentTrack,
-  isPlaying,
   artistBannerUrl,
   onPlayFeatured,
   onSelectArtist,
@@ -59,8 +57,6 @@ export function HomeDashboard({
   favoritesCount: number
   playlistsCount: number
   historyCount: number
-  currentTrack: Track | null
-  isPlaying: boolean
   artistBannerUrl?: string
   onPlayFeatured: () => void
   onSelectArtist: (name: string) => void
@@ -104,28 +100,6 @@ export function HomeDashboard({
               </button>
             </div>
           </div>
-
-          {currentTrack && (
-            <div className="hidden shrink-0 flex-col gap-2 rounded-2xl border border-white/10 bg-black/30 p-4 backdrop-blur-md lg:flex lg:w-52">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--cm-accent-hi)]">{t.reproduciendo}</p>
-              <div className="flex items-center gap-2.5">
-                <div className="size-11 shrink-0 overflow-hidden rounded-xl ring-1 ring-white/10">
-                  <img src={currentTrack.artworkUrl} alt="" className="size-full object-cover" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-[12px] font-bold text-white">{currentTrack.title}</p>
-                  <p className="truncate text-[10px] text-white/45">{currentTrack.artist}</p>
-                </div>
-              </div>
-              {isPlaying && (
-                <span className="flex h-3 items-end justify-center gap-0.5">
-                  <span className="h-3 w-0.5 animate-pulse rounded-full bg-[var(--cm-accent)]" />
-                  <span className="h-2 w-0.5 animate-pulse rounded-full bg-[var(--cm-accent)]" />
-                  <span className="h-3.5 w-0.5 animate-pulse rounded-full bg-[var(--cm-accent)]" />
-                </span>
-              )}
-            </div>
-          )}
         </div>
       </GlassPanel>
 

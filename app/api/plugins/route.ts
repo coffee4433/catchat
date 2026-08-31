@@ -20,6 +20,9 @@ function resolvePluginDownloadUrl(release: any, pluginId: string, pluginVersion:
   return `https://github.com/coffee4433/catchat/releases/download/${tagName}/${pluginId}-${pluginVersion}.zip`
 }
 
+/** Plugin ids that were published once but no longer ship with the app. */
+const REMOVED_PLUGIN_IDS = new Set(['survivor-shooter', 'polimarket', 'tps-controls'])
+
 export async function GET() {
   const plugins: any[] = []
   const foundIds = new Set<string>()
@@ -41,7 +44,7 @@ export async function GET() {
           if (r.tag_name && r.tag_name.startsWith('plugin-')) {
             const parts = r.tag_name.split('-')
             const pluginId = parts.slice(1, -1).join('-') || parts[1] || r.tag_name.replace('plugin-', '')
-            if (pluginId === 'survivor-shooter') continue
+            if (REMOVED_PLUGIN_IDS.has(pluginId)) continue
             const pluginVersion = parts.pop() || r.tag_name
 
             if (!foundIds.has(pluginId)) {
@@ -82,7 +85,7 @@ export async function GET() {
     if (fs.existsSync(pluginsDir)) {
       const entries = fs.readdirSync(pluginsDir, { withFileTypes: true })
       for (const ent of entries) {
-        if (ent.isDirectory() && !foundIds.has(ent.name)) {
+        if (ent.isDirectory() && !foundIds.has(ent.name) && !REMOVED_PLUGIN_IDS.has(ent.name)) {
           const manifestPath = path.join(pluginsDir, ent.name, 'manifest.json')
           if (fs.existsSync(manifestPath)) {
             const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))

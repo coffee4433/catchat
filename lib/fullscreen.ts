@@ -91,13 +91,24 @@ async function requestViaDom(element: HTMLElement): Promise<boolean> {
 export async function requestElementFullscreen(element: HTMLElement): Promise<void> {
   watchNativeFullscreen()
 
+  // The desktop path wins when it exists. Promoting an element instead renders
+  // *only* that subtree, which drops every sibling overlay — the player bar, the
+  // user dock, any floating menu — off the screen. Taking the window fullscreen
+  // keeps the whole document painting, so those layers just stay where they are.
+  const bridge = desktopWindow()
+  if (bridge?.setFullscreen) {
+    try {
+      nativeFullscreen = await bridge.setFullscreen(true)
+      if (nativeFullscreen) return
+    } catch {
+      // Falls through to the DOM path below.
+    }
+  }
+
   if (await requestViaDom(element)) return
 
-  const bridge = desktopWindow()
   if (!bridge) throw new Error('fullscreen is unavailable')
-
-  nativeFullscreen = await bridge.setFullscreen(true)
-  if (!nativeFullscreen) throw new Error('the window refused to go fullscreen')
+  throw new Error('the window refused to go fullscreen')
 }
 
 export async function exitDocumentFullscreen(): Promise<void> {

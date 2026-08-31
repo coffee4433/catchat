@@ -6,7 +6,6 @@ import { usePlugins } from '@/lib/plugins/plugin-provider'
 
 function pluginIconSrc(id: string) {
   if (id === 'cat-music') return '/catmusic.png'
-  if (id === 'polimarket') return '/polymarket-icon.png'
   return `/plugins/${id}/icon.png`
 }
 

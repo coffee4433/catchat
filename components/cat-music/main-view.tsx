@@ -39,10 +39,15 @@ import type { Track } from '@/lib/plugins/cat-music/types'
 import type { YtPlaylist, YtChannel } from '@/lib/plugins/cat-music/innertube'
 import {
   exitDocumentFullscreen,
+  getFullscreenElement,
   isFullscreenActive,
   requestElementFullscreen,
   subscribeFullscreenChange,
 } from '@/lib/fullscreen'
+
+/** Width of the floating activity menu (`w-72`) and its margin to the edges. */
+const NOTIF_MENU_WIDTH = 288
+const NOTIF_MENU_MARGIN = 12
 
 type Tab = 'home' | 'explore' | 'library'
 type SearchTab = 'songs' | 'playlists' | 'artists'
@@ -165,7 +170,7 @@ export function CatMusicMainView(_props: PluginViewProps) {
   /** Anchor for the floating activity menu, and the layer it is painted into. */
   const bellRef = useRef<HTMLButtonElement>(null)
   const [overlayHost, setOverlayHost] = useState<HTMLElement | null>(null)
-  const [notifAnchor, setNotifAnchor] = useState<{ top: number; right: number } | null>(null)
+  const [notifAnchor, setNotifAnchor] = useState<{ top: number; left: number } | null>(null)
 
   const [selectedTrackDetail, setSelectedTrackDetail] = useState<Track | null>(null)
   const [selectedArtistName, setSelectedArtistName] = useState<string | null>(null)
@@ -211,34 +216,57 @@ export function CatMusicMainView(_props: PluginViewProps) {
     })
   }, [])
 
-  // The plugin shell itself hosts every floating layer. Painting them into
-  // `document.body` would work in a window but vanish the moment the shell is
-  // promoted to the fullscreen element — only that subtree is rendered then.
+  // A layer of our own, outside the React-managed tree, so nothing the shell
+  // re-renders can drop it. It normally hangs off `document.body`; if a browser
+  // promoted an element to fullscreen it moves inside that element, because the
+  // top layer paints only that subtree.
   useEffect(() => {
-    setOverlayHost(rootRef.current)
+    const host = document.createElement('div')
+    host.setAttribute('data-cm-overlay', '')
+    const attach = () => {
+      const parent = getFullscreenElement() ?? document.body
+      if (host.parentElement !== parent) parent.appendChild(host)
+    }
+    attach()
+    setOverlayHost(host)
+    const unsubscribe = subscribeFullscreenChange(attach)
+    return () => {
+      unsubscribe()
+      host.remove()
+    }
   }, [])
 
   /**
-   * Pins the activity menu under the bell in viewport coordinates. It is
-   * `position: fixed` in its own layer rather than absolutely positioned inside
-   * the header, so no ancestor's `overflow: hidden` or stacking context can clip
-   * or bury it.
+   * Pins the activity menu under the bell in viewport coordinates, clamped so it
+   * can never hang off an edge of the window. It is `position: fixed` in its own
+   * layer rather than absolutely positioned inside the header, so no ancestor's
+   * `overflow: hidden` or stacking context can clip or bury it.
    */
-  const placeNotifications = useCallback(() => {
+  const measureNotifications = useCallback(() => {
     const anchor = bellRef.current
-    if (!anchor) return
+    if (!anchor) return null
     const rect = anchor.getBoundingClientRect()
-    setNotifAnchor({
-      top: Math.round(rect.bottom + 8),
-      right: Math.round(Math.max(12, window.innerWidth - rect.right)),
-    })
+    const maxLeft = Math.max(NOTIF_MENU_MARGIN, window.innerWidth - NOTIF_MENU_WIDTH - NOTIF_MENU_MARGIN)
+    return {
+      // Right edge of the panel lines up with the right edge of the button.
+      left: Math.min(Math.max(NOTIF_MENU_MARGIN, rect.right - NOTIF_MENU_WIDTH), maxLeft),
+      top: Math.min(rect.bottom + 8, Math.max(NOTIF_MENU_MARGIN, window.innerHeight - 120)),
+    }
   }, [])
+
+  // Measured in the click handler, not in an effect: both updates batch into the
+  // same render, so the menu is never painted at a stale position first.
+  const toggleNotifications = useCallback(() => {
+    setShowNotifications((open) => {
+      if (!open) setNotifAnchor(measureNotifications())
+      return !open
+    })
+  }, [measureNotifications])
 
   useEffect(() => {
     if (!showNotifications) return
-    placeNotifications()
 
-    const reposition = () => placeNotifications()
+    const reposition = () => setNotifAnchor(measureNotifications())
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setShowNotifications(false)
@@ -255,7 +283,7 @@ export function CatMusicMainView(_props: PluginViewProps) {
       window.removeEventListener('scroll', reposition, true)
       window.removeEventListener('keydown', onKeyDown)
     }
-  }, [showNotifications, placeNotifications])
+  }, [showNotifications, measureNotifications])
 
   useEffect(() => {
     if (!isFullscreen) return
@@ -298,7 +326,7 @@ export function CatMusicMainView(_props: PluginViewProps) {
     try {
       await requestElementFullscreen(root)
     } catch {
-      // Immersive CSS mode (fixed inset-0 z-[9999]) still applies via isFullscreen state
+      // Immersive CSS mode (fixed inset-0 z-30) still applies via isFullscreen state
     }
   }
 
@@ -420,7 +448,7 @@ export function CatMusicMainView(_props: PluginViewProps) {
       ref={rootRef}
       style={accentVars(accent)}
       className={`cm-root cm-grain relative h-full w-full overflow-hidden text-white ${
-        isFullscreen ? 'fixed inset-0 z-[9999] !h-dvh !w-dvw rounded-none' : ''
+        isFullscreen ? 'fixed inset-0 z-30 !h-dvh !w-dvw rounded-none' : ''
       }`}
     >
       <div className="cm-aurora" data-idle={!playerState.isPlaying} aria-hidden="true">
@@ -564,7 +592,7 @@ export function CatMusicMainView(_props: PluginViewProps) {
             <button
               ref={bellRef}
               type="button"
-              onClick={() => setShowNotifications((v) => !v)}
+              onClick={toggleNotifications}
               aria-label={t.recentActivity}
               aria-expanded={showNotifications}
               aria-haspopup="dialog"
@@ -608,8 +636,6 @@ export function CatMusicMainView(_props: PluginViewProps) {
                 favoritesCount={favorites.length}
                 playlistsCount={playlists.length}
                 historyCount={history.length}
-                currentTrack={currentTrack}
-                isPlaying={playerState.isPlaying}
                 artistBannerUrl={artistBanner}
                 onPlayFeatured={() => playTrack(featuredTrack, SEED_TRACKS)}
                 onSelectArtist={setSelectedArtistName}
@@ -1099,25 +1125,31 @@ export function CatMusicMainView(_props: PluginViewProps) {
         </div>
       )}
 
-      {/* Floating activity menu. Lives in its own fixed layer inside the plugin
-          shell so it hovers over the whole view — including in fullscreen — and
-          is pinned to the bell rather than to the header's box. */}
-      {showNotifications && notifAnchor && overlayHost && createPortal(
+      {/* Floating activity menu. Painted into its own layer outside the shell so
+          it hovers over the whole view, pinned to the bell rather than to the
+          header's box, and clamped so it never hangs off the window. */}
+      {showNotifications && overlayHost && createPortal(
         <div
-          className="fixed inset-0 z-[220]"
+          className="cm-scope fixed inset-0 z-[220]"
+          style={accentVars(accent)}
           onMouseDown={() => setShowNotifications(false)}
         >
           <GlassPanel
             variant="strong"
             role="dialog"
             aria-label={t.recentActivity}
-            style={{ top: notifAnchor.top, right: notifAnchor.right }}
+            style={{
+              top: notifAnchor?.top ?? 56,
+              left: notifAnchor?.left,
+              right: notifAnchor ? undefined : NOTIF_MENU_MARGIN,
+              maxHeight: `calc(100dvh - ${(notifAnchor?.top ?? 56) + NOTIF_MENU_MARGIN}px)`,
+            }}
             onMouseDown={(e) => e.stopPropagation()}
-            className="fixed w-72 p-3 shadow-2xl animate-in fade-in slide-in-from-top-2 duration-150"
+            className="fixed flex w-72 flex-col overflow-hidden p-3 shadow-2xl animate-in fade-in slide-in-from-top-2 duration-150"
           >
             <p className="text-[11px] font-bold uppercase tracking-wider text-white/40 mb-3">{t.recentActivity}</p>
             {history.length > 0 ? (
-              <div className="max-h-48 overflow-y-auto thin-scroll space-y-1 mb-3">
+              <div className="min-h-0 flex-1 overflow-y-auto thin-scroll space-y-1 mb-3">
                 {history.slice(0, 6).map((entry, idx) => (
                   <button
                     key={`${entry.id}-${idx}`}

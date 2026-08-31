@@ -4,7 +4,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { LogOut, Settings, Download, RotateCw, AlertCircle, Radio, Activity, PhoneOff, Mic, MicOff, Video, VideoOff, MonitorUp, MonitorOff, Sparkles, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { authClient } from '@/lib/auth-client'
+import { getFullscreenElement, subscribeFullscreenChange } from '@/lib/fullscreen'
 import { useLanguage } from '@/lib/i18n'
 import { ElectricBorder } from '@/components/electric-border'
 import { useCallContext } from '@/components/calls/call-provider'
@@ -218,6 +220,19 @@ export function UserDock({
   onOpenCatMusic?: () => void
 }) {
   const { t, lang } = useLanguage()
+
+  /**
+   * A browser that promotes an element to fullscreen renders *only* that subtree,
+   * so the dock — a sibling of the plugin view — would disappear. Re-parenting it
+   * into whatever element is fullscreen keeps it on screen. (The desktop build
+   * takes the window fullscreen instead, where nothing needs moving.)
+   */
+  const [fullscreenHost, setFullscreenHost] = useState<Element | null>(null)
+  useEffect(() => {
+    const sync = () => setFullscreenHost(getFullscreenElement())
+    sync()
+    return subscribeFullscreenChange(sync)
+  }, [])
   const { isPluginEnabled, pluginUpdates, updatePlugin, dismissPluginUpdate, installingPluginId, installProgressMap } = usePlugins()
   const router = useRouter()
   const [signingOut, setSigningOut] = useState(false)
@@ -372,7 +387,7 @@ export function UserDock({
     }
   }
 
-  return (
+  const dock = (
     <motion.div
       initial={{ opacity: 0, y: 24, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -709,4 +724,6 @@ export function UserDock({
       </ElectricBorder>
     </motion.div>
   )
+
+  return fullscreenHost ? createPortal(dock, fullscreenHost) : dock
 }

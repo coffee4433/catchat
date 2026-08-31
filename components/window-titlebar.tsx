@@ -127,7 +127,7 @@ function AppTitlebar() {
 
   return (
     <header
-      className="app-drag fixed inset-x-0 top-0 z-[200] flex h-9 select-none items-center gap-2 border-b border-border/40 bg-gradient-to-b from-background/90 to-background/60 pl-2.5 pr-1.5 backdrop-blur-xl"
+      className="app-drag fixed inset-x-0 top-0 z-[200] flex h-9 select-none items-center gap-2 bg-gradient-to-b from-background/90 to-background/60 pl-2.5 pr-1.5 backdrop-blur-xl"
       data-desktop={bridge ? 'true' : undefined}
     >
       <span className="flex shrink-0 items-center gap-2">
