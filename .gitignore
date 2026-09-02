@@ -23,3 +23,6 @@ android/local.properties
 .env.local
 .env.production
 .env.*.local
+
+# Assistant session transcripts dumped into the repo root
+/20??-??-??-*.txt
