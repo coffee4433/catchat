@@ -3,6 +3,7 @@
 const fs = require('fs')
 const path = require('path')
 const { execSync } = require('child_process')
+const { pushToGitHub } = require('./git-push.cjs')
 
 const root = path.join(__dirname, '..')
 const version = process.env.RELEASE_VERSION
@@ -32,11 +33,24 @@ if (oldVersion === version) {
 console.log('Pushing to GitHub (triggers Vercel deploy)...\n')
 try {
   execSync('git add package.json', { cwd: root, stdio: 'inherit' })
-  execSync(`git commit -m "Release v${version}"`, { cwd: root, stdio: 'inherit' })
-  execSync('git push', { cwd: root, stdio: 'inherit' })
+  // Re-running the same version leaves nothing staged, which is not an error:
+  // the push below still has to run so any earlier commit reaches the remote.
+  const staged = execSync('git diff --cached --name-only', { cwd: root, encoding: 'utf8' }).trim()
+  if (staged) {
+    execSync(`git commit -m "Release v${version}"`, { cwd: root, stdio: 'inherit' })
+  } else {
+    console.log('Version already committed, pushing existing history...\n')
+  }
+  const { owner, repo } = pkg.build.publish
+  pushToGitHub({ cwd: root, owner, repo })
   console.log(`✓ Pushed v${version} — Vercel is deploying...\n`)
 } catch (e) {
-  console.error('\n⚠ Failed to push to GitHub:', e.message)
+  // Fatal on purpose. The desktop app loads the deployed site rather than its
+  // own bundle, so building and publishing an installer on top of a failed
+  // push ships a release whose UI is whatever the remote still has.
+  console.error('\n✕ Failed to push to GitHub:', e.message)
+  console.error('Aborting before the build: the release would not match the deployed app.')
+  process.exit(1)
 }
 
 console.log('Building...\n')

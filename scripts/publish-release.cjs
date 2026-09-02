@@ -2,6 +2,7 @@
 
 const fs = require('fs')
 const path = require('path')
+const { pushToGitHub } = require('./git-push.cjs')
 
 const GH_TOKEN = process.env.GH_TOKEN
 const OWNER = 'coffee4433'
@@ -118,6 +119,65 @@ async function uploadAsset(uploadUrl, filePath, fileName, maxRetries = 3) {
   }
 }
 
+/**
+ * Writes the auto-updater feed Vercel serves from `/updates/latest.yml`. Runs
+ * before the commit below so the feed travels with it.
+ */
+function writeUpdateFeed() {
+  const publicDir = path.join(__dirname, '..', 'public', 'updates')
+  fs.mkdirSync(publicDir, { recursive: true })
+  const ghBase = `https://github.com/${OWNER}/${REPO}/releases/download/${tag}`
+  let ymlContent = fs.readFileSync(latestYml, 'utf8')
+  ymlContent = ymlContent.replace(/url: CatChat-Setup/g, `url: ${ghBase}/CatChat-Setup`)
+  const showReleaseModal = process.env.SHOW_RELEASE_MODAL !== 'false'
+  ymlContent += `showReleaseModal: ${showReleaseModal ? 'true' : 'false'}\n`
+  if (releaseBody) {
+    const formattedNotes = releaseBody.split('\n').map((line) => `  ${line}`).join('\n')
+    ymlContent += `releaseNotes: |\n${formattedNotes}\n`
+  }
+  fs.writeFileSync(path.join(publicDir, 'latest.yml'), ymlContent)
+  console.log('latest.yml (with releaseNotes & showReleaseModal) copied to public/updates/ for Vercel')
+}
+
+/**
+ * Lands the release commit on `origin/main`, and must run before the GitHub
+ * release is created: GitHub cuts a missing tag at the default branch's current
+ * head, so pushing afterwards left every tag one commit behind the code it was
+ * supposed to mark.
+ *
+ * A failure here is fatal. The desktop app loads the deployed site instead of
+ * its own bundle, so continuing would publish an installer while the UI users
+ * actually see stays on the previous commit.
+ */
+function commitAndPush() {
+  const { execSync } = require('child_process')
+  const root = path.join(__dirname, '..')
+
+  if (!fs.existsSync(path.join(root, '.git'))) {
+    console.log('Skipping git commit & push (not a git repository)\n')
+    return
+  }
+
+  console.log('Committing and pushing...')
+  try {
+    execSync('git add -A', { cwd: root, stdio: 'pipe' })
+    execSync(`git commit -m "Release ${tag}" --allow-empty`, { cwd: root, stdio: 'pipe' })
+  } catch (e) {
+    console.error(`\n✕ git commit failed: ${e.stderr?.toString().trim() || e.message}`)
+    process.exit(1)
+  }
+
+  try {
+    pushToGitHub({ cwd: root, owner: OWNER, repo: REPO })
+  } catch (e) {
+    console.error(`\n✕ git push failed: ${e.message}`)
+    console.error('Aborting before the release is created, so no installer is published')
+    console.error('against code that never reached the remote. Fix the push and re-run.')
+    process.exit(1)
+  }
+  console.log('Pushed to Git (origin main)\n')
+}
+
 async function publish() {
   console.log(`\nPublishing v${version} to GitHub...\n`)
 
@@ -129,6 +189,11 @@ async function publish() {
     process.exit(1)
   }
   console.log(`Token OK — repo: ${verify.full_name}\n`)
+
+  // Feed and code reach the remote first, so the tag GitHub cuts below lands on
+  // this release's commit instead of the one before it.
+  writeUpdateFeed()
+  commitAndPush()
 
   // 1. Delete existing release if any (also delete tag ref)
   try {
@@ -187,38 +252,6 @@ async function publish() {
     body: JSON.stringify({ draft: false }),
   })
   console.log('Release is now public')
-
-  // Copy latest.yml to public/updates/ for Vercel
-  const publicDir = path.join(__dirname, '..', 'public', 'updates')
-  fs.mkdirSync(publicDir, { recursive: true })
-  const ghBase = `https://github.com/${OWNER}/${REPO}/releases/download/${tag}`
-  let ymlContent = fs.readFileSync(latestYml, 'utf8')
-  ymlContent = ymlContent.replace(/url: CatChat-Setup/g, `url: ${ghBase}/CatChat-Setup`)
-  const showReleaseModal = process.env.SHOW_RELEASE_MODAL !== 'false'
-  ymlContent += `showReleaseModal: ${showReleaseModal ? 'true' : 'false'}\n`
-  if (releaseBody) {
-    const formattedNotes = releaseBody.split('\n').map((line) => `  ${line}`).join('\n')
-    ymlContent += `releaseNotes: |\n${formattedNotes}\n`
-  }
-  fs.writeFileSync(path.join(publicDir, 'latest.yml'), ymlContent)
-  console.log('latest.yml (with releaseNotes & showReleaseModal) copied to public/updates/ for Vercel')
-
-  // Auto git push
-  try {
-    const { execSync } = require('child_process')
-    const root = path.join(__dirname, '..')
-    if (!fs.existsSync(path.join(root, '.git'))) {
-      console.log('Skipping git commit & push (not a git repository)\n')
-    } else {
-      console.log(`Committing and pushing...`)
-      execSync('git add -A', { cwd: root, stdio: 'pipe' })
-      execSync(`git commit -m "Release ${tag}" --allow-empty`, { cwd: root, stdio: 'pipe' })
-      execSync('git push origin main', { cwd: root, stdio: 'pipe' })
-      console.log('Pushed to Git (origin main)\n')
-    }
-  } catch (e) {
-    console.log(`Git: ${e.stderr?.toString() || e.message}`)
-  }
 }
 
 publish().catch((e) => {
