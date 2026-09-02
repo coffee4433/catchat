@@ -447,8 +447,14 @@ export function CatMusicMainView(_props: PluginViewProps) {
     <div
       ref={rootRef}
       style={accentVars(accent)}
-      className={`cm-root cm-grain relative h-full w-full overflow-hidden text-white ${
-        isFullscreen ? 'fixed inset-0 z-30 !h-dvh !w-dvw rounded-none' : ''
+      // `position` and the sizing utilities are branched, not layered: Tailwind
+      // emits `.relative` after `.fixed`, so listing both left the root
+      // `relative` — viewport-sized inside a container that clips it, which cut
+      // the header's right-hand buttons off the screen.
+      className={`cm-root cm-grain overflow-hidden text-white ${
+        isFullscreen
+          ? 'fixed inset-0 z-30 h-dvh w-dvw rounded-none'
+          : 'relative h-full w-full'
       }`}
     >
       <div className="cm-aurora" data-idle={!playerState.isPlaying} aria-hidden="true">

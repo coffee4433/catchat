@@ -2,7 +2,6 @@ import { spawn } from 'child_process'
 import { createServer } from 'net'
 
 const DEV_PORT = 3000
-const START_URL = `http://127.0.0.1:${DEV_PORT}`
 
 async function isPortInUse(port) {
   return new Promise((resolve) => {
@@ -29,12 +28,15 @@ async function waitForServer(url, timeout = 30000) {
 }
 
 async function main() {
-  const port = 3000
+  const port = DEV_PORT
   const inUse = await isPortInUse(port)
+  // Declared out here so the exit handler below can still see it: it used to be
+  // block-scoped, so closing Electron threw and left the dev server running.
+  let nextProcess = null
 
   if (!inUse) {
     console.log('Starting Next.js dev server...')
-    const nextProcess = spawn('pnpm', ['run', 'dev'], {
+    nextProcess = spawn('pnpm', ['run', 'dev'], {
       stdio: 'inherit',
       shell: true,
       env: { ...process.env }
